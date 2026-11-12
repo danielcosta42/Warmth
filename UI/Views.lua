@@ -7,6 +7,7 @@ local T, Wd, L, C = UI.T, UI.Widgets, W.L, UI.C
 local PAD, WIDTH = UI.PAD, UI.W - 2 * UI.PAD
 
 function UI.CampTitle(camp)
+	if camp.spotted then return camp.owner == W.me and L["A campfire you found"] or L["Campfire seen by %s"]:format(W.Esc(camp.owner)) end
 	if camp.owner == W.me then return L["Your camp"] end
 	return L["%s's camp"]:format(W.Esc(camp.owner))
 end

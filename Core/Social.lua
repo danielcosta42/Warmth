@@ -51,7 +51,7 @@ end
 
 -- May this player thank the host of this camp: sitting in someone else's circle, and not thanked them today.
 function Social:CanThank(camp)
-	return camp.owner ~= W.me and not camp.demo and camp.heard[W.me] ~= nil and W.db.thanked[camp.owner] ~= Today()
+	return camp.owner ~= W.me and not camp.demo and not camp.spotted and camp.heard[W.me] ~= nil and W.db.thanked[camp.owner] ~= Today()
 end
 function Social:MarkThanked(owner) W.db.thanked[owner] = Today() end
 

@@ -134,7 +134,11 @@ local ptBR = {
 	["Show campfires on the map and the minimap"] = "Mostrar fogueiras no mapa e no minimapa",
 	["Less motion (fades only)"] = "Menos animação (só transições suaves)",
 	["/warmth opens the window. The compass opens the camp actions."] = "/warmth abre a janela. A bússola abre as ações de acampamento.",
-	["Announce my campfires to the network when I light them"] = "Anunciar minhas fogueiras à rede quando eu acender",
+	["Announce the campfires I light, and the ones I find, to the network"] = "Anunciar à rede as fogueiras que eu acendo e as que eu encontro",
+	["A campfire you found"] = "Uma fogueira que você encontrou",
+	["Campfire seen by %s"] = "Fogueira vista por %s",
+	["You found a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"] =
+		"Você encontrou uma fogueira que a rede não conhecia: ela está no mapa agora. (O anúncio automático pode ser desligado nas opções.)",
 	["Show the compass (the small campfire that points to the best fire nearby)"] = "Mostrar a bússola (a fogueirinha que aponta para a melhor fogueira por perto)",
 	["The campfires you light are announced to the network by themselves (see the options)."] = "As fogueiras que você acende são anunciadas à rede sozinhas (veja as opções).",
 	["Campfire lit and announced to the network. (You can turn the automatic announce off in the options.)"] =

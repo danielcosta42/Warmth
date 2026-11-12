@@ -5,6 +5,10 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- **Fogueira avistada.** Quem tem o Warmth e para ao lado de uma fogueira que a rede não conhece (acesa por quem
+  não tem o addon) a anuncia sozinho, marcada como "vista por". Apontar o mouse para o fogo diz o nível. O anúncio
+  do próprio dono, se chegar, toma o lugar. Vale a mesma opção do anúncio automático.
+
 ## [0.3.0]
 
 - **Os tempos na bússola.** Um aro de pontos enche durante o minuto sentado, com os segundos que faltam; depois,
