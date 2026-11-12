@@ -262,7 +262,7 @@ end, function(v, fresh)
 	v.go.fn = function() UI.Waypoint(camp) end
 	if camp.owner == W.me then
 		-- at my own fire there is nowhere to go: the main button is whether the camp asks for what it lacks
-		v.go:Set(W.db.asking ~= false and L["Asking for what is missing"] or L["Not asking for objects"])
+		v.go:Set(W.db.asking ~= false and L["Asking for objects"] or L["Not asking"])
 		v.go.fn = function()
 			W.db.asking = W.db.asking == false
 			W.Net:Extras()
