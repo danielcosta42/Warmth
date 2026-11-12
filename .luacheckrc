@@ -17,7 +17,7 @@ globals = {
 
 read_globals = {
     -- Lua environment WoW adds
-    "strsplit", "time", "issecretvalue", "geterrorhandler", "hooksecurefunc", "tinsert",
+    "strsplit", "time", "date", "issecretvalue", "geterrorhandler", "hooksecurefunc", "tinsert",
     -- frames
     "CreateFrame", "UIParent", "GameTooltip", "Minimap", "WorldMapFrame", "UISpecialFrames",
     "ChatFrameUtil", "ChatFrame_AddMessageEventFilter", "Settings", "InterfaceOptions_AddCategory",
@@ -25,18 +25,20 @@ read_globals = {
     "RAID_CLASS_COLORS", "CLASS_ICON_TCOORDS", "ERR_CHAT_PLAYER_NOT_FOUND_S", "STANDARD_TEXT_FONT",
     -- client, units
     "GetLocale", "GetTime", "GetCVar", "GetPlayerFacing", "Ambiguate", "UnitName", "UnitFullName", "UnitClass",
-    "InviteUnit",
+    "InviteUnit", "UnitGUID", "UnitAura", "InCombatLockdown", "GetBuildInfo", "IsResting", "GetRestState",
+    "GetXPExhaustion",
     -- items, spells, professions (the classic trade skill API is used guarded)
     "GetItemCount", "GetItemSpell", "GetItemIcon", "GetItemInfo", "GetSpellInfo",
     "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo",
     -- maps
     "CreateVector2D", "UiMapPoint",
     -- namespaces
-    "C_AddOns", "C_Item", "C_Map", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_SuperTrack", "C_Timer",
+    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_SuperTrack", "C_Timer",
 }
 
 files["Core/Locale.lua"] = { max_line_length = false }
 files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
+files["UI/Entry.lua"] = { max_line_length = false }
 
 exclude_files = { ".release/", "Libs/", "tools/" }

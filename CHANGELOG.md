@@ -23,7 +23,9 @@ Primeira versão, para o **WoW: Forever** (interface 16001).
 - **Cópias da zona.** Os acampamentos de outra cópia vêm marcados, e dá para pedir ao dono um convite de grupo
   para cair na dele.
 - **Aviso de proximidade** quando anunciam uma fogueira na zona em que você está.
+- **Acender pelo addon.** Com o kit na bolsa, um clique em Montar acampamento usa o kit (fora de combate).
 - **Botão nativo** no compartimento de addons do jogo, opções na aba AddOns e `/warmth`.
+- `/warmth probe` grava o que o cliente revela sobre acampamentos, para conferir no jogo o que hoje vem de guias.
 - Em inglês e em português do Brasil.
 
 Roda na ChehulNet (lib v1.3.0). Enquanto os outros addons da família não repassam os anúncios de fogueira, o

@@ -120,6 +120,25 @@ check(UI.tier == 2 and UI.sub.text:find("Journeyman campfire lit", 1, true) and 
 check(S.printed[#S.printed]:find("has not been announced", 1, true), "and the chat says it has not been announced")
 b.tiers[3]:Click()
 check(UI.tier == 3, "the player can correct the tier")
+-- the Light button: a secure button owned by UIParent, aimed at the chosen tier's kit, never touched in combat
+check(not (UI.light and UI.light.shown) and b.lightText.text == "No Expert kit in your bags.", "no kit of that tier: no button, and the view says why")
+b.tiers[1]:Click()
+local light = UI.light
+check(light and light.shown and light.template == "SecureActionButtonTemplate" and light.parent == UIParent
+	and light.attributes.type == "item" and light.attributes.item == "item:" .. W.KITS[1] and light.label.text == "Light the Basic campfire",
+	"a kit in the bags: one click uses it")
+check(light.point[2] == UIParent and light.point[4] == 300 and b.lightText.text == "", "it sits over its place in the window without being anchored to it")
+S.bags[W.KITS[3]] = 1
+S.combat = true
+S.fire("PLAYER_REGEN_DISABLED")
+b.tiers[3]:Click()
+check(light.shown == false and light.attributes.item == "item:" .. W.KITS[1] and b.lightText.text == "You are in combat.", "combat hides it and nothing about it changes until combat ends")
+S.combat = false
+S.fire("PLAYER_REGEN_ENABLED")
+check(light.shown and light.attributes.item == "item:" .. W.KITS[3], "after combat it comes back, aimed at the tier chosen meanwhile")
+UI:Show("list")
+check(light.shown == false, "it leaves with the view")
+UI:Show("build")
 b.input.text = "come sit"
 function b.input:GetText() return self.text end
 S.take()
@@ -221,6 +240,21 @@ SlashCmdList.WARMTH("clear")
 check(#Camps:List() == 0, "/warmth clear")
 SlashCmdList.WARMTH("options")
 check(S.openedOptions, "/warmth options")
+
+-- the probe: off until asked, records to WarmthDB only
+check(W.Probe.on == false and W.db.probe == nil, "the probe is off and has written nothing")
+S.take()
+SlashCmdList.WARMTH("probe")
+check(W.Probe.on and #W.db.probe.api > 30 and #W.db.probe.items == 41 and W.db.probe.items[1]:find("kit1", 1, true), "starting it snapshots the APIs and the 41 camp items")
+SlashCmdList.WARMTH("probe lit the basic kit")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[1] + 1000000)
+S.fire("CHAT_MSG_SYSTEM", "You feel cozy.")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "target", "g", 5)
+local log = table.concat(W.db.probe.log, "\n")
+check(log:find(">>> lit the basic kit", 1, true) and log:find("spell=1279981", 1, true) and log:find("You feel cozy.", 1, true) and not log:find("spell=5", 1, true),
+	"marks, my casts and system lines are recorded; other units are not")
+SlashCmdList.WARMTH("probe")
+check(W.Probe.on == false and W.db.probe.seconds ~= nil and #S.take() == 0 and S.printed[#S.printed]:find("lines recorded", 1, true), "stopping keeps the recording; the probe sent nothing")
 
 -- ptBR end to end
 S.locale = "ptBR"

@@ -257,14 +257,23 @@ UI.View("build", function(v)
 		v.lines[i] = { l, r }
 	end
 	v.tierLabel = Wd.Text(v, 11.5, T.mute)
-	v.tierLabel:SetPoint("BOTTOMLEFT", PAD, PAD + 156)
-	v.tierLabel:SetText(L["The campfire you lit"])
+	v.tierLabel:SetPoint("BOTTOMLEFT", PAD, PAD + 198)
+	v.tierLabel:SetText(L["Your campfire"])
+	-- Where the Light button sits. The button itself is a secure frame owned by UIParent (UI.SyncLight): anchored
+	-- here it would make the whole window protected, and the window could not be moved or closed in combat.
+	v.lightSlot = CreateFrame("Frame", nil, v)
+	v.lightSlot:SetPoint("BOTTOMLEFT", PAD, PAD + 130)
+	v.lightSlot:SetPoint("BOTTOMRIGHT", -PAD, PAD + 130)
+	v.lightSlot:SetHeight(30)
+	Wd.Fill(v.lightSlot, T.panel, 0.6):SetAllPoints()
+	v.lightText = Wd.Text(v.lightSlot, 12, T.mute)
+	v.lightText:SetPoint("CENTER")
 	v.tiers = {}
 	for i, name in ipairs(W.TIERS) do
 		local b = Wd.Button(v)
 		b:SetHeight(26)
 		b:SetWidth((WIDTH - 12) / 3)
-		b:SetPoint("BOTTOMLEFT", PAD + (i - 1) * ((WIDTH - 12) / 3 + 6), PAD + 124)
+		b:SetPoint("BOTTOMLEFT", PAD + (i - 1) * ((WIDTH - 12) / 3 + 6), PAD + 166)
 		b.label:SetFont(UI.Font(), 12, "")
 		b.fn = function() UI.tier, UI.tierTouched = i, true end
 		b:Set(L[name])
@@ -335,4 +344,67 @@ end, function(v)
 	if lit and not UI.tierTouched then UI.tier = lit.tier end
 	for i, b in ipairs(v.tiers) do b:Set(L[W.TIERS[i]], UI.tier == i) end
 	v.go:Set(W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"])
+	UI.SyncLight()
+	local lighting = UI.light and UI.light:IsShown()
+	v.lightText:SetText(lighting and "" or ((InCombatLockdown and InCombatLockdown()) and L["You are in combat."]
+		or L["No %s kit in your bags."]:format(L[W.TIERS[UI.tier]])))
+end)
+
+--------------------------------------------------------------------------------
+-- Light: one click uses the campfire kit from the bags. Using an item needs a secure button and a real click;
+-- a secure frame cannot be shown, hidden, moved or re-aimed in combat, so all of that happens only outside it,
+-- and the button leaves the screen as combat starts.
+--------------------------------------------------------------------------------
+local function MakeLight()
+	local b = CreateFrame("Button", "WarmthLightButton", UIParent, "SecureActionButtonTemplate")
+	-- both: with ActionButtonUseKeyDown on (the default) the secure action fires on the press, otherwise on release
+	b:RegisterForClicks("AnyUp", "AnyDown")
+	b:SetAttribute("type", "item")
+	b:SetFrameStrata("DIALOG")
+	b:SetFrameLevel(50)
+	b.bg = Wd.Fill(b, T.ember)
+	b.bg:SetAllPoints()
+	b.label = Wd.Text(b, 13, T.night, "title")
+	b.label:SetPoint("CENTER")
+	b:SetScript("OnEnter", function() b.bg:SetColorTexture(1, 0.78, 0.42, 1) end)
+	b:SetScript("OnLeave", function() b.bg:SetColorTexture(T.ember[1], T.ember[2], T.ember[3], 1) end)
+	b:Hide()
+	UI.light = b
+	return b
+end
+
+function UI.SyncLight()
+	if InCombatLockdown and InCombatLockdown() then return end
+	local kit = W.KITS[UI.tier]
+	local slot = UI.views.build and UI.views.build.lightSlot
+	local want = slot and UI.frame:IsShown() and UI.view == "build" and W.Count(kit) > 0
+	local b = UI.light
+	if not want then
+		if b and b:IsShown() then b:Hide() end
+		return
+	end
+	b = b or MakeLight()
+	local x, y = slot:GetCenter()
+	if not x then return end
+	local k = slot:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	b:SetSize(slot:GetWidth() * k, slot:GetHeight() * k)
+	b:ClearAllPoints()
+	b:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x * k, y * k)
+	if b.item ~= kit then
+		b:SetAttribute("item", "item:" .. kit)
+		b.item = kit
+	end
+	b.label:SetText(L["Light the %s campfire"]:format(L[W.TIERS[UI.tier]]))
+	b:Show()
+end
+
+local combat = CreateFrame("Frame")
+combat:RegisterEvent("PLAYER_REGEN_DISABLED") -- fires just before the lockdown: the last moment to hide it
+combat:RegisterEvent("PLAYER_REGEN_ENABLED")
+combat:SetScript("OnEvent", function(_, event)
+	if event == "PLAYER_REGEN_DISABLED" then
+		if UI.light then UI.light:Hide() end
+	elseif UI.frame then
+		UI.SyncLight()
+	end
 end)

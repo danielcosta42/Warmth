@@ -35,6 +35,8 @@ Rules that are easy to break:
 - **No looping `Scale` animation.** On the Forever client it accumulates until the region covers the screen.
   Everything that moves is computed per frame in `UI/Motion.lua`.
 - **Item and spell ids are unverified** (third-party guides). Every feature built on them has a manual path.
+  `/warmth probe` records what the client reveals (casts, auras, vignettes, tooltips, the interact target, which
+  APIs exist) into `WarmthDB.probe`; read it in `WTF/Account/<account>/SavedVariables/Warmth.lua` after a `/reload`.
 - **The network library is never edited here.** Change it in `danielcosta42/chehulnet` and run its `tools/sync.sh`.
 - **Every user-facing string goes through `W.L`**; `luajit tools/keys.lua` lists them and `tools/ui.lua` fails
   when ptBR misses one.

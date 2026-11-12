@@ -96,7 +96,9 @@ function UI:Build()
 	f:SetScript("OnUpdate", function(_, elapsed)
 		UI.acc = (UI.acc or 0) + elapsed
 		if UI.acc >= 1 then UI.acc = 0; UI:Render() end
+		if UI.view == "build" then UI.SyncLight() end -- the Light button follows the window as it is dragged
 	end)
+	f:SetScript("OnHide", function() UI.SyncLight() end)
 	f:Hide()
 	self.frame = f
 end
@@ -125,6 +127,7 @@ function UI:Show(view, owner)
 		end
 	end
 	self:Render(changed)
+	UI.SyncLight()
 end
 
 function UI:Toggle()

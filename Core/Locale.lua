@@ -55,7 +55,14 @@ local ptBR = {
 	["Asked %s for an invite."] = "Convite pedido a %s.",
 	["Could not ask right now."] = "Não deu para pedir agora.",
 	-- setting up
-	["The campfire you lit"] = "A fogueira que você acendeu",
+	["Your campfire"] = "Sua fogueira",
+	["Light the %s campfire"] = "Acender a fogueira %s",
+	["No %s kit in your bags."] = "Nenhum kit de fogueira %s na bolsa.",
+	["You are in combat."] = "Você está em combate.",
+	["Marked."] = "Marcado.",
+	["Probe stopped: %d lines recorded. /reload writes them to disk."] = "Sonda parada: %d linhas gravadas. /reload grava no disco.",
+	["Probe recording (nothing is sent). Light a fire, place an object, sit by it; mark each moment with /warmth probe <words>. /warmth probe alone stops."] =
+		"Sonda gravando (nada é enviado). Acenda um fogo, ponha um objeto, sente perto; marque cada momento com /warmth probe <palavras>. /warmth probe sozinho para.",
 	["A word for the network (optional)"] = "Um recado para a rede (opcional)",
 	["Your campfire is not announced until you click."] = "Sua fogueira só é anunciada quando você clica.",
 	["This is a demo camp: nobody is there to invite you."] = "Este é um acampamento de demonstração: não há ninguém lá para convidar você.",
@@ -109,7 +116,7 @@ local ptBR = {
 	["A campfire is only announced when you click announce. /warmth opens the window."] = "Uma fogueira só é anunciada quando você clica em anunciar. /warmth abre a janela.",
 	["Click: open.  Right click: set up a camp."] = "Clique: abrir.  Clique direito: montar acampamento.",
 	["Three demo camps on this map (only you see them). /warmth clear removes them."] = "Três acampamentos de demonstração neste mapa (só você vê). /warmth clear tira.",
-	["/warmth opens the window. Also: setup, options, demo, clear."] = "/warmth abre a janela. Também: setup, options, demo, clear.",
+	["/warmth opens the window. Also: setup, options, demo, clear, probe."] = "/warmth abre a janela. Também: setup, options, demo, clear, probe.",
 	-- the game's words
 	["Basic"] = "Básica", ["Journeyman"] = "Profissional", ["Expert"] = "Perita",
 	["Alchemy"] = "Alquimia", ["Blacksmithing"] = "Ferraria", ["Enchanting"] = "Encantamento", ["Engineering"] = "Engenharia",

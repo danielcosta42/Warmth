@@ -64,11 +64,22 @@ end
 
 SLASH_WARMTH1 = "/warmth"
 SlashCmdList.WARMTH = function(msg)
-	local cmd = (msg or ""):lower():match("^%s*(%S*)")
+	local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
+	cmd = cmd:lower()
 	if cmd == "" then UI:Toggle()
+	elseif cmd == "probe" then
+		if W.Probe.on and rest ~= "" then
+			W.Probe:Mark(rest)
+			W.Print(L["Marked."])
+		elseif W.Probe.on then
+			W.Print(L["Probe stopped: %d lines recorded. /reload writes them to disk."]:format(W.Probe:Stop()))
+		else
+			W.Probe:Start()
+			W.Print(L["Probe recording (nothing is sent). Light a fire, place an object, sit by it; mark each moment with /warmth probe <words>. /warmth probe alone stops."])
+		end
 	elseif cmd == "setup" then UI:Show("build")
 	elseif cmd == "options" then UI.OpenOptions()
 	elseif cmd == "demo" then Demo()
 	elseif cmd == "clear" then ClearDemo()
-	else W.Print(L["/warmth opens the window. Also: setup, options, demo, clear."]) end
+	else W.Print(L["/warmth opens the window. Also: setup, options, demo, clear, probe."]) end
 end

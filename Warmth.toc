@@ -27,6 +27,7 @@ Core/Wire.lua
 Core/Camps.lua
 Core/Net.lua
 Core/Watch.lua
+Core/Probe.lua
 
 UI/Theme.lua
 UI/Motion.lua

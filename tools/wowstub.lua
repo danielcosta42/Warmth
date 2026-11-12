@@ -67,6 +67,8 @@ function UnitClass() return "Druid", "DRUID" end
 function GetPlayerFacing() return S.facing or 0 end
 function GetCVar(name) return S.cvars and S.cvars[name] or "0" end
 function IsInGuild() return S.guild end
+function InCombatLockdown() return S.combat or false end
+function GetBuildInfo() return "1.60.1", "70862", "", 16001 end
 function IsInGroup() return false end
 function IsInRaid() return false end
 C_PlayerInfo = { ShouldDisplaySurname = function() return true end }
@@ -130,6 +132,9 @@ local METHODS = {
 	SetVertexColor = function(self, ...) self.color = { ... } end,
 	SetPoint = function(self, ...) self.point = { ... } end, ClearAllPoints = function(self) self.point = nil end,
 	GetFrameLevel = function() return 1 end,
+	GetCenter = function() return 300, 200 end, GetEffectiveScale = function() return 1 end,
+	SetAttribute = function(self, k, v) self.attributes = self.attributes or {}; self.attributes[k] = v end,
+	GetOwner = function() return nil end,
 	Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end,
 	SetShown = function(self, v) self.shown = v and true or false end,
 	IsShown = function(self) return self.shown end,
@@ -153,9 +158,9 @@ Widget = function()
 		__index = function(_, k) return METHODS[k] or (type(k) == "string" and k:match("^%u") and function() end or nil) end })
 end
 S.Widget = Widget
-function CreateFrame(_, name, parent)
+function CreateFrame(_, name, parent, template)
 	local f = Widget()
-	f.parent = parent
+	f.parent, f.template = parent, template
 	S.frames[#S.frames + 1] = f
 	if name then _G[name] = f end
 	return f
