@@ -69,6 +69,7 @@ W.COOKING_SPELL = 2550 -- the Cooking profession spell, for its localized name
 W.AURA = {
 	NEARBY   = 1283391, -- "Campfire Nearby": on while a lit campfire is in range, whoever lit it
 	WELCOME  = 1229739, -- "Welcoming Campfire": the minute of resting by the fire, 60 s
-	BENEFITS = 1229741, -- "Camp Benefits": what the minute gives
-	VIOLET   = 1328375, -- "Violet Flames": by a fire someone threw Violet Dust into (the launch celebration toy)
+	BENEFITS = 1229741, -- "Camp Benefits": what the minute gives; 1 hour, 2 hours from a fire with violet flames
+	VIOLET   = 1328375, -- "Violet Flames": by a fire someone threw Violet Dust into (the launch celebration toy);
+	                    -- such a fire gives its benefits for 2 hours instead of 1 (the owner, 2026-11-11)
 }

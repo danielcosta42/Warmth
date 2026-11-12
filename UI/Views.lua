@@ -204,7 +204,7 @@ end, function(v, fresh)
 		lines[#lines + 1] = C.ember .. W.ObjectName(index) .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"]) .. C.r
 	end
 	lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
-	if W.Camps:Violet(camp) then lines[#lines + 1] = UI.Hex(T.violet) .. L["Violet flames: someone threw Violet Dust into this fire."] .. C.r end
+	if W.Camps:Violet(camp) then lines[#lines + 1] = UI.Hex(T.violet) .. L["Violet flames: the benefits of this fire last two hours instead of one."] .. C.r end
 	v.objs:SetText(table.concat(lines, "\n"))
 
 	local bring = CanBring(camp)

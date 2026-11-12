@@ -27,7 +27,7 @@ Primeira versão, para o **WoW: Forever** (interface 16001).
 - **Fogo de verdade.** O addon confere pelo próprio jogo que há uma fogueira acesa: só anuncia com fogo, só
   põe você na roda com fogo presente, e encerra o anúncio sozinho quando o seu fogo apaga.
 - **Chamas violetas.** Uma fogueira com Pó Violeta (o brinquedo da celebração de lançamento) aparece violeta no
-  mapa, na lista e na roda.
+  mapa, na lista e na roda, com o aviso de que ali os benefícios duram duas horas.
 - **Botão nativo** no compartimento de addons do jogo, opções na aba AddOns e `/warmth`.
 - `/warmth probe` grava o que o cliente revela sobre acampamentos, para conferir no jogo o que hoje vem de guias.
 - Em inglês e em português do Brasil.
