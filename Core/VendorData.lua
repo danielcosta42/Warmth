@@ -6,7 +6,7 @@
 -- Public License v3.0; this file is distributed under that licence. The rest of Warmth is MIT.
 --
 -- [npc id] = { name, uiMapID, x, y (0..10000), friendly to ("A", "H" or "AH"), { item ids } }
--- 448 vendors, 24 items: Bronze Tube, Coarse Thread, Copper Tube, Crystal Vial, Dreamfoil, Empty Vial, Fine Thread, Flint and Tinder, Heavy Leather, Kingsblood, Leaded Vial, Medium Leather, Peacebloom, Refreshing Spring Water, Rugged Leather, Rune Thread, Silverleaf, Simple Flour, Simple Wood, Soothing Spices, Star Wood, Strange Dust, Thick Logs, Weak Flux.
+-- 444 vendors, 24 items: Bronze Tube, Coarse Thread, Copper Tube, Crystal Vial, Dreamfoil, Empty Vial, Fine Thread, Flint and Tinder, Heavy Leather, Kingsblood, Leaded Vial, Medium Leather, Peacebloom, Refreshing Spring Water, Rugged Leather, Rune Thread, Silverleaf, Simple Flour, Simple Wood, Soothing Spices, Star Wood, Strange Dust, Thick Logs, Weak Flux.
 --=============================================================================
 local _, W = ...
 
@@ -371,8 +371,6 @@ W.VENDOR_DATA = {
 	[11188] = { "Evie Whirlbrew", 1452, 6075, 3778, "AH", { 3371, 3372, 8925 } },
 	[11189] = { "Qia", 1452, 6120, 3721, "AH", { 2320, 2321, 2880, 3371, 3372, 3713, 8925, 14341 } },
 	[11287] = { "Baker Masterson", 1422, 6955, 7970, "AH", { 159 } },
-	[11555] = { "Gorn One Eye", 1448, 6518, 268, "AH", { 159, 4470, 4471 } },
-	[11557] = { "Meilosh", 1448, 6569, 281, "AH", { 2320, 2321, 14341 } },
 	[11874] = { "Masat T'andr", 1435, 2646, 3147, "AH", { 2320, 2321, 14341 } },
 	[12019] = { "Dargon", 1450, 4887, 3916, "AH", { 159 } },
 	[12021] = { "Daeolyn Summerleaf", 1450, 4519, 3474, "AH", { 159, 4470, 4471, 11291 } },
@@ -411,7 +409,6 @@ W.VENDOR_DATA = {
 	[16458] = { "Innkeeper Faralia", 1442, 3579, 574, "A", { 159 } },
 	[43411] = { "Lenedil Moonwing", 2482, 7085, 5079, "A", { 4470, 4471, 11291 } },
 	[243855] = { "Toron Rockhoof", 2482, 6900, 4736, "A", { 2880 } },
-	[244512] = { "Ortak Lomgok", 2482, 1280, 5240, "AH", { 4470, 4471 } },
 	[247227] = { "Riley Peltskinner", 1429, 4696, 3992, "A", { 2320 } },
 	[248198] = { "Aza'bek", 1413, 4923, 2874, "H", { 3713, 4470, 4471, 10284, 11291, 272941 } },
 	[251905] = { "Zerril Softbreeze", 2521, 4385, 4384, "AH", { 3713, 4470, 4471, 10284, 11291, 272941 } },
@@ -429,7 +426,7 @@ W.VENDOR_DATA = {
 	[253004] = { "Iaadaria Bitterwind", 2521, 6634, 7950, "A", { 3371, 3372, 8925 } },
 	[254358] = { "Veena Vericloud", 2521, 4471, 4548, "AH", { 4470, 4471 } },
 	[254360] = { "Belandiel Farflight", 2521, 4477, 4505, "AH", { 2320, 2321, 2880, 3371 } },
-	[254695] = { "Repair Bot", 1431, 7492, 4668, "AH", { 2320, 2321, 2880, 3713, 4470, 4471, 10284, 11291, 14341, 272941 } },
+	[254695] = { "Repair Bot", 1434, 2433, 1240, "AH", { 2320, 2321, 2880, 3713, 4470, 4471, 10284, 11291, 14341, 272941 } },
 	[255701] = { "Maralus", 2652, 4292, 7877, "AH", { 3713 } },
 	[255895] = { "Grizzek", 2548, 7596, 5099, "AH", { 4470, 4471, 11291 } },
 	[255897] = { "Friz Frazzlespark", 2548, 7710, 5290, "AH", { 3371, 3372, 4470, 4471, 8925, 11291 } },
@@ -457,6 +454,5 @@ W.VENDOR_DATA = {
 	[267330] = { "Nawka Wildsong", 1412, 4449, 7669, "H", { 2320 } },
 	[267333] = { "Terunne Bearshaper", 1438, 5939, 3863, "A", { 2320 } },
 	[267336] = { "Brighid Stormflayer", 1426, 2919, 6773, "A", { 2320 } },
-	[270780] = { "Qujo", 1425, 7795, 7783, "AH", { 3713, 4470, 4471, 10284, 11291, 272941 } },
 	[272646] = { "Miranda Turner", 2548, 6352, 8251, "A", { 3713, 4470, 4471, 10284, 11291, 272941 } },
 }

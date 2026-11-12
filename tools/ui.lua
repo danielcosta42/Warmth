@@ -260,13 +260,16 @@ check(UI.prompt.shown and UI.prompt.title.text == "Caio Nunes wants to come to y
 UI.prompt.yes:Click()
 check(S.invited == "Caio Nunes", "accepting invites them")
 
-check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 7, "the options live in the game's AddOns tab")
+check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 8, "the options live in the game's AddOns tab")
 UI.options.checks[1]:Click()
 check(W.db.consent == true, "the consent switch")
 UI.options.checks[2]:Click()
 check(W.db.auto == true, "the automatic-announce switch")
 W.db.auto = false
-UI.options.checks[7]:Click()
+UI.options.checks[4]:Click()
+check(W.db.shareVendors == false, "the vendor-sharing switch")
+UI.options.checks[4]:Click()
+UI.options.checks[8]:Click()
 check(W.db.lessMotion == true, "the less-motion switch")
 W.db.lessMotion = false
 
@@ -400,9 +403,9 @@ check(Compass.open == false and S.printed[#S.printed] == "|cffffb454Warmth|r You
 S.combat = false
 Compass.frame:Click("RightButton")
 check(UI.frame.shown == false, "right click on the compass toggles the window")
-UI.options.checks[6]:Click()
+UI.options.checks[7]:Click()
 check(W.db.compass == false and Compass.frame.shown == false, "the compass can be turned off")
-UI.options.checks[6]:Click()
+UI.options.checks[7]:Click()
 check(Compass.frame.shown, "and on again")
 for owner in pairs(Camps.all) do Camps:End(owner) end
 S.bags = {}
@@ -447,7 +450,7 @@ check(#W.db.probe.recipes == 35 and W.db.probe.recipes[4]:find("Sharpening Wheel
 S.merchant, S.npc = { 4470, 2320 }, "Creature-0-1-1-1-3313-0"
 function GetMerchantItemInfo(i) return ({ "Simple Wood", "Coarse Thread" })[i], nil, ({ 38, 10 })[i] end
 S.fire("MERCHANT_SHOW")
-check(#S.take() == 2, "(the Workshop told the network about this vendor of Simple Wood; that is its own doing)")
+check(#S.take() == 0, "opening a vendor sends nothing")
 C_TradeSkillUI = {
 	GetBaseProfessionInfo = function() return { professionName = "Blacksmithing", skillLevel = 95 } end,
 	GetAllRecipeIDs = function() return { 2660, 1230171 } end,

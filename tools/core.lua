@@ -384,32 +384,77 @@ for npc, v in pairs(W.VENDOR_DATA) do
 	if v[5] == "A" then check(Workshop:Sellers(v[6][1])[npc] == nil, "a Horde player is not sent to an Alliance-only vendor") break end
 end
 check(Workshop:Wanted()[2321] and Workshop:Wanted()[8925], "what vendors sell counts as camp material even before the game says what recipes take")
+-- a vendor the table lacks, opened by me: written down, and told later, never on the spot
 S.take()
-S.npc, S.merchant = "Creature-0-1-1-1-3313-0000", { 4470, 2320, 2321, 9999 }
+S.npc, S.merchant = "Creature-0-1-1-1-990001-0000", { 4470, 2320, 2321, 9999 }
 S.fire("MERCHANT_SHOW")
-local trade = Workshop:Vendors()[3313]
-check(trade and trade.mine and trade.map == 1411 and #trade.items == 3 and trade.items[3] == 2321, "opening a vendor of camp materials writes it down, with only the items that matter")
+local trade = Workshop:Vendors()[990001]
+check(trade and trade.mine and trade.tell and trade.map == 1411 and #trade.items == 3 and trade.items[3] == 2321,
+	"opening a vendor the table lacks writes it down, with only the items that matter")
+check(#S.take() == 0 and not W.Net:GossipVendor() and #S.take() == 0, "nothing is sent then, nor in the next minutes: it would say where I am right now")
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[990001] == trade, "the same vendor again changes nothing")
+S.advance(601)
 local told = S.take()
-check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|3313|1411|5000|5000|4470,2320,2321|Chehul",
-	"and tells the network who, where and what: " .. tostring(told[2] and told[2].payload))
+if #told == 0 then W.Net:GossipVendor(); told = S.take() end
+check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|990001|1411|5000|5000|4470,2320,2321|Chehul",
+	"ten minutes later the gossip tells who, where and what: " .. tostring(told[2] and told[2].payload))
+check(Workshop:Vendors()[990001].tell == nil and not W.Net:GossipVendor() and #S.take() == 0, "once: there is nothing left to tell")
+S.pos = { map = 1454, x = 0.5757, y = 0.5290 }
+S.npc, S.merchant = "Creature-0-1-1-1-3400-0000", { 4470, 159 }
 S.fire("MERCHANT_SHOW")
-check(#S.take() == 0, "the same vendor again is not news")
+check(Workshop:Vendors()[3400] == nil, "a vendor the table already has, where the table says, adds nothing")
+S.pos = keep
 S.npc, S.merchant = "Creature-0-1-1-1-777-0000", { 9999, 8888 }
 S.fire("MERCHANT_SHOW")
 check(Workshop:Vendors()[777] == nil and #S.take() == 0, "a vendor with nothing for a camp is ignored")
+S.advance(6)
 local vend, yards = Workshop:Vendor(4470)
-check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item is the one I am standing at, opened a moment ago")
-S.handler("C2|V|4000|1411|5100|5000|2321,159,777777|Far Trader", "Someone Else", "RELAY")
-check(Workshop:Vendors()[4000] and #Workshop:Vendors()[4000].items == 2 and not Workshop:Vendors()[4000].mine, "a vendor heard on the network is kept, with the items that are camp materials")
-S.handler("C2|V|3313|1412|1|1|4470|Liar", "Someone Else", "RELAY")
-check(Workshop:Vendors()[3313].map == 1411 and Workshop:Vendors()[3313].name == "Chehul", "hearsay never replaces a vendor I opened myself")
+check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item is the one I am standing at")
+
+-- what the network says is hearsay: it never corrects the table or me, and never outranks a trusted vendor
+S.handler("C2|V|990002|1411|5100|5000|2321,159,777777|Far Trader", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990002] and #Workshop:Vendors()[990002].items == 2 and not Workshop:Vendors()[990002].mine, "a vendor heard on the network is kept apart, with the items that are camp materials")
+S.handler("C2|V|990002|1411|5100|5000|2321|Far Trader", "Someone Else", "RELAY")
+check(#Workshop:Vendors()[990002].items == 2, "a shorter list heard later does not erase what was heard")
+S.handler("C2|V|3400|1429|100|100|4470|Liar", "Someone Else", "RELAY")
+check(Workshop:Vendors()[3400] == nil and Workshop:Sellers(4470)[3400].map == 1454, "a forged message cannot move a vendor the table knows")
+S.handler("C2|V|990001|1412|1|1|4470|Liar", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990001].map == 1411 and Workshop:Vendors()[990001].name == "Chehul", "nor one I opened myself")
+S.handler("C2|V|990003|1411|5001|5000|4470|Fake Wood", "Someone Else", "RELAY")
+S.advance(6)
+check(Workshop:Vendor(4470).name == "Chehul" and Workshop:Sellers(4470)[990003] == nil, "a forged vendor next to me is not the nearest seller of something trusted vendors sell")
+for n = 1, 6 do S.handler("C2|V|" .. (990100 + n) .. "|1411|5000|5000|2840|Bar Seller " .. n, "Someone Else", "RELAY") end
+check(W.Sources:Get(2840).kind == "craft", "six forged sellers do not turn a smelted bar into something sold everywhere")
+S.handler("C2|V|990005|1429|5000|5000|2321|Elwynn Trader", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990005] == nil, "a vendor in the other faction's home is no use")
+S.handler("C2|V|990004|1411|5200|5000|2318|Leather Guy", "Someone Else", "RELAY")
+S.advance(61)
+local guy, _, heardOnly = Workshop:Vendor(2318)
+check(guy and guy.name == "Leather Guy" and heardOnly == true, "hearsay is used where no trusted vendor sells the item, and is marked as such")
 for _, bad in ipairs({ "C2|V|0|1411|1|1|4470|x", "C2|V|5|1411|10001|1|4470|x", "C2|V|5|1411|1|1||x", "C2|V|5|1411|1|1|abc|x", "C2|V|5|1411|1|1|4470|",
 	"C2|V|5|1411|1|1|4470|a|extra", "C2|V|5|1411|1|1|1,2,3,4,5,6,7,8,9,10,11,12,13|x", "C2|V|5|1411|1|1|4470|bad;name" }) do
 	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
 end
 S.handler("C2|V|4001|1411|5000|5000|777777|Nothing Useful", "Someone Else", "RELAY")
 check(Workshop:Vendors()[4001] == nil, "a vendor selling nothing this client knows as camp material is not kept")
-check(W.Net:GossipVendor() and S.take("Realm")[1].payload:find("^C2|V|3313|"), "every half hour one vendor goes out again, first-hand first")
+check(Wire.Vendor(1, { map = 1, x = 0, y = 0, items = { 1 }, name = ("a"):rep(39) .. "\195\167\195\163" }):sub(-39) == ("a"):rep(39),
+	"a long vendor name is cut on a whole letter")
+S.take()
+S.advance(1900)
+check(#S.take() == 0, "hearsay is never passed on: the gossip has nothing to say")
+-- room for my own vendors whatever the network sends
+for n = 1, 150 do S.handler("C2|V|" .. (991000 + n) .. "|1411|5000|5000|2321|Flood " .. n, "Someone Else", "RELAY") end
+local heardCount = 0
+for _, v in pairs(Workshop:Vendors()) do if not v.mine then heardCount = heardCount + 1 end end
+check(heardCount <= Workshop.HEARD_MAX and Workshop:Vendors()[990001] ~= nil, "a flood of hearsay is capped at " .. Workshop.HEARD_MAX .. " and never pushes out what I opened")
+S.npc, S.merchant = "Creature-0-1-1-1-990009-0000", { 2321 }
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[990009] and Workshop:Vendors()[990009].mine, "and a vendor I open still goes in")
+W.db.shareVendors = false
+S.advance(1900)
+check(#S.take() == 0 and Workshop:Vendors()[990009].tell, "with the option off, nothing I open is told")
+W.db.shareVendors = true
 
 -- how to get what nobody sells
 local Sources = W.Sources

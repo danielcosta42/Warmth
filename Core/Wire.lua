@@ -39,13 +39,16 @@ local function GoodName(name)
 end
 Wire.GoodName = GoodName
 
--- At most NOTE_MAX bytes, never ending in the middle of a UTF-8 character.
-function Wire.CleanNote(note)
-	local s = tostring(note or ""):gsub("[|%c]", " "):gsub("^%s+", ""):gsub("%s+$", "")
-	if #s <= Wire.NOTE_MAX then return s end
-	local cut = Wire.NOTE_MAX
+-- At most `max` bytes, never ending in the middle of a UTF-8 character.
+local function Cut(s, max)
+	if #s <= max then return s end
+	local cut = max
 	while cut > 0 and s:byte(cut + 1) >= 128 and s:byte(cut + 1) < 192 do cut = cut - 1 end -- next byte continues a character
 	return s:sub(1, cut)
+end
+
+function Wire.CleanNote(note)
+	return Cut(tostring(note or ""):gsub("[|%c]", " "):gsub("^%s+", ""):gsub("%s+$", ""), Wire.NOTE_MAX)
 end
 
 -- fields: map, x, y (0..1), zuid, tier, n, age (minutes), objs = { index }, people = { { name, class } }, note
@@ -76,7 +79,7 @@ function Wire.Vendor(npc, v)
 	local items = {}
 	for i = 1, math.min(#v.items, Wire.VENDOR_ITEMS) do items[i] = v.items[i] end
 	return table.concat({ "C2", "V", npc, v.map, math.floor(v.x * 10000 + 0.5), math.floor(v.y * 10000 + 0.5),
-		table.concat(items, ","), (tostring(v.name):gsub("[|;~%c]", " ")):sub(1, Wire.NAME_MAX) }, "|")
+		table.concat(items, ","), Cut((tostring(v.name):gsub("[|;~%c]", " ")), Wire.NAME_MAX) }, "|")
 end
 function Wire.Invite(owner) return "C2|I|" .. owner end
 

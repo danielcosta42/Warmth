@@ -11,7 +11,7 @@
 ## AddonCompartmentFuncOnLeave: Warmth_OnCompartmentLeave
 ## X-Curse-Project-ID: 1799681
 ## X-Website: https://github.com/danielcosta42/Warmth
-## X-License: MIT
+## X-License: MIT; Core/VendorData.lua and Core/SourceData.lua are GPL-3.0 (derived from QuestieDB)
 
 Libs/LibStub/LibStub.lua
 Libs/CallbackHandler-1.0/CallbackHandler-1.0.lua

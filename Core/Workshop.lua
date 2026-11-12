@@ -7,10 +7,8 @@
 --   * C_TradeSkillUI.GetRecipeSchematic(recipe) gives what it takes, with item ids and amounts;
 --   * a merchant is known by the npc id in UnitGUID("npc") and lists its items with GetMerchantItemID.
 --
--- Vendors of camp materials come from two places. Core/VendorData.lua is the table generated from the QuestieDB
--- of Forever (tools/gen-vendors.py). On top of it, a vendor the player opens is written down and shared on the
--- network (Core/Net.lua, message V), which covers what the database lacks or has wrong: nothing about the player
--- travels, only "npc N stands at map M, x, y and sells these items".
+-- Vendors of camp materials come from Core/VendorData.lua, the table generated from the QuestieDB of Forever
+-- (tools/gen-questie.py), and from what the player and the network add to it: see "Vendors" below.
 --=============================================================================
 local _, W = ...
 local Workshop = {}
@@ -31,7 +29,8 @@ do
 	end
 end
 
--- Where the blueprint of a higher object is reported to drop (one third-party guide; not verified).
+-- Where the blueprint of a higher object is reported to drop (one third-party guide; not verified). Proper names
+-- of bosses and dungeons, shown as they are.
 W.BLUEPRINT = {
 	[2] = "Rath'mael, Ruins of Lordaeron", [5] = "Gilnid, The Deadmines", [8] = "Shade of the Archmage, City of Dalaran",
 	[11] = "Sneed, The Deadmines", [14] = "Shadetooth, Excavation Site: Wetlands", [17] = "Razorclaw the Butcher, Shadowfang Keep",
@@ -40,7 +39,6 @@ W.BLUEPRINT = {
 	[34] = "Gelihast, Blackfathom Deeps",
 }
 
-Workshop.VENDORS_MAX = 300 -- vendors learned (opened or heard), on top of the generated table
 
 local function Call(fn, ...)
 	if type(fn) ~= "function" then return nil end
@@ -130,15 +128,32 @@ function Workshop:CouldBring(camp)
 	end
 end
 
+-- Opens the profession's window. False when the client has no such call or refuses it: the caller says so.
 function Workshop:Open(line)
-	return Call(C_TradeSkillUI and C_TradeSkillUI.OpenTradeSkill, line) ~= nil
+	local open = C_TradeSkillUI and C_TradeSkillUI.OpenTradeSkill
+	if type(open) ~= "function" then return false end
+	local ok, result = pcall(open, line)
+	return ok and result ~= false
 end
 
 --------------------------------------------------------------------------------
 -- Vendors
+--
+-- Three tiers of trust, because a message on the network can be forged and its sender is only claimed:
+--   table   Core/VendorData.lua, generated from the QuestieDB;
+--   mine    a vendor this player opened (W.db.vendors[npc].mine): it wins over the table, which may be wrong;
+--   heard   a vendor someone on the network told about. Never about an npc the table knows, never over "mine",
+--           used only for an item no trusted vendor sells, forgotten after two weeks, never passed on.
+-- Nothing is sent when a vendor is opened (that would say where the player is right now): a vendor the table
+-- lacks waits for the half-hourly gossip, at least ten minutes later, and only if the player lets it.
 --------------------------------------------------------------------------------
--- Items worth knowing a vendor for: the woods, and everything a camp recipe takes.
+Workshop.MINE_MAX, Workshop.HEARD_MAX, Workshop.HEARD_TTL = 200, 100, 14 * 86400
+Workshop.TELL_AFTER = 600 -- seconds a vendor waits before it may be told
+
+-- Items worth knowing a vendor for: the woods, what the table's vendors sell, what a camp recipe takes.
+local wanted, wantedAt = nil, -1e9
 function Workshop:Wanted()
+	if wanted and GetTime() - wantedAt < 60 then return wanted end
 	local set = { [4471] = true }
 	for _, wood in ipairs(W.WOOD) do set[wood[1]] = true end
 	for _, v in pairs(W.VENDOR_DATA or {}) do
@@ -147,36 +162,83 @@ function Workshop:Wanted()
 	for index in ipairs(W.OBJECTS) do
 		for _, r in ipairs(self:Reagents(index) or {}) do set[r.item] = true end
 	end
+	wanted, wantedAt = set, GetTime()
 	return set
 end
 
-local nearest = {} -- [item] = { at, vendor, yards }: the last answer of Workshop:Vendor, emptied when the book changes
+local nearest = {} -- [item] = { at, vendor, yards, heard }: the last answer of Workshop:Vendor, emptied when the book changes
 
 function Workshop:Vendors()
 	return W.db and W.db.vendors or {}
 end
 
--- A vendor enters the book. First hand (the player opened it) is kept over hearsay. True when it is news.
+local function Close(a, b) -- the same spot, give or take a few steps
+	return a.map == b.map and math.abs(a.x - b.x) < 0.03 and math.abs(a.y - b.y) < 0.03
+end
+
+-- Does the generated table already say this: the npc, about there, selling at least these items?
+local function TableSays(npc, v)
+	local t = W.VENDOR_DATA and W.VENDOR_DATA[npc]
+	if not t or not Close({ map = t[2], x = t[3] / 10000, y = t[4] / 10000 }, v) then return false end
+	local sold = {}
+	for _, item in ipairs(t[6]) do sold[item] = true end
+	for _, item in ipairs(v.items) do
+		if not sold[item] then return false end
+	end
+	return true
+end
+
+-- Makes room among the entries of one kind (mine or heard), oldest out first, so one kind never starves the other.
+local function MakeRoom(book, mine, max)
+	local n, oldest, oldestAt = 0, nil, math.huge
+	for npc, v in pairs(book) do
+		if (v.mine == true) == mine then
+			n = n + 1
+			if (v.at or 0) < oldestAt then oldest, oldestAt = npc, v.at or 0 end
+		end
+	end
+	if n >= max and oldest then book[oldest] = nil end
+end
+
+-- A vendor enters the book. Returns true when the book changed.
 function Workshop:Learn(npc, v, mine)
 	local book = W.db.vendors
 	local old = book[npc]
-	if old and old.mine and not mine then return false end
-	if not old then
-		local n = 0
-		for _ in pairs(book) do n = n + 1 end
-		if n >= self.VENDORS_MAX then return false end
+	if mine then
+		if TableSays(npc, v) then -- nothing the table lacks: no entry, nothing to tell
+			if old and not old.mine then book[npc] = nil end
+			return false
+		end
+	else
+		if (W.VENDOR_DATA and W.VENDOR_DATA[npc]) or (old and old.mine) then return false end -- hearsay never corrects what is trusted
+		if W.Sources.Avoid(v.map) then return false end
 	end
-	local same = old and old.map == v.map and #old.items == #v.items and math.abs(old.x - v.x) < 0.002 and math.abs(old.y - v.y) < 0.002
-	book[npc] = { name = v.name, map = v.map, x = v.x, y = v.y, items = v.items, mine = mine or nil, at = time() }
+	local items = v.items
+	if old and not mine then -- what was heard before is kept: a shorter list does not erase a longer one
+		local seen = {}
+		items = {}
+		for _, list in ipairs({ old.items, v.items }) do
+			for _, item in ipairs(list) do
+				if not seen[item] and #items < W.Wire.VENDOR_ITEMS then seen[item] = true; items[#items + 1] = item end
+			end
+		end
+	end
+	if old and Close(old, v) and #old.items == #items and (old.mine == true) == (mine == true) then
+		old.at = time() -- the same thing again: still true, nothing to redraw
+		return false
+	end
+	if not old then MakeRoom(book, mine == true, mine and self.MINE_MAX or self.HEARD_MAX) end
+	book[npc] = { name = v.name, map = v.map, x = v.x, y = v.y, items = items, mine = mine or nil, at = time(), tell = mine or nil }
 	nearest = {}
 	W:Fire("VENDORS")
-	return not same
+	return true
 end
 
--- Every vendor of an item the player can use: the generated table (those friendly to the player's faction),
--- with what was learned in game laid over it. { [npc] = { name, map, x, y } }
+-- Vendors of an item the player can use. Trusted ones: the generated table (those friendly to the player's
+-- faction) with the vendors the player opened laid over it. Only when there is none of those, and unless
+-- `trustedOnly`, the ones heard on the network. Returns { [npc] = { name, map, x, y } } and whether they are hearsay.
 local byItem
-function Workshop:Sellers(item)
+function Workshop:Sellers(item, trustedOnly)
 	if not byItem then -- the generated table, indexed once
 		byItem = {}
 		local mine = (UnitFactionGroup and UnitFactionGroup("player") or ""):sub(1, 1)
@@ -189,26 +251,31 @@ function Workshop:Sellers(item)
 			end
 		end
 	end
-	local out = {}
+	local out, heard = {}, {}
 	for npc, v in pairs(byItem[item] or {}) do out[npc] = v end
 	for npc, v in pairs(self:Vendors()) do
 		for _, sold in ipairs(v.items) do
-			if sold == item then out[npc] = v end -- seen in game: it wins over the database
+			if sold == item then
+				if v.mine then out[npc] = v -- seen in game: it wins over the database
+				elseif time() - (v.at or 0) < self.HEARD_TTL then heard[npc] = v end
+			end
 		end
 	end
-	return out
+	if next(out) or trustedOnly then return out, false end
+	return heard, next(heard) ~= nil
 end
 
 -- The nearest vendor of an item: by yards when it is on the player's continent, otherwise the first by id.
--- vendor, yards (nil for another continent). Looked up at most every few seconds per item (`nearest`, above).
+-- vendor, yards (nil for another continent), heard (true when only the network says so). Cached a few seconds.
 function Workshop:Vendor(item)
 	local hit = nearest[item]
-	if hit and GetTime() - hit.at < 5 then return hit.vendor, hit.yards end
+	if hit and GetTime() - hit.at < 5 then return hit.vendor, hit.yards, hit.heard end
 	local map, x, y = W.Position()
 	local pn, pw, pc
 	if map then pn, pw, pc = W.World(map, x, y) end
 	local best, bestYards, other, otherNpc
-	for npc, v in pairs(self:Sellers(item)) do
+	local sellers, heard = self:Sellers(item)
+	for npc, v in pairs(sellers) do
 		local n, w, c = W.World(v.map, v.x, v.y)
 		if pn and n and c == pc then
 			local yards = math.sqrt((n - pn) ^ 2 + (w - pw) ^ 2)
@@ -217,11 +284,19 @@ function Workshop:Vendor(item)
 			other, otherNpc = v, npc
 		end
 	end
-	nearest[item] = { at = GetTime(), vendor = best or other, yards = best and bestYards or nil }
-	return best or other, best and bestYards or nil
+	nearest[item] = { at = GetTime(), vendor = best or other, yards = best and bestYards or nil, heard = heard }
+	return best or other, best and bestYards or nil, heard
 end
 
--- The merchant window is open: if this npc sells camp materials, it goes in the book and out to the network.
+-- A vendor this player opened that is ready to be told: not told yet, opened at least TELL_AFTER ago. npc or nil.
+function Workshop:ToTell()
+	for npc, v in pairs(self:Vendors()) do
+		if v.mine and v.tell and time() - (v.at or 0) >= self.TELL_AFTER then return npc end
+	end
+end
+
+-- The merchant window is open: if this npc sells camp materials the table does not know about, it is written
+-- down. Nothing is sent here.
 local function OnMerchant()
 	local guid = Call(UnitGUID, "npc")
 	if W.IsSecret(guid) or type(guid) ~= "string" then return end
@@ -229,21 +304,20 @@ local function OnMerchant()
 	npc = tonumber(npc)
 	local map, x, y = W.Position()
 	if kind ~= "Creature" or not npc or not map then return end
-	local wanted, items = Workshop:Wanted(), {}
+	local want, items = Workshop:Wanted(), {}
 	for i = 1, math.min(tonumber(Call(GetMerchantNumItems)) or 0, 100) do
 		local id = Call(GetMerchantItemID, i)
-		if type(id) == "number" and wanted[id] and #items < W.Wire.VENDOR_ITEMS then items[#items + 1] = id end
+		if type(id) == "number" and want[id] and #items < W.Wire.VENDOR_ITEMS then items[#items + 1] = id end
 	end
 	if #items == 0 then return end
 	local name = Call(UnitName, "npc")
-	local v = { name = (type(name) == "string" and not W.IsSecret(name)) and name or "?", map = map, x = x, y = y, items = items }
-	if Workshop:Learn(npc, v, true) then W.Net:ShareVendor(npc) end
+	Workshop:Learn(npc, { name = (type(name) == "string" and not W.IsSecret(name)) and name or "?", map = map, x = x, y = y, items = items }, true)
 end
 
 W:On("LOADED", function()
 	W.db.vendors = type(W.db.vendors) == "table" and W.db.vendors or {}
-	for npc, v in pairs(W.db.vendors) do
-		if (v.at or 0) == 0 then W.db.vendors[npc] = nil end -- the one hand-made entry of an early build: the table has it now
+	for npc, v in pairs(W.db.vendors) do -- hearsay grows old
+		if type(v) ~= "table" or type(v.items) ~= "table" or (not v.mine and time() - (v.at or 0) >= Workshop.HEARD_TTL) then W.db.vendors[npc] = nil end
 	end
 end)
 

@@ -35,16 +35,20 @@ a barra). Para os de vendedor, "Marcar no mapa" põe o marcador do jogo no vende
 
 ## Vendedores pela rede
 
-- **O que se aprende:** id do NPC, mapa, posição, e quais materiais de acampamento ele vende. Nada do jogador.
-- **Quando:** ao abrir um vendedor (`MERCHANT_SHOW`), se ele vende algum material da lista.
-- **Como viaja:** um item de taxa baixa no barramento do realm, com chave por NPC, só quando o vendedor é novo para
-  este cliente. A rede não precisa de mais de um aviso por vendedor.
-- **Confiança:** um vendedor falso só produz um marcador no lugar errado. Limites: por mapa e no total; posição
-  dentro do mapa; id de item da lista. Um vendedor que o próprio jogador abriu vale mais que um ouvido.
-- **Fica guardado** entre sessões (os vendedores não mudam de lugar).
+Depois da revisão de 2026-11-12, três graus de confiança, porque uma mensagem na rede pode ser forjada e o remetente
+de um item repassado é só alegado:
 
-A lista de materiais de vendedor ainda precisa ser levantada (madeira, frascos, linhas, especiarias, água, farinha);
-o resto é coleta ou fabricação.
+- **Tabela:** `Core/VendorData.lua`, gerada do QuestieDB.
+- **Meu:** um vendedor que o jogador abriu. Vence a tabela, que pode estar errada. Se a tabela já diz o mesmo
+  (o NPC, mais ou menos ali, vendendo aqueles itens), nada é guardado nem contado.
+- **Ouvido:** o que alguém na rede contou. Nunca sobre um NPC que a tabela conhece, nunca por cima de um "meu",
+  nunca conta como vendedor de confiança, só é usado para um item que nenhum vendedor de confiança vende (e a
+  tela diz "outro jogador informa"), é descartado em zona inicial da outra facção, expira em duas semanas, tem
+  teto próprio (100) e **nunca é repassado**.
+
+**O que sai deste cliente:** nada ao abrir o vendedor (diria onde o jogador está naquele momento). Um vendedor
+"meu" que a tabela não tem espera pelo menos dez minutos e sai na fofoca de meia em meia hora, uma vez, pela
+guilda e pelo realm. A opção `shareVendors` (ligada por padrão) desliga isso.
 
 ## Medido no jogo (2026-11-12, build 1.60.1.70888)
 
@@ -59,8 +63,8 @@ o resto é coleta ou fabricação.
 Vendedor medido: Xen'to (NPC 3400, Orgrimmar 57.5, 53.1) vende Simple Wood, Star Wood, Thick Logs, Flint and Tinder,
 Refreshing Spring Water, Soothing Spices e Simple Flour.
 
-**A tabela inicial vem do QuestieDB do Forever** (pedido do dono, 2026-11-12): `tools/gen-vendors.py` lê o banco
-com o decodificador do Lodestar e escreve `Core/VendorData.lua`, com 413 vendedores de 23 materiais, a facção de
+**A tabela inicial vem do QuestieDB do Forever** (pedido do dono, 2026-11-12): `tools/gen-questie.py` lê o banco
+com o decodificador do Lodestar e escreve `Core/VendorData.lua`, com 444 vendedores de 24 materiais, a facção de
 cada um e a posição. Confere com a medição: o banco põe o Xen'to em Orgrimmar 57.6, 52.9 com os mesmos sete itens.
 O que o jogador abre no jogo e o que a rede ensina ficam por cima da tabela. O QuestieDB é GPL-3.0; o arquivo
 gerado leva esse aviso e essa licença, e o resto do Warmth continua MIT.

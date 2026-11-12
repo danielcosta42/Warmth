@@ -36,7 +36,7 @@ function UI.SourceLine(item, offer)
 	if s.kind == "vendor" then
 		local where = s.yards and L["%d yd away"]:format(s.yards) or W.Esc(W.ZoneName(s.vendor.map))
 		offer(L["Mark %s on the map"]:format(W.Esc(s.vendor.name)), function() UI.MarkPlace(s.vendor, W.Esc(s.vendor.name)) end)
-		return L["%s: sold by %s (%s)."]:format(name, W.Esc(s.vendor.name), where)
+		return (s.heard and L["%s: another player reports it sold by %s (%s)."] or L["%s: sold by %s (%s)."]):format(name, W.Esc(s.vendor.name), where)
 	elseif s.kind == "craft" then
 		local parts = {}
 		for i, from in ipairs(s.from) do parts[i] = (from[2] > 1 and (from[2] .. " ") or "") .. W.ItemName(from[1], "#" .. from[1]) end
@@ -80,12 +80,13 @@ end
 -- What to say and offer about the selected object: text, button label, button action.
 local function Advice(e)
 	local name = W.ObjectName(e.index)
+	local function open()
+		if not W.Workshop:Open(e.line) then W.Print(L["Could not open %s from here: open it from your spellbook."]:format(W.Esc(e.profession))) end
+	end
 	if e.state == "ready" then
-		return L["You have everything for %d. Open %s to craft it."]:format(e.can, W.Esc(e.profession)),
-			L["Open %s"]:format(W.Esc(e.profession)), function() W.Workshop:Open(e.line) end
+		return L["You have everything for %d. Open %s to craft it."]:format(e.can, W.Esc(e.profession)), L["Open %s"]:format(W.Esc(e.profession)), open
 	elseif e.state == "unknown" then
-		return L["Open %s once so the game says what %s takes."]:format(W.Esc(e.profession), name),
-			L["Open %s"]:format(W.Esc(e.profession)), function() W.Workshop:Open(e.line) end
+		return L["Open %s once so the game says what %s takes."]:format(W.Esc(e.profession), name), L["Open %s"]:format(W.Esc(e.profession)), open
 	elseif e.state == "skill" then
 		return L["%s needs %s %d; you have %d."]:format(name, W.Esc(e.profession), e.need, e.rank)
 	elseif e.state == "recipe" then
@@ -94,7 +95,7 @@ local function Advice(e)
 		return where and L["%s needs a blueprint, reported to drop from %s."]:format(name, where)
 			or L["%s needs a blueprint; where it drops is not known yet."]:format(name)
 	end
-	-- materials: how to get each missing one (at most three), and one thing to click for the first that has it
+	-- materials: how to get each missing one (five lines at most), and one thing to click for the first that has it
 	local lines, label, action = {}, nil, nil
 	local function offer(text, fn)
 		if not action then label, action = text, fn end

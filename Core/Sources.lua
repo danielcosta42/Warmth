@@ -51,7 +51,7 @@ Sources.HOW = {
 -- Zones a player is not sent to: the other faction's home zones and cities (uiMapIDs).
 local HOME = {
 	Alliance = { 1429, 1426, 1438, 1436, 1432, 1439, 1453, 1455, 1457 },
-	Horde = { 1411, 1412, 1420, 1421, 1413, 1454, 1456, 1458 },
+	Horde = { 1411, 1412, 1420, 1421, 1454, 1456, 1458 }, -- The Barrens is not here: both factions quest in it
 }
 local avoid
 function Sources.Avoid(map)
@@ -74,20 +74,24 @@ Sources.FEW = 5 -- fewer vendors than this is a limited stock somewhere: another
 function Sources:Places(item)
 	local data = W.SOURCE_DATA and W.SOURCE_DATA[item]
 	if not data then return nil end
-	local kind = data.n and "nodes" or "mobs" -- an ore's vein beats the creature that sometimes carries the ore
-	local out = {}
-	for _, p in ipairs(data.n or data.m) do
-		if #out < 2 and not Sources.Avoid(p[1]) then out[#out + 1] = { map = p[1], count = p[2], from = p[3], to = p[4], creature = p[5] } end
+	-- an ore's vein beats the creature that sometimes carries the ore; but if every zone with nodes is the other
+	-- faction's home, the creatures are the way
+	for _, kind in ipairs({ "nodes", "mobs" }) do
+		local out = {}
+		for _, p in ipairs(data[kind == "nodes" and "n" or "m"] or {}) do
+			if #out < 2 and not Sources.Avoid(p[1]) then out[#out + 1] = { map = p[1], count = p[2], from = p[3], to = p[4], creature = p[5] } end
+		end
+		if #out > 0 then return kind, out end
 	end
-	return #out > 0 and kind or nil, out
+	return nil
 end
 
 -- How to get an item: { kind = "vendor" | "craft" | "nodes" | "mobs" | "skin" | "cloth" | "disenchant" | "fish" | "unknown", ... }
 function Sources:Get(item)
 	local how = self.HOW[item]
-	local vendor, yards = W.Workshop:Vendor(item)
+	local vendor, yards, heard = W.Workshop:Vendor(item)
 	local sellers = 0
-	for _ in pairs(W.Workshop:Sellers(item)) do sellers = sellers + 1 end
+	for _ in pairs(W.Workshop:Sellers(item, true)) do sellers = sellers + 1 end -- trusted ones: hearsay cannot make an item "sold everywhere"
 	if vendor and sellers >= self.FEW then return { kind = "vendor", vendor = vendor, yards = yards } end
 	-- what is known of how the item is made or won comes before the database's places: for leather and cloth the
 	-- database lists a chest or a handful of creatures, which would read as "gathered" or "dropped by one mob"
@@ -95,7 +99,7 @@ function Sources:Get(item)
 	if how then return { kind = how[1], from = how[2], to = how[3] } end
 	local kind, places = self:Places(item)
 	if kind then return { kind = kind, places = places } end
-	if vendor then return { kind = "vendor", vendor = vendor, yards = yards } end
+	if vendor then return { kind = "vendor", vendor = vendor, yards = yards, heard = heard } end
 	return { kind = "unknown" }
 end
 

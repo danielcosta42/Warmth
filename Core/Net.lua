@@ -4,7 +4,9 @@
 -- What leaves this client, and when (the consent rules of the spec, section 2):
 --   * an announce: only when the player clicks Announce; its repeats ride on that click and die with the session;
 --   * presence in someone's circle: only after the one-time "yes" (W.db.consent == true);
---   * an invite request: only when the player clicks it.
+--   * an invite request: only when the player clicks it;
+--   * a vendor of camp materials the player opened and the addon's table lacks: later, never on the spot, and only
+--     with W.db.shareVendors on (on by default, a switch in the options).
 -- Only the announce travels the realm bus (with relay). Presence and invite requests go to the owner by whisper,
 -- and presence also to guild and group, where it costs nothing.
 --
@@ -136,7 +138,8 @@ function Net:AnswerInvite(name, accept)
 	if invite then pcall(invite, name) end
 end
 
--- A vendor of camp materials, told to the network. Nothing about the player is in it. Coalesced per npc.
+-- A vendor of camp materials, told to the network: which npc, where it stands, what it sells. Coalesced per npc.
+-- It does say that this player was at that vendor at some point; that is why it waits (see GossipVendor).
 function Net:ShareVendor(npc)
 	local v, mesh = W.Workshop:Vendors()[npc], Mesh()
 	if not (v and mesh) then return false end
@@ -146,16 +149,14 @@ function Net:ShareVendor(npc)
 	return true
 end
 
--- Every half hour one vendor from the book goes out again, first-hand ones first: that is how a player who
--- installs Warmth next month still hears of a vendor someone opened today. One message per client per half hour.
+-- Every half hour, at most one vendor this player opened and the table lacks is told (one guild message and one
+-- realm item): never at the moment it is opened, never something only heard, and not at all with the option off.
 function Net:GossipVendor()
-	local mine, heard = {}, {}
-	for npc, v in pairs(W.Workshop:Vendors()) do
-		if v.mine then mine[#mine + 1] = npc elseif (v.at or 0) > 0 then heard[#heard + 1] = npc end
-	end
-	local pool = #mine > 0 and mine or heard
-	if #pool == 0 then return false end
-	return self:ShareVendor(pool[math.random(#pool)])
+	if W.db.shareVendors == false then return false end
+	local npc = W.Workshop:ToTell()
+	if not npc or not self:ShareVendor(npc) then return false end
+	W.Workshop:Vendors()[npc].tell = nil
+	return true
 end
 
 local function OnMessage(payload, sender, dist)
