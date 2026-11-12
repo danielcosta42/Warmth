@@ -16,7 +16,7 @@ function UI.Where(camp)
 	local d = W.Distance(camp)
 	if not d then return W.Esc(W.ZoneName(camp.map)) end
 	if d < 1000 then return L["%d yd away"]:format(d) end
-	return L["%.1f kyd away"]:format(d / 1000)
+	return L["%.1fk yd away"]:format(d / 1000)
 end
 
 local function Ago(ts)
@@ -39,7 +39,7 @@ end
 local function CanBring(camp)
 	if #W.Camps:Objects(camp) >= W.SLOTS[camp.tier] then return nil end
 	for index, o in ipairs(W.OBJECTS) do
-		if W.Count(o[1]) > 0 and not W.Camps:Has(camp, index) then return o[2] end
+		if W.Count(o[1]) > 0 and not W.Camps:Has(camp, index) then return W.ObjectName(index) end
 	end
 end
 
@@ -192,9 +192,10 @@ end, function(v, fresh)
 
 	local lines = {}
 	for i, index in ipairs(objs) do
-		if i > 6 then lines[#lines + 1] = C.mute .. L["and %d more"]:format(#objs - 6) .. C.r; break end
+		-- four fit above the hint; the ring's slots name the rest on hover
+		if i > 4 then lines[#lines + 1] = C.mute .. L["and %d more"]:format(#objs - 4) .. C.r; break end
 		local o = W.OBJECTS[index]
-		lines[#lines + 1] = C.ember .. o[2] .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"]) .. C.r
+		lines[#lines + 1] = C.ember .. W.ObjectName(index) .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"]) .. C.r
 	end
 	lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
 	v.objs:SetText(table.concat(lines, "\n"))
@@ -232,6 +233,7 @@ UI.REASONS = {
 	full = "Too many campfires known right now.",
 	bad_tier = "Pick the campfire you lit.",
 	no_camp = "That camp is gone.",
+	demo = "This is a demo camp: nobody is there to invite you.",
 }
 
 --------------------------------------------------------------------------------
@@ -290,7 +292,7 @@ UI.View("build", function(v)
 	end
 	v.foot = Wd.Text(v, 11.5, T.mute)
 	v.foot:SetPoint("BOTTOMLEFT", PAD, PAD)
-	v.foot:SetText(L["Nothing goes to the network until you click announce."])
+	v.foot:SetText(L["Your campfire is not announced until you click."])
 end, function(v)
 	local lit = W.lit and (time() - W.lit.at) < 3600 and W.lit
 	UI.title:SetText(L["Set up a camp"])
@@ -300,8 +302,9 @@ end, function(v)
 	local rows = { { C.ember .. L["Light it"] .. C.r, "" } }
 	for i, kit in ipairs(W.KITS) do
 		local n, wood = W.Count(kit), W.Count(W.WOOD[i][1])
-		rows[#rows + 1] = { L["%s Campfire Kit"]:format(L[W.TIERS[i]]), n > 0 and (C.ok .. L["%d in your bags"]:format(n) .. C.r)
-			or (wood > 0 and (C.mute .. L["craftable: %d %s"]:format(wood, W.WOOD[i][2]) .. C.r) or (C.miss .. L["needs %s"]:format(W.WOOD[i][2]) .. C.r)) }
+		local woodName = W.ItemName(W.WOOD[i][1], W.WOOD[i][2])
+		rows[#rows + 1] = { W.ItemName(kit, L["%s Campfire Kit"]:format(L[W.TIERS[i]])), n > 0 and (C.ok .. L["%d in your bags"]:format(n) .. C.r)
+			or (wood > 0 and (C.mute .. L["craftable: %d %s"]:format(wood, woodName) .. C.r) or (C.miss .. L["needs %s"]:format(woodName) .. C.r)) }
 	end
 	rows[#rows + 1] = { C.ember .. L["Your camp objects"] .. C.r, "" }
 	local have = 0
@@ -309,7 +312,7 @@ end, function(v)
 		local n = W.Count(o[1])
 		if n > 0 and have < 4 then
 			have = have + 1
-			rows[#rows + 1] = { o[2] .. C.mute .. "   " .. L[o[3]] .. C.r, index == W.myObject and (C.ok .. L["placed"] .. C.r) or (C.ok .. L["%d in your bags"]:format(n) .. C.r) }
+			rows[#rows + 1] = { W.ObjectName(index) .. C.mute .. "   " .. L[o[3]] .. C.r, C.ok .. L["%d in your bags"]:format(n) .. C.r }
 		end
 	end
 	if have == 0 then rows[#rows + 1] = { C.mute .. L["None in your bags. Each profession crafts its own (from skill 20)."] .. C.r, "" } end

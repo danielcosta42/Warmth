@@ -19,7 +19,8 @@ function UI:Build()
 	local f = CreateFrame("Frame", "WarmthFrame", UIParent)
 	f:SetSize(UI.W, UI.H)
 	f:SetPoint("RIGHT", -140, 0)
-	f:SetFrameStrata("HIGH")
+	f:SetFrameStrata("DIALOG") -- above the world map: a pin's click opens the circle over it
+	f:SetToplevel(true)
 	f:SetClampedToScreen(true)
 	f:SetMovable(true)
 	f:EnableMouse(true)
@@ -114,6 +115,7 @@ function UI:Show(view, owner)
 	self.view = view
 	if owner then self.sel = owner end
 	self.frame:Show()
+	self.frame:Raise()
 	for key, v in pairs(self.views) do
 		if key == view then
 			if changed then Motion.Enter(v, 18) else v:Show() end

@@ -14,7 +14,7 @@ local function Tip(self)
 	local lines = { L["%d by the fire"]:format(W.Camps:Count(camp)) .. "  ·  " .. L[W.TIERS[camp.tier]] .. "  ·  " .. UI.Where(camp) }
 	for _, index in ipairs(W.Camps:Objects(camp)) do
 		local o = W.OBJECTS[index]
-		lines[#lines + 1] = UI.C.mute .. o[2] .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
+		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
 	end
 	if camp.note ~= "" then lines[#lines + 1] = UI.C.ember .. "\"" .. W.Esc(camp.note) .. "\"" .. UI.C.r end
 	if W.Camps:OtherCopy(camp) == true then lines[#lines + 1] = UI.C.copy .. L["In another copy of the zone"] .. UI.C.r end
@@ -146,12 +146,13 @@ end
 W:On("CAMPS", function() Pins:RefreshWorld() end)
 W:On("LOGIN", function()
 	HookMap()
-	local ticker, acc = CreateFrame("Frame"), 0
+	local ticker, acc, beats = CreateFrame("Frame"), 0, 0
 	ticker:SetScript("OnUpdate", function(_, elapsed)
 		acc = acc + elapsed
 		if acc < 0.25 then return end
-		acc = 0
+		acc, beats = 0, beats + 1
 		HookMap() -- the world map may load after login
 		Pins:RefreshMini()
+		if beats % 8 == 0 then Pins:RefreshWorld() end -- a camp that expired leaves an open map too
 	end)
 end)

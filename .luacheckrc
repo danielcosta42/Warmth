@@ -27,7 +27,7 @@ read_globals = {
     "GetLocale", "GetTime", "GetCVar", "GetPlayerFacing", "Ambiguate", "UnitName", "UnitFullName", "UnitClass",
     "InviteUnit",
     -- items, spells, professions (the classic trade skill API is used guarded)
-    "GetItemCount", "GetItemSpell", "GetItemIcon", "GetSpellInfo",
+    "GetItemCount", "GetItemSpell", "GetItemIcon", "GetItemInfo", "GetSpellInfo",
     "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo",
     -- maps
     "CreateVector2D", "UiMapPoint",

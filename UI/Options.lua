@@ -58,5 +58,7 @@ function UI.OpenOptions()
 	local category = UI.optionsCategory
 	if category and Settings and Settings.OpenToCategory then
 		pcall(Settings.OpenToCategory, (category.GetID and category:GetID()) or category.ID or category)
+	else
+		W.Print(L["The options are in the game's options, under AddOns."])
 	end
 end

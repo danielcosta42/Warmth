@@ -72,7 +72,9 @@ do projeto pesa o visual e as transições tanto quanto a função.
 - **Cópias da zona (camadas):** o mapa mostra todas as fogueiras; as de outra cópia vêm marcadas, e "Ir até lá"
   oferece pedir ao dono um convite de grupo para cair na cópia dele.
 - **Aparecer na roda dos outros:** o addon pergunta uma vez ("aparecer nas rodas?"); com o sim, o jogador entra
-  sozinho na roda quando senta num acampamento anunciado, e pode desligar nas opções. Sem o sim, nada sobre ele sai.
+  sozinho na roda quando senta num acampamento anunciado, e pode desligar nas opções. Sem o sim, ele não aparece na
+  roda de ninguém. (O HELLO do ChehulNet, com classe, nível e zona, sai de todo addon da família e não depende
+  disto: é o que faz a rede existir. Os textos do addon prometem só o que é do Warmth: a fogueira e a roda.)
 
 ## 4. Como o jogo funciona (o que se sabe e o que falta medir)
 
@@ -111,7 +113,8 @@ ao dono, que a resume no anúncio seguinte. Assim o custo na rede não cresce co
 
 - **Anúncio (dono, pelo realm com repasse, pela guilda e pelo grupo):** mapa, x, y (inteiros de 0 a 10000), a
   cópia da zona (o `zoneUID` que o ChehulNet já conhece, 0 se desconhecido), nível da fogueira, quantas pessoas na
-  roda, os objetos postos, até 9 pessoas (nome e classe) para desenhar a roda, e o recado (até 80 letras, sem `|`).
+  roda, há quantos minutos foi anunciado pela primeira vez, os objetos postos, até 9 pessoas (nome e classe) para
+  desenhar a roda, e o recado (até 80 bytes, sem `|`). O formato exato está no cabeçalho de `Core/Wire.lua`.
   Tem de caber em uma mensagem; se não couber, cortam-se as pessoas, nunca os objetos.
 - **Presença (visitante que deu o "sim", por whisper ao dono; e pela guilda e pelo grupo, onde é de graça):**
   "estou na sua roda", com a classe e o objeto que pus (0 = nenhum).

@@ -41,6 +41,20 @@ function W.MyClassIndex()
 	return W.CLASS_INDEX[token or ""] or 0
 end
 
+-- The item's name in the client's language once the client knows it; the English name until then.
+function W.ItemName(item, fallback)
+	local f = (C_Item and C_Item.GetItemNameByID) or GetItemInfo
+	if f then
+		local ok, name = pcall(f, item)
+		if ok and type(name) == "string" and name ~= "" and not W.IsSecret(name) then return name end
+	end
+	return fallback
+end
+function W.ObjectName(index)
+	local o = W.OBJECTS[index]
+	return o and W.ItemName(o[1], o[2]) or "?"
+end
+
 function W.Count(item)
 	local f = (C_Item and C_Item.GetItemCount) or GetItemCount
 	if not f then return 0 end

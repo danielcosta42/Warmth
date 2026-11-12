@@ -60,6 +60,9 @@ W.db.lessMotion = false
 check(UI.title.text == "Ana Lima's camp" and UI.sub.text:find("Durotar", 1, true) and UI.sub.text:find("Journeyman", 1, true), "the camp's header")
 check(ring.seats[1].crown.shown and ring.seats[2].crown.shown == false, "the owner wears the flame")
 check(ring.seats[3].label.text == "BR" and ring.seats[3].icon.shown == false, "an unknown class falls back to initials")
+ring.seats[3]:SetPerson({ name = "\195\129vila \195\141ris", class = 0 })
+check(ring.seats[3].label.text == "\195\129\195\141", "initials are whole letters, accents included")
+UI:Render()
 check(ring.seats[4].label.text == "you" and ring.seats[5].shown == false, "an empty seat marked 'you' is the invitation")
 check(ring.slots[1].icon.texture == "icon279978" and ring.slots[3].dash.shown and ring.slots[5].shown and ring.slots[6].shown == false,
 	"the tier's five slots: two taken, three open")
@@ -106,7 +109,7 @@ check(b.lines[6][1].text:find("Sharpening Wheel", 1, true) and b.lines[8][1].tex
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[2] + 1000000)
 UI:Render()
 check(UI.tier == 2 and UI.sub.text:find("Journeyman campfire lit", 1, true) and b.tiers[2].on, "lighting a kit preselects its tier")
-check(S.printed[#S.printed]:find("nothing was sent", 1, true), "and the chat says nothing was sent")
+check(S.printed[#S.printed]:find("has not been announced", 1, true), "and the chat says it has not been announced")
 b.tiers[3]:Click()
 check(UI.tier == 3, "the player can correct the tier")
 b.input.text = "come sit"
@@ -114,7 +117,7 @@ function b.input:GetText() return self.text end
 S.take()
 b.go:Click()
 local sent = S.take("Realm")
-check(#sent == 1 and sent[1].payload:find("|3|1||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
+check(#sent == 1 and sent[1].payload:find("|3|1|0||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
 	"Announce sends the camp and opens my circle: " .. tostring(sent[1] and sent[1].payload))
 check(UI.title.text == "Your camp" and UI.views.camp.other.label.text == "End announce", "my own camp")
 UI.views.camp.other:Click()
@@ -204,7 +207,8 @@ check(ring.seats[9].shown and ring.seats[10].label.text == "you" and ring.more.t
 	"nine seats, the invitation, the rest as a count, ten slots")
 W.db.consent = true
 S.advance(30)
-check(#S.take() == 0 and select(2, W.Net:RequestInvite("Lia Velha")) == "no_camp", "a demo camp never receives a whisper")
+check(#S.take() == 0 and select(2, W.Net:RequestInvite("Lia Velha")) == "demo", "a demo camp never receives a whisper")
+check(not (UI.toast and UI.toast.shown), "and the demo raises no toast")
 SlashCmdList.WARMTH("clear")
 check(#Camps:List() == 0, "/warmth clear")
 SlashCmdList.WARMTH("options")

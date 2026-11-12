@@ -16,7 +16,7 @@ Somewhere out there, someone just lit a campfire. Warmth puts it on your map: wh
 ## You decide what is shared
 
 - A campfire is announced **only when you click announce**. Lighting one sends nothing.
-- Warmth asks **once** whether you want to appear in other people's circles when you sit at an announced fire. Say no and nothing about you is ever sent; change your mind in the options.
+- Warmth asks **once** whether you want to appear in other people's circles when you sit at an announced fire. Say no and you never show up in anyone's circle; change your mind in the options.
 - You can turn off invite requests, the toast, the pins and most of the motion.
 
 ## Getting in
@@ -30,6 +30,7 @@ Warmth lives in the game's **addon compartment** (the addon list by the minimap)
 ## Good to know
 
 - Warmth runs on **ChehulNet**, the network shared with GuildOS, Lodestar and PartyLens. It is brand new on this network: for now you will mostly hear campfires from your guild, your group and a few players beyond. The reach grows as the other addons update.
+- Like every ChehulNet addon, Warmth says hello to the network from time to time (your class, level and zone), which is how its addons find each other. Your campfire and your place in a circle are never part of that.
 - Only campfires lit by players show up, and only the announced ones. Campfires that belong to the world are not listed.
 - English and Brazilian Portuguese. No dependencies.
 
@@ -48,6 +49,6 @@ Em algum lugar, alguém acabou de acender uma fogueira. O Warmth põe ela no seu
 - **Cópias da zona**: o Warmth marca os acampamentos que estão em outra cópia e deixa você pedir ao dono um convite de grupo para cair na dele.
 - **Aviso de proximidade** quando anunciam uma fogueira na sua zona.
 
-**Você decide o que é compartilhado.** Uma fogueira só é anunciada quando você clica em anunciar. O Warmth pergunta uma vez se você quer aparecer nas rodas dos outros; se disser não, nada sobre você é enviado.
+**Você decide o que é compartilhado.** Uma fogueira só é anunciada quando você clica em anunciar. O Warmth pergunta uma vez se você quer aparecer nas rodas dos outros; se disser não, você nunca aparece na roda de ninguém.
 
 Abra pelo **compartimento de addons** do jogo (clique: abrir; clique direito: montar acampamento) ou com `/warmth`. Roda na **ChehulNet**, a mesma rede do GuildOS, do Lodestar e do PartyLens; como é novo nela, por enquanto você ouve mais a sua guilda, o seu grupo e alguns outros.

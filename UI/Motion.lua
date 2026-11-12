@@ -65,6 +65,11 @@ function Motion.Anchor(frame, point, rel, relPoint, x, y)
 end
 
 function Motion.Enter(frame, dy)
+	local r = frame.rest
+	if r then -- an Enter cut short may have left it mid-slide
+		frame:ClearAllPoints()
+		frame:SetPoint(r[1], r[2], r[3], r[4], r[5])
+	end
 	frame:Show()
 	frame:SetAlpha(0)
 	Motion.moving[frame] = { t0 = GetTime(), dur = ENTER, dy = Less() and 0 or (dy or 0) }

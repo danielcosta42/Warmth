@@ -11,22 +11,29 @@ W.Camps = Camps
 
 Camps.TTL, Camps.PERSON_TTL = 720, 360 -- seconds without news until a camp / a person heard directly is gone
 Camps.MAX, Camps.PEOPLE_MAX = 100, 40
+Camps.ENDED = 15 -- seconds an owner's late (relayed) announce is ignored after their End
 
 local seq = 0
+local ended = {} -- [owner] = GetTime() of their End
 
 function Camps:Get(owner) return self.all[owner or ""] end
 
 -- fields: what Wire.Decode returns for an announce. Returns the camp and whether it is new.
-function Camps:Announce(owner, f)
+-- `here`: made on this client (my own camp, a demo camp), not heard from the network.
+function Camps:Announce(owner, f, here)
 	local camp = self.all[owner]
 	local isNew = camp == nil
 	if isNew then
-		local n = 0
-		for _ in pairs(self.all) do n = n + 1 end
-		if n >= self.MAX then return nil end
-		camp = { owner = owner, at = time(), heard = {}, order = {} }
+		if owner ~= W.me and not here then -- the cap and the tombstone are for what comes from the network
+			if ended[owner] and GetTime() - ended[owner] < self.ENDED then return nil end
+			local n = 0
+			for _ in pairs(self.all) do n = n + 1 end
+			if n >= self.MAX then return nil end
+		end
+		camp = { owner = owner, heard = {}, order = {} }
 		self.all[owner] = camp
 	end
+	camp.at = time() - (f.age or 0) * 60 -- when it was first announced, by the owner's count
 	camp.map, camp.x, camp.y, camp.zuid, camp.tier = f.map, f.x, f.y, f.zuid or 0, f.tier
 	camp.n, camp.objs, camp.roster, camp.note = f.n or 0, f.objs or {}, f.people or {}, f.note or ""
 	camp.last = time()
@@ -55,6 +62,7 @@ function Camps:Join(who, owner, class, obj)
 end
 
 function Camps:End(owner)
+	ended[owner or ""] = GetTime()
 	if not self.all[owner or ""] then return end
 	self.all[owner] = nil
 	W:Fire("CAMPS")

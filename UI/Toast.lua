@@ -117,5 +117,5 @@ local told
 W:On("LIT", function()
 	if told then return end
 	told = true
-	W.Print(L["Campfire lit. Open Warmth to announce it; nothing was sent."])
+	W.Print(L["Campfire lit. Open Warmth to announce it; it has not been announced."])
 end)

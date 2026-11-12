@@ -42,7 +42,7 @@ function UI.BuildRing(parent)
 				seat:SetPerson(p, p.name == camp.owner)
 				seat.tipTitle = W.Esc(p.name)
 				seat.tipLines = { p.name == camp.owner and L["Lit this fire"] or nil }
-				if obj then table.insert(seat.tipLines, L["Brought:"] .. " " .. obj[2]) end
+				if obj then table.insert(seat.tipLines, L["Brought:"] .. " " .. W.ObjectName(p.obj)) end
 				seat:Show()
 				Motion.Place(seat, self, Around(i, total, SEAT_R))
 				if not self.seen[p.name] then
@@ -74,7 +74,7 @@ function UI.BuildRing(parent)
 				if index then
 					local o = W.OBJECTS[index]
 					slot:SetObject(index)
-					slot.tipTitle, slot.tipLines = o[2], { o[4] and L[o[4]] or L["A crafting station"], UI.C.mute .. L[o[3]] .. UI.C.r }
+					slot.tipTitle, slot.tipLines = W.ObjectName(index), { o[4] and L[o[4]] or L["A crafting station"], UI.C.mute .. L[o[3]] .. UI.C.r }
 					slot:Show()
 					Motion.Place(slot, self, Around(i + 0.5, slots, radius))
 					if not self.seen["o" .. index] then

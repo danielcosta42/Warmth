@@ -40,16 +40,19 @@ local DEMO = {
 local function Demo()
 	local map, x, y = W.Position()
 	if not map then return W.Print(L[UI.REASONS.no_position]) end
+	local toast = W.db.toast
+	W.db.toast = false -- three camps at once are not news
 	for _, d in ipairs(DEMO) do
 		local people = {}
 		for i, p in ipairs(d[7]) do people[i] = { name = p[1], class = p[2] } end
 		local camp = W.Camps:Announce(d[1], { map = map, x = math.min(0.95, math.max(0.05, x + d[2])), y = math.min(0.95, math.max(0.05, y + d[3])),
-			zuid = 0, tier = d[4], n = d[8], objs = d[6], people = people, note = d[5] })
+			zuid = 0, tier = d[4], n = d[8], age = 12, objs = d[6], people = people, note = d[5] }, true)
 		if camp then
 			camp.demo = true
 			camp.last = time() + 86400 -- stays for the session
 		end
 	end
+	W.db.toast = toast
 	W.Print(L["Three demo camps on this map (only you see them). /warmth clear removes them."])
 	UI:Show("list")
 end

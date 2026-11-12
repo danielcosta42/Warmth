@@ -18,26 +18,29 @@ W.db.consent = nil
 -- ── task 2: data, wire, camps ──────────────────────────────────────────────
 check(#W.OBJECTS == 35 and W.OBJECTS[W.TENT][2] == "Camp Tent" and W.OBJECTS[W.REPAIR][2] == "Repair Bot", "35 objects with stable indexes")
 local Wire, Camps = W.Wire, W.Camps
-local fields = { map = 1411, x = 0.501, y = 0.5, zuid = 77, tier = 2, n = 3, objs = { W.TENT, W.REPAIR },
+local fields = { map = 1411, x = 0.501, y = 0.5, zuid = 77, tier = 2, n = 3, age = 41.7, objs = { W.TENT, W.REPAIR },
 	people = { { name = "Ana Lima", class = 9 }, { name = "Caio Nunes", class = 7 } }, note = " tent | repair \n" }
 local payload = Wire.Announce(fields)
-check(payload == "C2|A|1411|5010|5000|77|2|3|16,11|Ana Lima~j;Caio Nunes~h|tent   repair", "an announce on the wire: " .. payload)
+check(payload == "C2|A|1411|5010|5000|77|2|3|41|16,11|Ana Lima~j;Caio Nunes~h|tent   repair", "an announce on the wire: " .. payload)
 local msg = Wire.Decode(payload)
-check(msg and msg.kind == "A" and msg.x == 0.501 and msg.zuid == 77 and msg.tier == 2 and msg.n == 3 and msg.objs[2] == W.REPAIR
+check(msg and msg.kind == "A" and msg.x == 0.501 and msg.zuid == 77 and msg.tier == 2 and msg.n == 3 and msg.age == 41 and msg.objs[2] == W.REPAIR
 	and msg.people[2].name == "Caio Nunes" and msg.people[2].class == 7 and msg.note == "tent   repair", "and back")
 local j = Wire.Decode(Wire.Join("Ana Lima", 9, W.TENT))
 check(j and j.kind == "J" and j.owner == "Ana Lima" and j.class == 9 and j.obj == W.TENT, "presence round trip")
 check(Wire.Decode(Wire.End()).kind == "X" and Wire.Decode(Wire.Invite("Ana Lima")).owner == "Ana Lima", "end and invite round trip")
 
 -- Review Focus 2: forged or truncated payloads are dropped
-for _, bad in ipairs({ "C1|A|1411|1|1|0|1|1|||x", "C2|A|1411|1|1|0|1|1||", "C2|A|0|1|1|0|1|1|||x", "C2|A|1411|10001|1|0|1|1|||x",
-	"C2|A|1411|1|1|0|4|1|||x", "C2|A|1411|1|1|0|1|41|||x", "C2|A|1411|1|1|0|1|1|36||x", "C2|A|1411|1|1|0|1|1|1,2,3,4||x",
-	"C2|A|1411|1|1|0|1|1||Bad;Name~b|x", "C2|A|1411|1|1|0|1|1||" .. ("n"):rep(41) .. "~b|x", "C2|A|1e3|1|1|0|1|1|||x",
-	"C2|A|99999999999|1|1|0|1|1|||x", "C2|J|Ana|b", "C2|J|Ana|bb|1", "C2|J|Ana|b|99", "C2|J||b|1", "C2|X|extra", "C2|I|",
-	"C2|Q", "", "C2", ("C2|A|1411|1|1|0|1|1|||"):rep(60) }) do
+for _, bad in ipairs({ "C1|A|1411|1|1|0|1|1|0|||x", "C2|A|1411|1|1|0|1|1|0||", "C2|A|0|1|1|0|1|1|0|||x", "C2|A|1411|10001|1|0|1|1|0|||x",
+	"C2|A|1411|1|1|0|4|1|0|||x", "C2|A|1411|1|1|0|1|41|0|||x", "C2|A|1411|1|1|0|1|1|0|36||x", "C2|A|1411|1|1|0|1|1|0|1,2,3,4||x",
+	"C2|A|1411|1|1|0|1|1|0||Bad;Name~b|x", "C2|A|1411|1|1|0|1|1|0||" .. ("n"):rep(41) .. "~b|x", "C2|A|1e3|1|1|0|1|1|0|||x",
+	"C2|A|99999999999|1|1|0|1|1|0|||x", "C2|A|1411|1|1|0|1|1|1441|||x", "C2|A|1411|1|1|0|1|1|||x",
+	"C2|J|Ana|b", "C2|J|Ana|bb|1", "C2|J|Ana|b|99", "C2|J||b|1", "C2|X|extra", "C2|I|",
+	"C2|Q", "", "C2", ("C2|A|1411|1|1|0|1|1|0|||"):rep(60) }) do
 	check(Wire.Decode(bad) == nil, "dropped: " .. bad:sub(1, 50))
 end
-check(#Wire.Decode("C2|A|1411|1|1|0|1|1|||" .. ("z"):rep(200)).note == 80, "a long note is cut to 80")
+check(#Wire.Decode("C2|A|1411|1|1|0|1|1|0|||" .. ("z"):rep(200)).note == 80, "a long note is cut to 80")
+check(Wire.CleanNote(("a"):rep(79) .. "\195\167\195\163") == ("a"):rep(79), "and never in the middle of an accented letter")
+check(Wire.CleanNote(("a"):rep(78) .. "\195\167z") == ("a"):rep(78) .. "\195\167", "a whole letter that fits stays")
 
 -- Review Focus 3: a full circle with long names still fits one message and keeps every object
 local crowd = { map = 1411, x = 0.5, y = 0.5, zuid = 4000000000 % 2147483647, tier = 3, n = 40, objs = {}, people = {}, note = ("n"):rep(80) }
@@ -50,6 +53,7 @@ check(#big <= 240 and back and #back.objs == 10 and #back.people >= 1 and #back.
 
 local ana, isNew = Camps:Announce("Ana Lima", msg)
 check(ana and isNew and Camps:Get("Ana Lima") == ana, "an announce becomes a camp")
+check(time() - ana.at == 41 * 60, "lit when the owner says, not when this client first heard")
 local people = Camps:People(ana)
 check(#people == 2 and people[1].name == "Ana Lima" and people[1].class == 9 and Camps:Count(ana) == 3, "the roster, owner first; the count is what the owner said")
 check(Camps:Join("Bia Rocha", "Ana Lima", 2, 1) and #Camps:People(ana) == 3 and Camps:Has(ana, 1) and #Camps:Objects(ana) == 3, "someone heard directly joins, with the object")
@@ -100,7 +104,7 @@ local mine = W.Net:Announce(2, "need a tent")
 local sent = S.take()
 check(mine and mine.owner == "Chehul Costa" and mine.zuid == 12 and #sent == 3 and sent[1].bus == "Guild" and sent[2].bus == "Group"
 	and sent[3].bus == "Realm" and sent[3].relay == true, "announce goes to guild, group and the realm with relay")
-check(sent[3].payload == "C2|A|1411|5000|5000|12|2|1||Chehul Costa~j|need a tent", "with me in my own circle: " .. sent[3].payload)
+check(sent[3].payload == "C2|A|1411|5000|5000|12|2|1|0||Chehul Costa~j|need a tent", "with me in my own circle: " .. sent[3].payload)
 check(select(2, W.Net:Announce(2, "again")) == "too_soon" and #S.take() == 0, "no second announce within 20 s")
 
 -- the owner hears presence and invite requests only from authentic paths
@@ -126,7 +130,7 @@ check(S.invited == "Caio Nunes", "accepting invites the player")
 S.take()
 S.advance(120) -- 250 s since the announce; the ticker ran
 local beat = S.take("Realm")
-check(#beat == 1 and beat[1].payload:find("|2|" .. W.TENT .. "|Chehul Costa~j;Caio Nunes~h|need a tent", 1, true), "the repeat carries people and objects: " .. tostring(beat[1] and beat[1].payload))
+check(#beat == 1 and beat[1].payload:find("|2|4|" .. W.TENT .. "|Chehul Costa~j;Caio Nunes~h|need a tent", 1, true), "the repeat carries people and objects: " .. tostring(beat[1] and beat[1].payload))
 S.pos = { map = 1411, x = 0.6, y = 0.5 } -- 500 yards away
 S.advance(300)
 check(#S.take("Realm") == 0, "away from the fire, the announce stops repeating")
@@ -146,7 +150,7 @@ check(needed == 1 and #S.take() == 0 and not Camps:Get("Ana Lima").heard["Chehul
 W.db.consent = false
 S.advance(30)
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.OBJECTS[4][1] + 1000000)
-check(W.myObject == 4 and #S.take() == 0 and needed == 1, "answered no: placing an object by her fire still sends nothing")
+check(W.placed.obj == 4 and #S.take() == 0 and needed == 1, "answered no: placing an object by her fire still sends nothing")
 W.db.consent = true
 S.advance(10)
 sent = S.take()
@@ -163,7 +167,19 @@ check(W.Net:RequestInvite("Ana Lima") and S.take("Whisper")[1].payload == "C2|I|
 check(select(2, W.Net:RequestInvite("Ana Lima")) == "too_soon", "one per camp per 2 minutes")
 -- Review Focus 4, the visitor's side: an owner gone quiet gets no more whispers
 S.advance(400)
-S.handler("C2|A|1411|5010|5000|77|2|3|16,11|Ana Lima~j|", "Ana Lima", "RELAY")
+-- an object stays where it was put: at another camp I arrive with empty hands
+S.handler("C2|A|1411|6000|5000|77|1|1|0|||", "Far Camp", "RELAY")
+S.pos = { map = 1411, x = 0.6, y = 0.5 }
+S.advance(150)
+S.take()
+S.advance(130)
+local far = S.take("Whisper")
+check(#far == 1 and far[1].target == "Far Camp" and far[1].payload == "C2|J|Far Camp|j|0" and not Camps:Has(Camps:Get("Far Camp"), 4),
+	"the object I placed at Ana's fire does not follow me to another camp")
+S.pos = keep
+S.handler("C2|X", "Far Camp", "RELAY")
+
+S.handler("C2|A|1411|5010|5000|77|2|3|0|16,11|Ana Lima~j|", "Ana Lima", "RELAY")
 S.advance(370)
 S.take()
 S.advance(130)
@@ -176,8 +192,33 @@ check(Camps:Get("Ana Lima") == nil, "the owner ends the camp")
 W.Net:ExpectNotFound("Ana Lima")
 local filter = S.filters.CHAT_MSG_SYSTEM
 check(filter(nil, nil, "No player named 'Ana Lima' is currently playing.") == true
-	and filter(nil, nil, "No player named 'Ana Lima' is currently playing.") == false
-	and filter(nil, nil, "No player named 'Other' is currently playing.") == false, "our not-found line is hidden once; others pass")
+	and filter(nil, nil, "No player named 'Ana Lima' is currently playing.") == true
+	and filter(nil, nil, "No player named 'Other' is currently playing.") == false, "our not-found line is hidden in every chat frame; others pass")
+S.advance(31)
+check(filter(nil, nil, "No player named 'Ana Lima' is currently playing.") == false, "and only for half a minute")
+
+-- hostile input
+S.handler("C2|A|1411|5000|5000|0|1|1|0|||", "Bad;Owner", "RELAY")
+S.handler("C2|A|1411|5000|5000|0|1|1|0|||", ("L"):rep(45), "RELAY")
+check(Camps:Get("Bad;Owner") == nil and Camps:Get(("L"):rep(45)) == nil, "an owner nobody could name in a presence is not a camp")
+S.handler("C2|A|1411|5000|5000|0|1|1|0|||", "Late Echo", "RELAY")
+S.handler("C2|X", "Late Echo", "RELAY")
+S.handler("C2|A|1411|5000|5000|0|1|1|0|||", "Late Echo", "RELAY")
+check(Camps:Get("Late Echo") == nil, "a relayed announce that arrives right after its End does not bring the camp back")
+S.advance(16)
+S.handler("C2|A|1411|5000|5000|0|1|1|0|||", "Late Echo", "RELAY")
+check(Camps:Get("Late Echo") ~= nil, "but the owner can announce again a moment later")
+S.handler("C2|X", "Late Echo", "RELAY")
+for i = 1, 100 do S.handler("C2|A|1411|5000|5000|0|1|1|0|||", "Flood " .. i, "RELAY") end
+check(#Camps:List() == 100 and W.Net:Announce(1, "room for me") ~= nil, "a hundred camps from the network never block my own announce")
+W.Net:End()
+for i = 1, 100 do S.handler("C2|X", "Flood " .. i, "RELAY") end
+-- a pile of camps on one spot costs one presence, not a hundred
+for i = 1, 5 do S.handler("C2|A|1411|5000|5000|77|1|1|0|||", "Pile " .. i, "RELAY") end
+S.take()
+S.advance(100)
+check(#S.take("Whisper") == 1, "five camps on the same spot: I am at one fire, and say so once")
+for i = 1, 5 do S.handler("C2|X", "Pile " .. i, "RELAY") end
 
 -- cooking snapshot
 function GetTradeSkillLine() return "Cooking" end

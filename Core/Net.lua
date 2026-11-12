@@ -32,7 +32,7 @@ local function Fields(camp)
 	local list = {}
 	for i, p in ipairs(people) do list[i] = { name = p.name, class = p.class } end
 	return { map = camp.map, x = camp.x, y = camp.y, zuid = camp.zuid, tier = camp.tier, n = #people,
-		objs = W.Camps:Objects(camp), people = list, note = camp.note }
+		age = (time() - camp.at) / 60, objs = W.Camps:Objects(camp), people = list, note = camp.note }
 end
 
 local function Broadcast(payload)
@@ -51,12 +51,12 @@ function Net:Announce(tier, note)
 	if not W.SLOTS[tier or 0] then return nil, "bad_tier" end
 	if GetTime() - lastAnnounce < self.ANNOUNCE_GAP then return nil, "too_soon" end
 	if not Mesh() then return nil, "no_network" end
-	lastAnnounce, lastBeat = GetTime(), GetTime()
+	W.Camps:End(W.me) -- a new click is a new camp: nobody and nothing carries over from the last place
 	local camp = W.Camps:Announce(W.me, { map = map, x = x, y = y, zuid = W.MyCopy(map), tier = tier,
-		n = 1, objs = {}, people = {}, note = W.Wire.CleanNote(note) })
+		n = 1, age = 0, objs = {}, people = {}, note = W.Wire.CleanNote(note) })
 	if not camp then return nil, "full" end
-	camp.heard, camp.order = {}, {} -- a new click is a new circle: nobody carries over from the last place
-	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.myObject or 0)
+	lastAnnounce, lastBeat = GetTime(), GetTime()
+	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
 	Broadcast(W.Wire.Announce(Fields(camp)))
 	return camp
 end
@@ -68,7 +68,7 @@ function Net:Heartbeat()
 	local d = W.Distance(camp)
 	if not d or d > self.OWNER_NEAR then return false end
 	lastBeat = GetTime()
-	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.myObject or 0)
+	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
 	local f = Fields(camp)
 	camp.last, camp.n, camp.objs = time(), f.n, f.objs
 	Broadcast(W.Wire.Announce(f))
@@ -82,21 +82,27 @@ function Net:End()
 end
 
 function Net:ExpectNotFound(target)
-	self.tried[target] = GetTime() + 30
+	local now = GetTime()
+	for name, till in pairs(self.tried) do
+		if till < now then self.tried[name] = nil end
+	end
+	self.tried[target] = now + 30
 end
 
 -- "I am in <owner>'s circle". Without the player's yes, nothing is sent and nothing is recorded.
-function Net:Presence(owner)
+-- `now`: the player just placed an object, which is worth telling at once (still one message per camp per 20 s).
+function Net:Presence(owner, now)
 	local camp = W.Camps:Get(owner)
 	if not camp or camp.demo then return false end -- a demo camp (/warmth demo) exists on this client only
+	local obj = W.Watch:ObjectAt(camp)
 	if owner == W.me then
-		return W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.myObject or 0) -- goes out in my next announce
+		return W.Camps:Join(W.me, W.me, W.MyClassIndex(), obj) -- goes out in my next announce
 	end
 	if W.db.consent ~= true then return false end
-	if GetTime() - (lastPresence[owner] or -1e9) < self.PRESENCE_GAP then return false end
+	if GetTime() - (lastPresence[owner] or -1e9) < (now and self.ANNOUNCE_GAP or self.PRESENCE_GAP) then return false end
 	lastPresence[owner] = GetTime()
-	W.Camps:Join(W.me, owner, W.MyClassIndex(), W.myObject or 0)
-	local mesh, payload = Mesh(), W.Wire.Join(owner, W.MyClassIndex(), W.myObject or 0)
+	W.Camps:Join(W.me, owner, W.MyClassIndex(), obj)
+	local mesh, payload = Mesh(), W.Wire.Join(owner, W.MyClassIndex(), obj)
 	if not mesh then return false end
 	if time() - camp.last <= self.FRESH then -- an owner gone quiet is probably offline: no whisper into the void
 		self:ExpectNotFound(owner)
@@ -110,7 +116,8 @@ end
 -- Ask the owner for a group invite, to land in their copy of the zone.
 function Net:RequestInvite(owner)
 	local camp = W.Camps:Get(owner)
-	if not camp or camp.demo or owner == W.me then return false, "no_camp" end
+	if camp and camp.demo then return false, "demo" end
+	if not camp or owner == W.me then return false, "no_camp" end
 	if GetTime() - (lastInviteTo[owner] or -1e9) < self.INVITE_GAP then return false, "too_soon" end
 	local mesh = Mesh()
 	if not mesh then return false, "no_network" end
@@ -133,7 +140,8 @@ local function OnMessage(payload, sender, dist)
 	local msg = W.Wire.Decode(payload)
 	if not (msg and who) or who == W.me or not W.db then return end
 	if msg.kind == "A" then
-		W.Camps:Announce(who, msg)
+		-- an owner the codec could not name in a presence or an invite would be a camp nobody can join
+		if W.Wire.GoodName(who) then W.Camps:Announce(who, msg) end
 	elseif msg.kind == "X" then
 		W.Camps:End(who)
 	elseif dist == "RELAY" then
@@ -162,9 +170,8 @@ local function FilterNotFound(_, _, msg)
 	end
 	local name = notFound and msg:match(notFound)
 	local till = name and Net.tried[name]
-	if not till then return false end
-	Net.tried[name] = nil
-	return GetTime() <= till
+	-- kept until it times out: the filter runs once per chat frame showing system messages
+	return till ~= nil and GetTime() <= till
 end
 
 W:On("LOADED", function()

@@ -269,19 +269,10 @@ def copies():
     return white(32, 32, a)
 
 
-def people():
-    """Head and shoulders, for 'n in the circle'."""
-    def a(x, y):
-        head = circle(x, y, 16, 11, 5.2)
-        body = max(circle(x, y, 16, 30.5, 11.0), y - 28.5)
-        return max(cov(head), cov(body))
-    return white(32, 32, a)
-
-
 TEXTURES = [
     ("flame", flame_sheet), ("logo", logo), ("glow", glow), ("ring", ring), ("disc", disc), ("slot", slot),
     ("slot-ring", slot_ring), ("slot-dash", slot_dash), ("grain", grain), ("vignette", vignette),
-    ("corner", corner), ("crown", crown), ("copies", copies), ("people", people),
+    ("corner", corner), ("crown", crown), ("copies", copies),
 ]
 
 

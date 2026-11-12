@@ -115,9 +115,13 @@ function Wd.Flame(parent, size)
 	return f
 end
 
+-- The first letter of the first two words, as whole UTF-8 characters ("Ávila Íris" is two letters, not two bytes).
+local LETTER = "[%z\1-\127\194-\244][\128-\191]*"
 local function Initials(name)
-	local a, b = tostring(name):match("^(%S)%S*%s*(%S?)")
-	return ((a or "?") .. (b or "")):upper()
+	local first, rest = tostring(name):match("^(" .. LETTER .. ")%S*%s*(.*)$")
+	local second = rest and rest:match("^" .. LETTER) or ""
+	local out = (first or "?") .. second
+	return out:find("[\128-\255]") and out or out:upper()
 end
 
 -- A person by the fire: a ring in the class colour around the game's class portrait (initials when the class is
