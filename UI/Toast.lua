@@ -35,9 +35,9 @@ function UI:Toast(camp)
 	local t = self.toast
 	if not t then
 		t = Card(340, 60, -150)
-		t:SetScript("OnClick", function(self)
-			self:Hide()
-			if self.camp then UI:Show("camp", self.camp.owner) end
+		t:SetScript("OnClick", function(card)
+			card:Hide()
+			if card.camp then UI:Show("camp", card.camp.owner) end
 		end)
 		self.toast = t
 	end

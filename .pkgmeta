@@ -1,0 +1,21 @@
+# BigWigsMods/packager configuration: https://github.com/BigWigsMods/packager
+
+# The folder inside the .zip: it must match the addon's name in the game.
+package-as: Warmth
+
+enable-nolib-creation: no
+
+# Development files that do not ship.
+ignore:
+  - .github
+  - .gitignore
+  - .gitattributes
+  - .luacheckrc
+  - .pkgmeta
+  - VERSION
+  - AGENTS.md
+  - CURSEFORGE-DESCRIPTION.md
+  - chehulnet.lock
+  - docs
+  - tools
+  - Media/logo-512.png
