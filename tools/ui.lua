@@ -32,6 +32,14 @@ check(W.L["Lit campfires"] == "Lit campfires" and W.L["never translated"] == "ne
 draws("the empty list", function() UI:Show("list") end)
 check(UI.frame.shown and UI.views.list.shown and UI.views.list.empty.text:find("first warm spot", 1, true), "an empty list explains itself and invites")
 check(UI.title.text == "Lit campfires" and UI.back.shown == false, "the list is the home view")
+do -- the filter chips sit side by side: each starts after the one before it ends, and the row fits the window
+	local chips, edge = UI.views.list.chips, UI.PAD
+	for i, chip in ipairs(chips) do
+		check(chip.point[2] == edge and chip.w >= #chip.label.text * 5.5 + 22, "chip " .. i .. " starts where the last one ended and holds its label")
+		edge = edge + chip.w + 6
+	end
+	check(edge <= UI.W - UI.PAD + 6, "the chips fit the window: " .. edge)
+end
 
 local ana = announce("Ana Lima", { x = 0.501, tier = 2, n = 4, objs = { W.TENT, W.REPAIR }, note = "tent | here",
 	people = { { name = "Ana Lima", class = 9 }, { name = "Caio Nunes", class = 7 }, { name = "Bia Rocha", class = 0 } } })

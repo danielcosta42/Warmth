@@ -106,16 +106,12 @@ end
 
 UI.View("list", function(v)
 	v.chips = {}
-	local x = PAD
 	for i, flt in ipairs(FILTERS) do
 		local b = Wd.Button(v)
 		b:SetHeight(24)
 		b.label:SetFont(UI.Font(), 11.5, "")
 		b.fn = function() UI.filter = flt[1] end
 		b:Set(L[flt[2]])
-		b:SetWidth(b.label:GetStringWidth() + 22)
-		b:SetPoint("TOPLEFT", x, 0)
-		x = x + b:GetWidth() + 6
 		v.chips[i] = b
 	end
 	v.list = Wd.ScrollList(v, 58, 7, MakeRow, FillRow)
@@ -132,8 +128,17 @@ UI.View("list", function(v)
 	v.build.fn = function() UI:Show("build") end
 end, function(v)
 	local all, shown, people, match = W.Camps:List(), {}, 0, FILTERS[1][3]
+	-- Laid out on every draw: a font string only knows its width once it has been shown, so a width measured
+	-- when the window is built comes out too small and the chips overlap.
+	local x = PAD
 	for i, flt in ipairs(FILTERS) do
-		v.chips[i]:Set(L[flt[2]], UI.filter == flt[1])
+		local chip = v.chips[i]
+		chip:Set(L[flt[2]], UI.filter == flt[1])
+		local w = math.max(chip.label:GetStringWidth() or 0, #L[flt[2]] * 5.5) + 22
+		chip:SetWidth(w)
+		chip:ClearAllPoints()
+		chip:SetPoint("TOPLEFT", x, 0)
+		x = x + w + 6
 		if UI.filter == flt[1] then match = flt[3] end
 	end
 	for _, camp in ipairs(all) do
