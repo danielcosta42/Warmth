@@ -209,6 +209,14 @@ end, function(v, fresh)
 
 	local bring = CanBring(camp)
 	local hint = L["Sit by the fire for a minute to get the camp's benefits for an hour."]
+	if #objs == 0 then
+		-- A fire with no camp object gives nothing (guides, and measured: a minute at one ended the Camp Benefits
+		-- the player already had). The addon only knows the objects its own users placed, hence "reported".
+		hint = L["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."]
+		if W.HasAura(W.AURA.BENEFITS) == true then
+			hint = hint .. " " .. C.miss .. L["You carry Camp Benefits: resting at a fire with no objects may end them."] .. C.r
+		end
+	end
 	if camp.notHere then hint = C.copy .. L["You are where this camp is and there is no fire: it burns in another copy of the zone, or it went out."] .. C.r
 	elseif other == true then hint = C.copy .. L["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] .. C.r
 	elseif bring then hint = C.ok .. L["Your %s fits here."]:format(bring) .. C.r .. " " .. hint end

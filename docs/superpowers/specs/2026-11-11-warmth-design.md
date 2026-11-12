@@ -106,6 +106,11 @@ conferido no jogo**; os ids em especial.
 | Bolsa de dormir (Cozy Sleeping Bag, item 211527) | Usar lança Unroll Bag (429961, 15 s); o jogador fica "resting" e cerca de um minuto depois ganha "Well-Rested" (429959, 2 h). Pelo dono: 1% de experiência por minuto deitado, até 3%, e combina com a fogueira | Aparece no checklist com essa explicação |
 | Culinária | `C_TradeSkillUI.GetBaseProfessionInfo()` traz `professionName=Cooking`, `profession=5`; 132 receitas listadas | O addon reconhece a janela de Culinária; a contagem do que dá para fazer ainda não foi vista com materiais na bolsa |
 
+**Fogo sem objetos não dá nada.** Os guias dizem que os benefícios vêm só dos objetos, e a medição concorda: um
+minuto sentado numa fogueira sem objetos não deu "Camp Benefits" e, uma vez, o que o jogador já tinha (2 h, de outra
+fogueira) sumiu 5 s depois do minuto. A tela do acampamento sem objetos informados diz isso, e avisa quem já está
+com o benefício. (Visto uma vez; nos fóruns há relatos de bug no benefício desde 7/11.)
+
 **Ainda a medir:** quanto dura a fogueira. Os guias dizem 10 minutos (entrevista de um designer) ou 15 (dados do
 jogo), e nenhum cronometrou. O addon cronometra o fogo do próprio jogador, do acender até a aura "Campfire Nearby"
 cair, se ele ficou junto do fogo, e guarda por nível em `WarmthDB.burn`. Também: Flint and Tinder e a perícia dos

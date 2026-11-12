@@ -153,6 +153,12 @@ local sent = S.take("Realm")
 check(#sent == 1 and sent[1].payload:find("|3|1|0||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
 	"Announce sends the camp and opens my circle: " .. tostring(sent[1] and sent[1].payload))
 check(UI.title.text == "Your camp" and UI.views.camp.other.label.text == "End announce", "my own camp")
+check(UI.views.camp.hint.text:find("the fire alone gives no benefits", 1, true) and not UI.views.camp.hint.text:find("may end them", 1, true),
+	"a fire with no camp object: the view says it gives nothing")
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return (id == W.AURA.BENEFITS or id == W.AURA.NEARBY) and {} or nil end }
+UI:Render()
+check(UI.views.camp.hint.text:find("may end them", 1, true), "and warns a player who already carries Camp Benefits")
+C_UnitAuras = nil
 UI.views.camp.other:Click()
 check(Camps:Get("Chehul Costa") == nil and UI.view == "list" and S.take("Realm")[1].payload == "C2|X", "ending it tells the network and returns to the list")
 

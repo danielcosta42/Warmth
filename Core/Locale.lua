@@ -48,6 +48,10 @@ local ptBR = {
 	["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] =
 		"Este acampamento está em outra cópia da zona: você só vê o fogo depois de entrar no grupo do dono.",
 	["Your %s fits here."] = "Seu objeto %s cabe aqui.",
+	["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."] =
+		"Nenhum objeto de acampamento informado aqui: o fogo sozinho não dá benefício. Traga um da sua profissão.",
+	["You carry Camp Benefits: resting at a fire with no objects may end them."] =
+		"Você está com Camp Benefits: descansar num fogo sem objetos pode acabar com eles.",
 	["Go there"] = "Ir até lá",
 	["End announce"] = "Encerrar anúncio",
 	["Back to the list"] = "Voltar à lista",
