@@ -5,6 +5,10 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- **Canal da rede travado.** Quando alguém trava com senha o canal que os addons da família usam para se achar,
+  a caixa de senha da Blizzard fecha sozinha (menos no modo gamepad) e o addon passa para outro canal (lib
+  ChehulNet v1.4.1, #8).
+
 ## [0.2.0]
 
 - **Oficina.** Uma tela nova (e uma fatia na roda da bússola) mostra os objetos de acampamento que as suas
