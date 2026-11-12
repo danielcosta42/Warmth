@@ -9,7 +9,8 @@
 --   C2|E|o,o,o|level                                     the owner's extras: the objects the camp asks for, the host's warmth level
 --   C2|T|owner                                           "thank you for the fire" (whisper to the owner, guild, group)
 --
--- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames. Unknown letters are
+-- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames; s = a sighting: the
+-- announcer found this fire burning, someone else lit it (the tier is then a guess). Unknown letters are
 -- ignored, so a flag can be added later without breaking older clients.
 -- x, y: 0..10000. zuid: the zone copy, 0 = unknown. n: people in the circle. age: minutes since it was first
 -- announced. o: object index (Core/Data.lua).
@@ -59,7 +60,8 @@ function Wire.Announce(f)
 	for i = 1, math.min(#f.objs, W.SLOTS[f.tier]) do objs[i] = f.objs[i] end
 	local note = Wire.CleanNote(f.note)
 	local head = table.concat({ "C2", "A", f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5),
-		f.zuid or 0, f.tier .. (f.flame == 1 and "v" or ""), math.min(f.n or 0, Wire.COUNT_MAX), math.min(math.floor(f.age or 0), Wire.AGE_MAX),
+		f.zuid or 0, f.tier .. (f.flame == 1 and "v" or "") .. (f.spotted and "s" or ""),
+		math.min(f.n or 0, Wire.COUNT_MAX), math.min(math.floor(f.age or 0), Wire.AGE_MAX),
 		table.concat(objs, ",") }, "|")
 	local people, size = {}, #head + 2 + #note
 	for i = 1, math.min(#f.people, Wire.PEOPLE) do
@@ -151,6 +153,7 @@ function Wire.Decode(payload)
 		end
 		return { kind = "A", map = map, x = x / 10000, y = y / 10000, zuid = zuid, tier = tier, n = n, age = age,
 			flame = flags:find("v", 1, true) and 1 or 0,
+			spotted = flags:find("s", 1, true) and true or nil,
 			objs = objs, people = people, note = Wire.CleanNote(note) }
 	end
 	return nil

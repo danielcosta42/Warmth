@@ -37,6 +37,7 @@ function Camps:Announce(owner, f, here)
 	camp.map, camp.x, camp.y, camp.zuid, camp.tier = f.map, f.x, f.y, f.zuid or 0, f.tier
 	camp.n, camp.objs, camp.roster, camp.note = f.n or 0, f.objs or {}, f.people or {}, f.note or ""
 	camp.flame = f.flame or 0
+	camp.spotted = f.spotted or nil
 	camp.last = time()
 	W:Fire("CAMPS")
 	if isNew and owner ~= W.me then W:Fire("CAMP_NEW", camp) end

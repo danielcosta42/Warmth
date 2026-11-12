@@ -22,7 +22,7 @@ W:On("LOADED", function()
 	local rows = {
 		{ L["Appear in the circle when I stand by an announced campfire"],
 			function() return W.db.consent == true end, function(v) W.db.consent = v end },
-		{ L["Announce my campfires to the network when I light them"], Flag("auto") },
+		{ L["Announce the campfires I light, and the ones I find, to the network"], Flag("auto") },
 		{ L["Let visitors ask me for an invite to my camp"], Flag("invites") },
 		{ L["Tell the network, later, about vendors of camp materials I open that Warmth does not know"], Flag("shareVendors") },
 		{ L["Tell me when a campfire is announced in my zone"], Flag("toast") },

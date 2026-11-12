@@ -34,7 +34,7 @@ local function Fields(camp)
 	local list = {}
 	for i, p in ipairs(people) do list[i] = { name = p.name, class = p.class } end
 	camp.flame = (W.HasAura(W.AURA.VIOLET) == true) and 1 or 0 -- read when I announce: I am by my fire then
-	return { map = camp.map, x = camp.x, y = camp.y, zuid = camp.zuid, tier = camp.tier, flame = camp.flame, n = #people,
+	return { map = camp.map, x = camp.x, y = camp.y, zuid = camp.zuid, tier = camp.tier, flame = camp.flame, spotted = camp.spotted, n = #people,
 		age = (time() - camp.at) / 60, objs = W.Camps:Objects(camp), people = list, note = camp.note }
 end
 
@@ -48,7 +48,8 @@ local function Broadcast(payload)
 end
 
 -- Announce a campfire where the player stands. Returns the camp, or nil and a reason key.
-function Net:Announce(tier, note)
+-- `spotted`: a fire the player found burning, not one they lit.
+function Net:Announce(tier, note, spotted)
 	local map, x, y = W.Position()
 	if not map then return nil, "no_position" end
 	if not W.SLOTS[tier or 0] then return nil, "bad_tier" end
@@ -57,7 +58,7 @@ function Net:Announce(tier, note)
 	if not Mesh() then return nil, "no_network" end
 	W.Camps:End(W.me) -- a new click is a new camp: nobody and nothing carries over from the last place
 	local camp = W.Camps:Announce(W.me, { map = map, x = x, y = y, zuid = W.MyCopy(map), tier = tier,
-		n = 1, age = 0, objs = {}, people = {}, note = W.Wire.CleanNote(note) })
+		n = 1, age = 0, objs = {}, people = {}, note = W.Wire.CleanNote(note), spotted = spotted or nil })
 	if not camp then return nil, "full" end
 	lastAnnounce, lastBeat = GetTime(), GetTime()
 	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
@@ -87,7 +88,7 @@ function Net:Extras()
 	local camp, mesh = W.Camps:Get(W.me), Mesh()
 	if not (camp and mesh) then return false end
 	camp.wants = (W.db.asking ~= false) and W.Social:Wants(camp) or {}
-	camp.host = W.Social:MyLevel()
+	camp.host = camp.spotted and 0 or W.Social:MyLevel() -- a fire I only found says nothing of me as a host
 	local payload = W.Wire.Extras(camp.wants, camp.host)
 	mesh:Guild(self.PREFIX, payload)
 	mesh:Group(self.PREFIX, payload)
@@ -241,7 +242,7 @@ local function OnMessage(payload, sender, dist)
 	elseif msg.kind == "T" then
 		-- thanks count only for my own camp, from someone I heard in my circle
 		local camp = W.Camps:Get(W.me)
-		if msg.owner == W.me and camp and camp.heard[who] then W.Social:Thanked(who) end
+		if msg.owner == W.me and camp and not camp.spotted and camp.heard[who] then W.Social:Thanked(who) end
 	elseif msg.kind == "I" then
 		if dist ~= "WHISPER" or msg.owner ~= W.me or not W.Camps:Get(W.me) or not W.db.invites then return end
 		if GetTime() - (lastInviteFrom[who] or -1e9) < Net.INVITE_GAP then return end
