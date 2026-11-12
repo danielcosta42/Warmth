@@ -15,7 +15,7 @@
 -- With "less motion" on (W.db.lessMotion) only the fades remain.
 --=============================================================================
 local _, W = ...
-local Motion = { breathing = {}, books = {}, arriving = {}, moving = {}, fading = {} }
+local Motion = { breathing = {}, books = {}, arriving = {}, moving = {}, fading = {}, tweens = {} }
 W.UI.Motion = Motion
 
 local ARRIVE, ENTER, LEAVE = 0.45, 0.32, 0.5
@@ -79,6 +79,18 @@ function Motion.Leave(frame, onDone)
 	Motion.moving[frame] = { t0 = GetTime(), dur = LEAVE, dy = 0, leaving = true, onDone = onDone }
 end
 
+-- A tween: apply(p) with p going 0..1 over `seconds` after `delay`, then onDone. One per key (a new one replaces
+-- the old). With "less motion" on it jumps to the end. Never use it on a secure frame.
+function Motion.Tween(key, delay, seconds, apply, onDone)
+	Motion.tweens[key] = { t0 = GetTime() + (delay or 0), dur = seconds, apply = apply, onDone = onDone }
+	apply(0)
+end
+function Motion.OutBack(p) -- overshoots a little and settles
+	local c = 1.9
+	p = p - 1
+	return 1 + (c + 1) * p * p * p + c * p * p
+end
+
 -- Alpha only, after a delay. The one motion that is safe on a secure frame: it never moves, scales or hides it.
 function Motion.FadeIn(frame, delay)
 	frame:SetAlpha(0)
@@ -87,6 +99,14 @@ end
 
 function Motion.Tick(now)
 	local less = Less()
+	for key, t in pairs(Motion.tweens) do
+		local p = less and 1 or math.min(1, math.max(0, (now - t.t0) / t.dur))
+		t.apply(p)
+		if p >= 1 then
+			if Motion.tweens[key] == t then Motion.tweens[key] = nil end
+			if t.onDone then t.onDone() end
+		end
+	end
 	for frame, t0 in pairs(Motion.fading) do
 		local p = math.min(1, math.max(0, (now - t0) / 0.22))
 		frame:SetAlpha(p)

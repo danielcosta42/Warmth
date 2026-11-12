@@ -305,11 +305,25 @@ S.bags = { [W.KITS[1]] = 3, [W.KITS[2]] = 1, [W.OBJECTS[4][1]] = 2, [W.SLEEPING_
 W.db.violetToy = nil
 Compass.frame:Click("LeftButton")
 local function slice(title) for _, sl in ipairs(Compass.slices) do if sl.shown and sl.action.title == title then return sl end end end
+local function skin(sl) for i, other in ipairs(Compass.slices) do if other == sl then return Compass.skins[i] end end end
+local function frames(seconds) for _ = 1, seconds * 20 do S.now = S.now + 0.05; S.frame(0.05) end end
 local lightSlice, wheel, bag, sit, cook, win = slice("Light the Journeyman campfire"), slice("Sharpening Wheel"), slice("Sleeping Bag"), slice("Sit"), slice("Cooking"), slice("Warmth")
 check(Compass.open and lightSlice and wheel and bag and sit and cook and win and not slice("Pouch of Violet Dust"), "the ring: light, my object, the bag, sit, cook, the window")
 check(lightSlice.template == "SecureActionButtonTemplate" and lightSlice.parent == UIParent and lightSlice.attributes.type == "item"
 	and lightSlice.attributes.item == "item:" .. W.KITS[2], "lighting uses the best kit in the bags, on a secure button")
-check(wheel.attributes.item == "item:" .. W.OBJECTS[4][1] and wheel.count.text == 2 and bag.attributes.item == "item:" .. W.SLEEPING_BAG, "objects and the bag use their items")
+check(wheel.attributes.item == "item:" .. W.OBJECTS[4][1] and skin(wheel).count.text == 2 and skin(wheel).seal.shown
+	and bag.attributes.item == "item:" .. W.SLEEPING_BAG and skin(bag).seal.shown == false, "objects and the bag use their items; a seal counts what there is more than one of")
+-- the skins fly out of the compass; the secure buttons never move
+local sk = skin(wheel)
+check(sk.shown and sk.alpha == 0 and sk.point[4] == 300 and sk.point[5] == 200 and wheel.point[4] ~= 300, "a skin starts on the compass, clear; its button is already in place")
+frames(1)
+check(sk.alpha == 1 and math.abs(sk.point[4] - wheel.point[4]) < 0.01 and math.abs(sk.point[5] - wheel.point[5]) < 0.01 and math.abs(sk.w - 42) < 0.01,
+	"and lands on its button, whole")
+check(Compass.layer.halo.alpha > 0.4 and next(Motion.tweens) == nil, "with a warm halo behind the ring, and nothing left animating")
+wheel.scripts.OnEnter(wheel); frames(0.3)
+check(sk.w > 46 and #S.tooltip >= 1, "hovering a slice grows it and names it")
+wheel.scripts.OnLeave(wheel); frames(0.3)
+check(math.abs(sk.w - 42) < 0.01, "and it settles back")
 check(sit.attributes.type == "macro" and sit.attributes.macrotext == "/sit" and cook.attributes.type == "spell" and cook.attributes.spell == "Cooking"
 	and win.attributes.type == nil, "sit is a macro, cooking a spell, the window a plain click")
 check(lightSlice.point[2] == UIParent and lightSlice.point[4] == 300 and lightSlice.point[5] == 270, "the first slice sits at twelve o'clock, placed on the screen and not on the compass")
@@ -317,7 +331,9 @@ UI.frame:Hide()
 win.scripts.PostClick(win, "LeftButton", true)
 check(UI.frame.shown == false and Compass.open, "the press does nothing by itself")
 win.scripts.PostClick(win, "LeftButton", false)
-check(UI.frame.shown and Compass.open == false and win.shown == false, "the release opens the window and closes the ring")
+check(UI.frame.shown and Compass.open == false and win.shown == false and skin(win).shown, "the release opens the window and closes the ring: buttons gone at once, skins on their way back")
+frames(1)
+check(skin(win).shown == false and Compass.layer.halo.alpha == 0 and next(Motion.tweens) == nil, "then the skins are back in the fire and the halo is out")
 C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return id == W.AURA.NEARBY and {} or nil end }
 W.db.violetToy = true
 Compass.frame:Click("LeftButton")
@@ -326,7 +342,7 @@ check(slice("Light the Journeyman campfire").action.text:find("100 yards", 1, tr
 C_UnitAuras = nil
 S.combat = true
 S.fire("PLAYER_REGEN_DISABLED")
-check(Compass.open == false and wheel.shown == false, "combat closes the ring")
+check(Compass.open == false and wheel.shown == false and skin(wheel).shown == false, "combat closes the ring at once, skins and all")
 Compass.frame:Click("LeftButton")
 check(Compass.open == false and S.printed[#S.printed] == "|cffffb454Warmth|r You are in combat.", "and it does not open in combat")
 S.combat = false
