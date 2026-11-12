@@ -159,6 +159,23 @@ function Net:GossipVendor()
 	return true
 end
 
+-- What this client tells the network's operator about Warmth when asked (a DIAG, answered only to the operator's
+-- characters): counts and switches, nothing about where the player is or who they are with. The burn times are
+-- how long this player's own campfires lasted, per tier, in seconds: the network measuring what no guide says.
+function Net.Diag()
+	local camps, mine, heard = 0, 0, 0
+	for _ in pairs(W.Camps.all) do camps = camps + 1 end
+	for _, v in pairs(W.Workshop:Vendors()) do
+		if v.mine then mine = mine + 1 else heard = heard + 1 end
+	end
+	local burn = W.db.burn or {}
+	local function flag(v) return v == true and "1" or (v == false and "0" or "-") end
+	return table.concat({ "v=" .. W.VERSION, "camps=" .. camps, "mine=" .. (W.Camps:Get(W.me) and 1 or 0),
+		"auto=" .. flag(W.db.auto ~= false), "consent=" .. flag(W.db.consent), "share=" .. flag(W.db.shareVendors ~= false),
+		"vend=" .. mine .. "/" .. heard, "burn=" .. (burn[1] or 0) .. "/" .. (burn[2] or 0) .. "/" .. (burn[3] or 0),
+		"compass=" .. flag(W.db.compass ~= false) }, ";")
+end
+
 local function OnMessage(payload, sender, dist)
 	if W.IsSecret(payload, sender, dist) or type(sender) ~= "string" then return end
 	local who = W.Short(sender)
@@ -214,6 +231,7 @@ W:On("LOADED", function()
 		if mesh.PeerStore then mesh:PeerStore(function() return W.db and W.db.meshPeers end) end
 	end
 	if CN and CN.Register then CN:Register("cf", function() return "cfv=" .. W.VERSION end) end
+	if CN and CN.RegisterDiag then CN:RegisterDiag("cf", Net.Diag) end
 end)
 W:On("LOGIN", function()
 	C_Timer.NewTicker(1800, function() Net:GossipVendor() end)

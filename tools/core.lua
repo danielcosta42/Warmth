@@ -15,6 +15,8 @@ check(W.db.toast == true and W.db.pins == true and W.db.invites == true and W.db
 check(W.db.consent == false and type(W.db.meshPeers) == "table", "a saved answer survives the defaults")
 check(S.prefix == "ChehulCamp" and S.relayable == "ChehulCamp" and S.tag == "cf" and S.caps() == "cfv=0.1.0", "one prefix, relayable, node tag cf")
 check(S.peerStore() == W.db.meshPeers, "the mesh saves its peers in WarmthDB")
+check(S.diagTag == "cf" and S.diag() == "v=0.1.0;camps=0;mine=0;auto=0;consent=0;share=1;vend=0/0;burn=0/0/0;compass=1",
+	"what the operator's diagnostic gets from Warmth: " .. S.diag())
 W.db.consent = nil
 
 -- ── task 2: data, wire, camps ──────────────────────────────────────────────
