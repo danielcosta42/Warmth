@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fogueiras: direção visual</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#17130f;color:#e9dfd0;font-family:Nunito,system-ui,sans-serif;padding:28px 20px 60px}
+  header{max-width:1240px;margin:0 auto 22px}
+  header h1{font-family:Fraunces,serif;font-weight:600;font-size:26px;margin:0 0 6px}
+  header p{margin:0;color:#a8998a;max-width:70ch;line-height:1.5}
+  .grid{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:22px}
+  .opt{border-radius:14px;cursor:pointer;outline:2px solid transparent;outline-offset:4px;transition:outline-color .2s,transform .25s}
+  .opt:hover{transform:translateY(-3px)}
+  .opt.selected{outline-color:#ffb454}
+  .tag{display:flex;align-items:baseline;gap:10px;margin:0 4px 10px}
+  .tag b{font-family:Fraunces,serif;font-size:19px}
+  .tag span{color:#a8998a;font-size:13.5px}
+  .why{margin:12px 4px 0;color:#a8998a;font-size:13.5px;line-height:1.5}
+  .win{height:540px;border-radius:14px;position:relative;overflow:hidden}
+  @keyframes flick{0%,100%{transform:scale(1) rotate(-1deg);opacity:1}40%{transform:scale(1.06,.95) rotate(1.5deg);opacity:.9}70%{transform:scale(.96,1.07) rotate(-.5deg)}}
+  @keyframes glow{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
+  @keyframes arrive{0%{opacity:0;transform:translateY(14px) scale(.8)}100%{opacity:1;transform:none}}
+  @keyframes spark{0%{transform:translate(0,0);opacity:1}100%{transform:translate(var(--dx),-70px);opacity:0}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,180,84,.55)}100%{box-shadow:0 0 0 16px rgba(255,180,84,0)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  .flame{transform-origin:50% 100%;animation:flick 1.6s ease-in-out infinite}
+
+  /* ---------- A · Brasa ---------- */
+  .a{background:radial-gradient(120% 80% at 50% 46%,#4a2a14 0%,#24160d 45%,#120c08 100%);color:#f3e6d2}
+  .a .top{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start}
+  .a .top h2{font-family:Fraunces,serif;font-weight:600;font-size:20px;margin:0}
+  .a .top small{color:#c9a983;font-size:12.5px}
+  .a .badge{font-size:11.5px;padding:4px 9px;border-radius:99px;background:rgba(255,180,84,.14);color:#ffc77a;border:1px solid rgba(255,180,84,.3)}
+  .a .ring{position:absolute;left:50%;top:232px;width:270px;height:270px;transform:translate(-50%,-50%)}
+  .a .halo{position:absolute;inset:38px;border-radius:50%;background:radial-gradient(circle,rgba(255,170,70,.55),rgba(255,120,40,.12) 55%,transparent 72%);animation:glow 3.2s ease-in-out infinite}
+  .a .fire{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%)}
+  .a .sp{position:absolute;left:50%;top:44%;width:3px;height:3px;border-radius:50%;background:#ffd08a;animation:spark 2.4s linear infinite}
+  .a .seat{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;border:2px solid;animation:arrive .7s cubic-bezier(.2,.9,.3,1.3) both;background:#2a1a10}
+  .a .seat.empty{border-style:dashed;border-color:#6b4c33;color:#6b4c33;background:transparent}
+  .a .obj{position:absolute;width:34px;height:34px;margin:-17px;border-radius:9px;background:#3a2414;border:1px solid #7a5230;display:grid;place-items:center;font-size:17px;box-shadow:0 0 14px rgba(255,150,60,.25)}
+  .a .obj.free{background:transparent;border-style:dashed;border-color:#5d4129;color:#7a5230;font-size:15px;box-shadow:none}
+  .a .foot{position:absolute;left:0;right:0;bottom:0;padding:14px 18px 18px;background:linear-gradient(transparent,rgba(10,6,4,.85) 30%)}
+  .a .buffs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .a .buffs span{font-size:12px;padding:4px 9px;border-radius:8px;background:rgba(255,255,255,.06);color:#e9d3b4}
+  .a .btns{display:flex;gap:8px}
+  .a button{flex:1;font:700 13.5px Nunito;padding:10px;border-radius:10px;border:0;cursor:pointer}
+  .a .go{background:linear-gradient(#ffb454,#f08a2c);color:#2a1505}
+  .a .bring{background:rgba(255,255,255,.08);color:#f3e6d2;border:1px solid rgba(255,255,255,.14)}
+
+  /* ---------- B · Diário de viagem ---------- */
+  .b{background:#efe4cd;color:#3a2c1c;background-image:radial-gradient(rgba(120,90,50,.09) 1px,transparent 1px);background-size:5px 5px}
+  .b .page{position:absolute;inset:14px;border:1.5px solid #b79b6c;border-radius:6px;padding:16px 18px}
+  .b h2{font-family:Fraunces,serif;font-size:21px;margin:0}
+  .b .hand{font-family:Caveat,cursive;font-size:19px;color:#8a5a2b}
+  .b .sketch{margin:10px 0 8px;height:150px;border:1.5px dashed #b79b6c;border-radius:6px;position:relative;background:linear-gradient(160deg,rgba(150,170,120,.25),rgba(200,170,110,.2))}
+  .b .sketch i{position:absolute;font-style:normal}
+  .b .pin{left:58%;top:38%;width:30px;height:30px;margin:-15px;border-radius:50%;background:#c9562b;display:grid;place-items:center;color:#fff3df;font-size:15px;animation:pulse 2s infinite}
+  .b .you{left:22%;top:70%;font-family:Caveat,cursive;font-size:18px;color:#5d7a3c}
+  .b .path{position:absolute;left:24%;top:42%;width:35%;height:30%;border-top:2px dashed #8a5a2b;border-right:2px dashed #8a5a2b;border-radius:0 40px 0 0;opacity:.6}
+  .b .stamp{position:absolute;right:16px;top:14px;transform:rotate(7deg);border:2px solid #c9562b;color:#c9562b;border-radius:6px;padding:3px 8px;font:700 11px Nunito;letter-spacing:.08em;text-transform:uppercase}
+  .b h3{font-family:Fraunces,serif;font-size:14px;margin:12px 0 6px;border-bottom:1px solid #cdb78e;padding-bottom:3px}
+  .b ul{list-style:none;margin:0;padding:0;font-size:13.5px}
+  .b li{display:flex;justify-content:space-between;padding:3px 0}
+  .b li em{font-family:Caveat,cursive;font-style:normal;font-size:17px;color:#8a5a2b}
+  .b .who{display:flex;gap:6px;flex-wrap:wrap;font-size:12.5px}
+  .b .who span{padding:2px 8px;border:1px solid #b79b6c;border-radius:99px;animation:arrive .6s both}
+  .b .btns{position:absolute;left:18px;right:18px;bottom:14px;display:flex;gap:8px}
+  .b button{flex:1;font:700 13.5px Nunito;padding:9px;border-radius:6px;cursor:pointer;border:1.5px solid #3a2c1c;background:transparent;color:#3a2c1c}
+  .b .go{background:#3a2c1c;color:#efe4cd}
+
+  /* ---------- C · Lanterna ---------- */
+  .c{background:linear-gradient(#1c2740 0%,#2b3350 55%,#4a3b4a 100%);color:#eef0f7}
+  .c .stars{position:absolute;inset:0;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:70px 60px;opacity:.18}
+  .c .card{position:absolute;left:16px;right:16px;top:16px;background:rgba(18,24,40,.72);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px}
+  .c .head{display:flex;gap:12px;align-items:center}
+  .c .lamp{width:52px;height:52px;border-radius:16px;background:radial-gradient(circle at 50% 60%,#ffd27a,#f0993c 60%,#8a4a1c);display:grid;place-items:center;box-shadow:0 0 26px rgba(255,190,100,.5);animation:glow 3s ease-in-out infinite}
+  .c h2{font-family:Fraunces,serif;font-size:18px;margin:0}
+  .c small{color:#a9b2cc;font-size:12.5px}
+  .c .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 4px}
+  .c .slot{aspect-ratio:1;border-radius:14px;background:rgba(255,255,255,.07);display:grid;place-items:center;font-size:20px;border:1px solid rgba(255,255,255,.1)}
+  .c .slot.free{border-style:dashed;color:#7f8ab0;font-size:15px;background:transparent}
+  .c .cap{font-size:12px;color:#a9b2cc;margin-bottom:12px}
+  .c .people{display:flex;align-items:center;margin-bottom:12px}
+  .c .people span{width:34px;height:34px;border-radius:50%;margin-right:-8px;display:grid;place-items:center;font:700 12px Nunito;border:2px solid #1c2740;animation:arrive .6s both}
+  .c .people b{margin-left:18px;font-weight:600;font-size:13px;color:#d6dbee}
+  .c .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08)}
+  .c .row i{font-style:normal;color:#ffd27a}
+  .c .list{position:absolute;left:16px;right:16px;bottom:16px;display:grid;gap:8px}
+  .c .item{display:flex;justify-content:space-between;align-items:center;background:rgba(18,24,40,.6);border-radius:14px;padding:10px 14px;font-size:13px;border:1px solid rgba(255,255,255,.08)}
+  .c .item small{display:block}
+  .c button{font:700 13px Nunito;padding:9px 14px;border-radius:12px;border:0;cursor:pointer;background:#ffd27a;color:#3a2408}
+  .c .btns{display:flex;gap:8px;margin-top:12px}
+  .c .btns button{flex:1}
+  .c .ghost{background:rgba(255,255,255,.1);color:#eef0f7}
+</style>
+</head>
+<body>
+<header>
+  <h1>Qual destas tem a cara do addon?</h1>
+  <p>O mesmo acampamento, em três direções. Olhe o clima, não os detalhes: cores, forma e o jeito que as pessoas aparecem. Tudo aqui dá para fazer no jogo (texturas, brilho pulsando, gente entrando com animação). Clique na que mais te puxa, ou diga "A com o mapa da B".</p>
+</header>
+
+<div class="grid">
+
+  <!-- A -->
+  <div class="opt" data-choice="A-brasa" onclick="toggleSelect(this)">
+    <div class="tag"><b>A · Brasa</b><span>noite, calor do fogo, roda de gente</span></div>
+    <div class="win a">
+      <div class="top">
+        <div><h2>Acampamento de Ana Lima</h2><small>Durotar · aceso há 12 min · 140 m de você</small></div>
+        <span class="badge">Journeyman</span>
+      </div>
+      <div class="ring">
+        <div class="halo"></div>
+        <i class="sp" style="--dx:-18px"></i><i class="sp" style="--dx:14px;animation-delay:.8s"></i><i class="sp" style="--dx:4px;animation-delay:1.5s"></i>
+        <svg class="fire" width="74" height="92" viewBox="0 0 74 92">
+          <g class="flame"><path d="M37 4c10 16 26 26 26 48a26 26 0 0 1-52 0c0-12 6-18 10-26 2 8 6 12 8 12 0-12 2-22 8-34z" fill="#f0872a"/>
+          <path d="M37 34c6 8 14 14 14 24a14 14 0 0 1-28 0c0-8 6-12 8-18 2 4 4 6 6 6z" fill="#ffd27a"/></g>
+          <rect x="10" y="80" width="54" height="8" rx="4" fill="#5a3a22" transform="rotate(-8 37 84)"/><rect x="10" y="80" width="54" height="8" rx="4" fill="#6b452a" transform="rotate(8 37 84)"/>
+        </svg>
+        <!-- gente sentada: anel externo -->
+        <span class="seat" style="left:50%;top:0;border-color:#ff7c0a;color:#ff7c0a">An</span>
+        <span class="seat" style="left:97%;top:36%;border-color:#3fc7eb;color:#3fc7eb;animation-delay:.15s">Ca</span>
+        <span class="seat" style="left:79%;top:90%;border-color:#f48cba;color:#f48cba;animation-delay:.3s">Bi</span>
+        <span class="seat" style="left:21%;top:90%;border-color:#aad372;color:#aad372;animation-delay:.45s">Da</span>
+        <span class="seat empty" style="left:3%;top:36%">você</span>
+        <!-- objetos: anel interno -->
+        <span class="obj" style="left:50%;top:22%" title="Camp Tent">⛺</span>
+        <span class="obj" style="left:77%;top:42%" title="Mana Well">💧</span>
+        <span class="obj" style="left:67%;top:74%" title="Repair Bot">🔧</span>
+        <span class="obj free" style="left:33%;top:74%">+</span>
+        <span class="obj free" style="left:23%;top:42%">+</span>
+      </div>
+      <div class="foot">
+        <div class="buffs"><span>⛺ XP de descanso</span><span>💧 Regeneração de mana</span><span>🔧 Conserto</span><span>2 espaços livres</span></div>
+        <div class="btns"><button class="go">Ir até lá</button><button class="bring">Levo minha Sharpening Wheel</button></div>
+      </div>
+    </div>
+    <p class="why">A fogueira é o centro e a comunidade senta em volta. Quem chega aparece na roda com uma animação; os objetos ficam entre as pessoas e o fogo. O lugar vazio com "você" é o convite.</p>
+  </div>
+
+  <!-- B -->
+  <div class="opt" data-choice="B-diario" onclick="toggleSelect(this)">
+    <div class="tag"><b>B · Diário de viagem</b><span>papel, tinta, anotação à mão</span></div>
+    <div class="win b"><div class="page">
+      <span class="stamp">Aceso</span>
+      <h2>Acampamento de Ana Lima</h2>
+      <div class="hand">Durotar, ao sul da Colina da Navalha</div>
+      <div class="sketch"><div class="path"></div><i class="pin">🔥</i><i class="you">você ✕</i></div>
+      <h3>O que tem no fogo <span style="float:right;font-weight:400">3 de 5</span></h3>
+      <ul>
+        <li><span>⛺ Camp Tent</span><em>XP de descanso</em></li>
+        <li><span>💧 Mana Well</span><em>mana volta mais rápido</em></li>
+        <li><span>🔧 Repair Bot</span><em>conserta de graça</em></li>
+      </ul>
+      <h3>Quem está na roda</h3>
+      <div class="who"><span>Ana Lima</span><span style="animation-delay:.15s">Caio Nunes</span><span style="animation-delay:.3s">Bia Rocha</span><span style="animation-delay:.45s">Davi Sol</span></div>
+      <div class="hand" style="margin-top:10px">falta: força, intelecto. Sua Sharpening Wheel cabe!</div>
+      <div class="btns"><button class="go">Ir até lá</button><button>Levo a minha</button></div>
+    </div></div>
+    <p class="why">O addon como caderno de quem viaja: cada acampamento é uma página com um croqui do caminho e notas à mão. Aconchegante de outro jeito, mais calmo e mais legível de dia.</p>
+  </div>
+
+  <!-- C -->
+  <div class="opt" data-choice="C-lanterna" onclick="toggleSelect(this)">
+    <div class="tag"><b>C · Lanterna</b><span>anoitecer, cartões macios, direto ao ponto</span></div>
+    <div class="win c"><div class="stars"></div>
+      <div class="card">
+        <div class="head"><div class="lamp">🔥</div><div><h2>Acampamento de Ana Lima</h2><small>Durotar · 140 m · Journeyman</small></div></div>
+        <div class="slots"><div class="slot">⛺</div><div class="slot">💧</div><div class="slot">🔧</div><div class="slot free">+</div><div class="slot free">+</div></div>
+        <div class="cap">3 de 5 objetos · descanso, mana, conserto</div>
+        <div class="people"><span style="background:#ff7c0a">An</span><span style="background:#3fc7eb;animation-delay:.15s">Ca</span><span style="background:#f48cba;animation-delay:.3s">Bi</span><span style="background:#aad372;color:#1c2740;animation-delay:.45s">Da</span><b>4 na roda agora</b></div>
+        <div class="row"><span>Você pode levar</span><i>Sharpening Wheel</i></div>
+        <div class="btns"><button>Ir até lá</button><button class="ghost">Levo a minha</button></div>
+      </div>
+      <div class="list">
+        <div class="item"><div>Fogueira de Rui Novo<small>The Barrens · 1 na roda · 1 de 3</small></div><span>⛺</span></div>
+        <div class="item"><div>Acampamento dos Filhos da Horda<small>Mulgore · 7 na roda · 5 de 5</small></div><span>⛺💧🔧</span></div>
+      </div>
+    </div>
+    <p class="why">Mais próximo de um app: cartões arredondados, espaços dos objetos numa fileira, lista de outras fogueiras embaixo. Menos atmosfera, mais leitura rápida e mais fácil de casar com o resto da família Chehul.</p>
+  </div>
+</div>
+</body>
+</html>

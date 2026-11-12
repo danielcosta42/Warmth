@@ -1,0 +1,38 @@
+name: Lint
+
+# Blocking checks on every push and pull request: luacheck (undefined globals included, see .luacheckrc), the
+# textures, every harness in tools/ and the ChehulNet lock. The addon cannot always be run in game before a
+# merge, so this is the net.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.1, LuaRocks and LuaJIT
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1 luarocks luajit > /dev/null
+
+      - name: Install luacheck
+        run: sudo luarocks install luacheck > /dev/null
+
+      - name: luacheck
+        run: luacheck Core UI
+
+      - name: Textures
+        # Media/*.tga come from tools/gen-media.py (standard library only); a hand-edited or stale texture fails.
+        run: python3 -I tools/gen-media.py --check
+
+      - name: Harnesses
+        # core.lua and ui.lua run the real addon files under a simulated Forever client (wowstub.lua) and exit 1
+        # on the first failed check.
+        run: luajit tools/core.lua && luajit tools/ui.lua
+
+      - name: ChehulNet copies
+        # Libs/LibChehulMesh.lua and Libs/ChehulNet.lua come from danielcosta42/chehulnet through its
+        # tools/sync.sh; a copy edited here would be lost at the next sync.
+        run: bash tools/chehulnet-lock.sh
