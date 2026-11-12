@@ -35,5 +35,5 @@ Primeira versão, para o **WoW: Forever** (interface 16001).
 - `/warmth probe` grava o que o cliente revela sobre acampamentos, para conferir no jogo o que hoje vem de guias.
 - Em inglês e em português do Brasil.
 
-Roda na ChehulNet (lib v1.3.0). Enquanto os outros addons da família não repassam os anúncios de fogueira, o
-alcance é a guilda, o grupo e alguns pares além deles.
+Roda na ChehulNet (lib v1.4.0), em que GuildOS, Lodestar e PartyLens repassam os anúncios de fogueira: o alcance
+cresce conforme os jogadores atualizam esses addons.
