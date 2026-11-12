@@ -28,6 +28,7 @@ Core/Wire.lua
 Core/Camps.lua
 Core/Net.lua
 Core/Watch.lua
+Core/Workshop.lua
 Core/Probe.lua
 
 UI/Theme.lua
@@ -36,6 +37,7 @@ UI/Widgets.lua
 UI/Ring.lua
 UI/Window.lua
 UI/Views.lua
+UI/Workshop.lua
 UI/Pins.lua
 UI/Compass.lua
 UI/Toast.lua

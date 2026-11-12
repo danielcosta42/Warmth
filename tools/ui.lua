@@ -270,6 +270,46 @@ UI.options.checks[7]:Click()
 check(W.db.lessMotion == true, "the less-motion switch")
 W.db.lessMotion = false
 
+-- ── the Workshop view ──────────────────────────────────────────────────────
+S.profs = { { "Leatherworking", 45, 75, 165 }, { "Skinning", 188, 225, 393 } }
+S.known = { [W.RECIPES[W.TENT]] = true, [W.RECIPES[22]] = true }
+local takes = { [W.RECIPES[W.TENT]] = { { 2318, 5 } }, [W.RECIPES[22]] = { { 2318, 3 }, { 4470, 2 } } }
+C_TradeSkillUI = { OpenTradeSkill = function(line) S.opened = line; return true end, GetRecipeSchematic = function(id)
+	local slots = {}
+	for i, r in ipairs(takes[id] or {}) do slots[i] = { quantityRequired = r[2], reagents = { { itemID = r[1] } } } end
+	return { reagentSlotSchematics = slots }
+end }
+S.bags = { [2318] = 5 }
+UI:Show("list")
+UI.views.list.work:Click()
+local ws = UI.views.workshop
+check(UI.view == "workshop" and UI.title.text == "Workshop" and #ws.list.items == 6 and UI.back.shown, "the Workshop lists the objects of my two professions")
+check(ws.list.rows[1].title.text == "Camp Tent" and ws.list.rows[1].status.text:find("can make 1", 1, true) and ws.list.rows[1].sel.shown
+	and ws.list.rows[1].mats.text:find("5/5", 1, true), "ready first, selected, with its materials")
+check(ws.advice.text:find("Open Leatherworking to craft it", 1, true) and ws.act.shown and ws.act.label.text == "Open Leatherworking", "what to do about it")
+ws.act:Click()
+check(S.opened == 165, "the button opens the profession")
+ws.list.rows[2]:Click()
+check(UI.workSel == 22 and ws.list.rows[2].status.text:find("materials missing", 1, true) and ws.advice.text:find("sold by Xen'to (Zone1454)", 1, true)
+	and ws.act.label.text == "Mark Xen'to on the map", "a material short: who sells it, and a button to mark the vendor")
+ws.act:Click()
+check(S.waypoint.map == 1454 and S.waypoint.x == 0.575, "the vendor is marked on the map")
+ws.list.rows[3]:Click()
+check(ws.advice.text:find("needs a blueprint", 1, true) and ws.act.shown == false, "not learned: where the recipe comes from, and nothing to click")
+-- a camp says what I could craft for it
+S.bags = { [2318] = 5 }
+local needy = announce("Needs A Tent", { x = 0.5005, objs = { 1 }, tier = 2 })
+UI:Show("camp", "Needs A Tent")
+check(UI.views.camp.hint.text:find("You can craft a Camp Tent for this camp", 1, true), "a camp without a tent, and I can make one")
+S.bags = {}
+UI:Render()
+check(UI.views.camp.hint.text:find("You could craft a Camp Tent for this camp; the Workshop says what is missing", 1, true), "or could, with the materials")
+Camps:End("Needs A Tent")
+S.profs, S.known, C_TradeSkillUI, S.bags = nil, nil, nil, {}
+UI:Show("workshop")
+check(ws.empty.text:find("no profession", 1, true) and ws.act.shown == false, "no profession reported: the view says so")
+UI:Show("list")
+
 -- ── the compass and its ring ───────────────────────────────────────────────
 local Compass = UI.Compass
 for owner in pairs(Camps.all) do Camps:End(owner) end
@@ -392,11 +432,10 @@ check(W.Probe.on and #W.db.probe.api > 30 and #W.db.probe.items == 42 and W.db.p
 check(#W.db.probe.recipes == 35 and W.db.probe.recipes[4]:find("Sharpening Wheel", 1, true) and W.db.probe.recipes[4]:find("recipe=1230171", 1, true),
 	"and the 35 camp recipes, with whether the client knows them")
 -- a merchant, a trainer and a profession window are written down when opened
-function GetMerchantNumItems() return 2 end
-function GetMerchantItemID(i) return ({ 4470, 2320 })[i] end
+S.merchant, S.npc = { 4470, 2320 }, "Creature-0-1-1-1-3313-0"
 function GetMerchantItemInfo(i) return ({ "Simple Wood", "Coarse Thread" })[i], nil, ({ 38, 10 })[i] end
-function UnitGUID(unit) return unit == "npc" and "Creature-0-1-1-1-3313-0" or nil end
 S.fire("MERCHANT_SHOW")
+check(#S.take() == 2, "(the Workshop told the network about this vendor of Simple Wood; that is its own doing)")
 C_TradeSkillUI = {
 	GetBaseProfessionInfo = function() return { professionName = "Blacksmithing", skillLevel = 95 } end,
 	GetAllRecipeIDs = function() return { 2660, 1230171 } end,

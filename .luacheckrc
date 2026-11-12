@@ -42,6 +42,8 @@ files["Core/Locale.lua"] = { max_line_length = false }
 files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
 files["UI/Entry.lua"] = { max_line_length = false }
+files["UI/Workshop.lua"] = { max_line_length = false }
+files["Core/Workshop.lua"] = { max_line_length = false }
 files["UI/Compass.lua"] = { max_line_length = false }
 files["UI/Options.lua"] = { max_line_length = false }
 files["Core/Probe.lua"] = { max_line_length = false }

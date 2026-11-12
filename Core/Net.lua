@@ -136,6 +136,28 @@ function Net:AnswerInvite(name, accept)
 	if invite then pcall(invite, name) end
 end
 
+-- A vendor of camp materials, told to the network. Nothing about the player is in it. Coalesced per npc.
+function Net:ShareVendor(npc)
+	local v, mesh = W.Workshop:Vendors()[npc], Mesh()
+	if not (v and mesh) then return false end
+	local payload = W.Wire.Vendor(npc, v)
+	mesh:Guild(self.PREFIX, payload)
+	mesh:Realm(self.PREFIX, payload, "V" .. npc, true)
+	return true
+end
+
+-- Every half hour one vendor from the book goes out again, first-hand ones first: that is how a player who
+-- installs Warmth next month still hears of a vendor someone opened today. One message per client per half hour.
+function Net:GossipVendor()
+	local mine, heard = {}, {}
+	for npc, v in pairs(W.Workshop:Vendors()) do
+		if v.mine then mine[#mine + 1] = npc elseif (v.at or 0) > 0 then heard[#heard + 1] = npc end
+	end
+	local pool = #mine > 0 and mine or heard
+	if #pool == 0 then return false end
+	return self:ShareVendor(pool[math.random(#pool)])
+end
+
 local function OnMessage(payload, sender, dist)
 	if W.IsSecret(payload, sender, dist) or type(sender) ~= "string" then return end
 	local who = W.Short(sender)
@@ -146,6 +168,13 @@ local function OnMessage(payload, sender, dist)
 		if W.Wire.GoodName(who) then W.Camps:Announce(who, msg) end
 	elseif msg.kind == "X" then
 		W.Camps:End(who)
+	elseif msg.kind == "V" then
+		-- hearsay is fine for a map marker; only items this client knows as camp materials are kept
+		local wanted, items = W.Workshop:Wanted(), {}
+		for _, id in ipairs(msg.items) do
+			if wanted[id] then items[#items + 1] = id end
+		end
+		if #items > 0 then W.Workshop:Learn(msg.npc, { name = msg.name, map = msg.map, x = msg.x, y = msg.y, items = items }, false) end
 	elseif dist == "RELAY" then
 		return -- presence and invite requests rest on who sent them
 	elseif msg.kind == "J" then
@@ -186,6 +215,7 @@ W:On("LOADED", function()
 	if CN and CN.Register then CN:Register("cf", function() return "cfv=" .. W.VERSION end) end
 end)
 W:On("LOGIN", function()
+	C_Timer.NewTicker(1800, function() Net:GossipVendor() end)
 	local add = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
 	if add then pcall(add, "CHAT_MSG_SYSTEM", FilterNotFound) end
 end)

@@ -340,5 +340,61 @@ S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.VIOLET_DUST_SPELL)
 check(W.db.violetToy == true, "throwing Violet Dust tells the addon the player owns the toy")
 C_UnitAuras = nil
 
+-- ── the Workshop ───────────────────────────────────────────────────────────
+local Workshop = W.Workshop
+check(W.SKILL[1] == 20 and W.SKILL[2] == 140 and W.SKILL[3] == 300 and W.SKILL[28] == 140 and W.SKILL[29] == 300 and W.SKILL[30] == 20,
+	"each object's skill: 20, 140, 300, and Cooking's two start at 140")
+check(#Workshop:List() == 0, "no profession reported: nothing to list")
+S.profs = { { "Leatherworking", 45, 75, 165 }, { "Skinning", 188, 225, 393 }, { "First Aid", 60, 150, 129 } }
+S.known = { [W.RECIPES[W.TENT]] = true, [W.RECIPES[22]] = true }
+local schem = {
+	[W.RECIPES[W.TENT]] = { { 2318, 5 } }, [W.RECIPES[17]] = { { 2319, 5 }, { 2321, 3 }, { 4470, 2 } },
+	[W.RECIPES[22]] = { { 2318, 3 }, { 4470, 2 } }, [W.RECIPES[30]] = { { 1251, 3 }, { 159, 1 } },
+}
+C_TradeSkillUI = { OpenTradeSkill = function(line) S.opened = line; return true end, GetRecipeSchematic = function(id)
+	local slots = {}
+	for i, r in ipairs(schem[id] or {}) do slots[i] = { quantityRequired = r[2], reagents = { { itemID = r[1] } } } end
+	return { reagentSlotSchematics = slots }
+end }
+S.bags = { [2318] = 11 }
+local by = {}
+for _, e in ipairs(Workshop:List()) do by[W.OBJECTS[e.index][2]] = e end
+check(by["Camp Tent"].state == "ready" and by["Camp Tent"].can == 2 and Workshop:List()[1].index == W.TENT, "learned, with materials: ready, how many, listed first")
+check(by["Camp Chair"].state == "materials" and by["Camp Chair"].reagents[2].item == 4470 and by["Camp Chair"].reagents[2].have == 0, "learned, a material short")
+check(by["First Aid Kit"].state == "recipe" and by["Tanning Rack"].state == "skill" and by["Tanning Rack"].need == 140 and by["Tanning Rack"].rank == 45,
+	"skill enough but not learned: the recipe; skill short: the skill")
+check(by["Mana Well"] == nil and by["Field Guide"].state == "recipe", "another profession's objects are not listed; mine all are")
+check(Workshop:Open(165) and S.opened == 165, "opening the profession")
+
+-- vendors: the seed, learning one by opening it, telling the network, hearing others
+check(Workshop:Vendor(4470).name == "Xen'to" and Workshop:Vendor(2321) == nil, "the measured Orgrimmar supplier is known from the start")
+S.take()
+S.npc, S.merchant = "Creature-0-1-1-1-3313-0000", { 4470, 2320, 2321, 9999 }
+S.fire("MERCHANT_SHOW")
+local trade = Workshop:Vendors()[3313]
+check(trade and trade.mine and trade.map == 1411 and #trade.items == 2 and trade.items[2] == 2321, "opening a vendor of camp materials writes it down, with only the items that matter")
+local told = S.take()
+check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|3313|1411|5000|5000|4470,2321|Chehul",
+	"and tells the network who, where and what: " .. tostring(told[2] and told[2].payload))
+S.fire("MERCHANT_SHOW")
+check(#S.take() == 0, "the same vendor again is not news")
+S.npc, S.merchant = "Creature-0-1-1-1-777-0000", { 9999, 8888 }
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[777] == nil and #S.take() == 0, "a vendor with nothing for a camp is ignored")
+local vend, yards = Workshop:Vendor(4470)
+check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item, on my map before another zone")
+S.handler("C2|V|4000|1411|5100|5000|2321,159,777777|Far Trader", "Someone Else", "RELAY")
+check(Workshop:Vendors()[4000] and #Workshop:Vendors()[4000].items == 2 and not Workshop:Vendors()[4000].mine, "a vendor heard on the network is kept, with the items that are camp materials")
+S.handler("C2|V|3313|1412|1|1|4470|Liar", "Someone Else", "RELAY")
+check(Workshop:Vendors()[3313].map == 1411 and Workshop:Vendors()[3313].name == "Chehul", "hearsay never replaces a vendor I opened myself")
+for _, bad in ipairs({ "C2|V|0|1411|1|1|4470|x", "C2|V|5|1411|10001|1|4470|x", "C2|V|5|1411|1|1||x", "C2|V|5|1411|1|1|abc|x", "C2|V|5|1411|1|1|4470|",
+	"C2|V|5|1411|1|1|4470|a|extra", "C2|V|5|1411|1|1|1,2,3,4,5,6,7,8,9,10,11,12,13|x", "C2|V|5|1411|1|1|4470|bad;name" }) do
+	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
+end
+S.handler("C2|V|4001|1411|5000|5000|777777|Nothing Useful", "Someone Else", "RELAY")
+check(Workshop:Vendors()[4001] == nil, "a vendor selling nothing this client knows as camp material is not kept")
+check(W.Net:GossipVendor() and S.take("Realm")[1].payload:find("^C2|V|3313|"), "every half hour one vendor goes out again, first-hand first")
+S.bags, S.profs, S.known, C_TradeSkillUI = {}, nil, nil, nil
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")

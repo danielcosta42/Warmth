@@ -6,7 +6,7 @@ local function Keys(W)
 	local function add(k)
 		if type(k) == "string" and k ~= "" and not seen[k] then seen[k] = true; keys[#keys + 1] = k end
 	end
-	for _, file in ipairs({ "Ring", "Window", "Views", "Pins", "Toast", "Options", "Entry" }) do
+	for _, file in ipairs({ "Ring", "Window", "Views", "Workshop", "Compass", "Pins", "Toast", "Options", "Entry" }) do
 		local f = assert(io.open("UI/" .. file .. ".lua"))
 		local src = f:read("*a")
 		f:close()

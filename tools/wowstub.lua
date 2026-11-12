@@ -68,6 +68,13 @@ function GetPlayerFacing() return S.facing or 0 end
 function GetCVar(name) return S.cvars and S.cvars[name] or "0" end
 function IsInGuild() return S.guild end
 function InCombatLockdown() return S.combat or false end
+-- professions as GetProfessions / GetProfessionInfo report them: S.profs = { { name, rank, max, line } }
+function GetProfessions() local out = {}; for i in ipairs(S.profs or {}) do out[i] = i end; return unpack(out) end
+function GetProfessionInfo(i) local p = (S.profs or {})[i]; if p then return p[1], "icon", p[2], p[3], 0, 0, p[4] end end
+function IsPlayerSpell(id) return (S.known or {})[id] == true end
+function UnitGUID(unit) return unit == "npc" and S.npc or nil end
+function GetMerchantNumItems() return #(S.merchant or {}) end
+function GetMerchantItemID(i) return (S.merchant or {})[i] end
 function GetBuildInfo() return "1.60.1", "70862", "", 16001 end
 function IsInGroup() return false end
 function IsInRaid() return false end

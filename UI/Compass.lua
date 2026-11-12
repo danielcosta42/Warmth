@@ -80,6 +80,8 @@ function Compass.Actions()
 		out[#out + 1] = { kind = "macro", macro = "/use Pouch of Violet Dust", violet = true, title = "Pouch of Violet Dust",
 			text = L["Violet flames: the benefits of this fire last two hours instead of one."] }
 	end
+	out[#out + 1] = { kind = "fn", fn = function() UI:Show("workshop") end, icon = "Interface\\Icons\\Trade_Engineering", title = L["Workshop"],
+		text = L["What your professions can make for a camp, and what is missing."] }
 	out[#out + 1] = { kind = "fn", fn = function() UI:Toggle() end, icon = UI.MEDIA .. "logo", title = "Warmth", text = L["Open the window"] }
 	return out
 end

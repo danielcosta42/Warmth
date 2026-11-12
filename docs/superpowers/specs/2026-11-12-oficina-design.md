@@ -46,18 +46,23 @@ a barra). Para os de vendedor, "Marcar no mapa" põe o marcador do jogo no vende
 A lista de materiais de vendedor ainda precisa ser levantada (madeira, frascos, linhas, especiarias, água, farinha);
 o resto é coleta ou fabricação.
 
-## A medir antes de construir
+## Medido no jogo (2026-11-12, build 1.60.1.70888)
 
-A sonda (`/warmth probe`) já grava o que falta saber. Uma rodada abrindo uma profissão, um vendedor e um instrutor
-responde:
-
-| Pergunta | O que muda |
+| Pergunta | Resposta |
 |---|---|
-| O cliente diz as profissões e a perícia sem abrir a janela? | Se não, a Oficina pede para abrir cada profissão uma vez |
-| Dá para saber que uma receita foi aprendida? (os ids de receita vieram de um guia só) | Se não, "falta a receita" e "falta material" viram um estado só |
-| O cliente dá os materiais de uma receita? | Se sim, a tabela de materiais do guia vira só reserva |
-| Como o cliente lista os itens de um vendedor e identifica o NPC? | Define o aprendizado pela rede |
-| A missão "Camping 101" aparece como concluída? | Diz se a receita de nível 1 já foi pega |
+| O cliente diz as profissões e a perícia sem abrir a janela? | Sim: `GetProfessions` + `GetProfessionInfo` (nome, perícia, máximo, linha de perícia) |
+| Dá para saber que uma receita foi aprendida? | Sim: `IsPlayerSpell(receita)`. Os 35 ids de receita do guia conferem com os nomes do cliente |
+| O cliente dá os materiais de uma receita? | Sim: `C_TradeSkillUI.GetRecipeSchematic(receita)`, com id e quantidade de cada material |
+| Como o cliente lista um vendedor? | `UnitGUID("npc")` traz o id do NPC; `GetMerchantNumItems` + `GetMerchantItemID` listam os itens |
+| Na janela de profissão | No `TRADE_SKILL_SHOW` a lista de receitas ainda é a da janela anterior: quem precisar dela lê no `TRADE_SKILL_LIST_UPDATE`. A Oficina não depende disso |
+
+Vendedor medido: Xen'to (NPC 3400, Orgrimmar 57.5, 53.1) vende Simple Wood, Star Wood, Thick Logs, Flint and Tinder,
+Refreshing Spring Water, Soothing Spices e Simple Flour. É a única entrada da tabela inicial: não inventei posições
+que não medi; o resto vem da rede.
+
+Ainda não medido: se `GetRecipeSchematic` responde antes de qualquer janela de profissão ter sido aberta na sessão
+(se não responder, a linha pede "abra a profissão uma vez"); os instrutores (a sonda não conseguiu listar o que
+ensinam); os kits de fogueira ficaram na tela "Set up a camp", não na Oficina.
 
 ## Fora desta versão
 

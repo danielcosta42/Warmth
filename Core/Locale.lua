@@ -137,6 +137,29 @@ local ptBR = {
 	["The campfires you light are announced to the network by themselves (see the options)."] = "As fogueiras que você acende são anunciadas à rede sozinhas (veja as opções).",
 	["Campfire lit and announced to the network. (You can turn the automatic announce off in the options.)"] =
 		"Fogueira acesa e anunciada à rede. (Dá para desligar o anúncio automático nas opções.)",
+	-- the workshop
+	["Workshop"] = "Oficina",
+	["What your professions can make for a camp, and what is missing."] = "O que as suas profissões fazem para um acampamento, e o que falta.",
+	["can make %d"] = "dá para fazer %d",
+	["materials missing"] = "falta material",
+	["recipe not learned"] = "receita não aprendida",
+	["needs %s %d"] = "pede %s %d",
+	["open %s once"] = "abra %s uma vez",
+	["You have everything for %d. Open %s to craft it."] = "Você tem tudo para %d. Abra %s para fabricar.",
+	["Open %s"] = "Abrir %s",
+	["Open %s once so the game says what %s takes."] = "Abra %s uma vez para o jogo dizer o que %s leva.",
+	["%s needs %s %d; you have %d."] = "%s pede %s %d; você tem %d.",
+	["Learn %s from your %s trainer, or from the Camping 101 quest."] = "Aprenda %s com o instrutor de %s, ou pela missão Camping 101.",
+	["%s needs a blueprint, reported to drop from %s."] = "%s pede um projeto, que dizem cair de %s.",
+	["%s needs a blueprint; where it drops is not known yet."] = "%s pede um projeto; ainda não se sabe de onde cai.",
+	["%s: sold by %s (%s)."] = "%s: vendido por %s (%s).",
+	["Mark %s on the map"] = "Marcar %s no mapa",
+	["%s: no vendor known. It is gathered or crafted, or nobody on the network has opened its vendor yet."] =
+		"%s: nenhum vendedor conhecido. É coletado ou fabricado, ou ninguém na rede abriu o vendedor dele ainda.",
+	["The game reports no profession for this character yet. Every profession makes its own camp objects, from skill 20."] =
+		"O jogo não informa nenhuma profissão neste personagem ainda. Cada profissão faz os seus objetos de acampamento, a partir de 20 de perícia.",
+	["You can craft a %s for this camp."] = "Você consegue fabricar %s para este acampamento.",
+	["You could craft a %s for this camp; the Workshop says what is missing."] = "Você poderia fabricar %s para este acampamento; a Oficina diz o que falta.",
 	-- the compass
 	["%d yd"] = "%d jardas",
 	["Sit"] = "Sentar",

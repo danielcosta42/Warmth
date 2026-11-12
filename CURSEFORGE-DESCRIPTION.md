@@ -12,6 +12,7 @@ Somewhere out there, someone just lit a campfire. Warmth puts it on your map: wh
 - **The circle fills up.** People who walk up to your fire appear around it, with the object they brought. An empty seat marked "you" waits on every camp you look at.
 - **Zone copies.** Forever runs several copies of a zone at once. Warmth marks camps that are in another copy, and lets you ask the owner for a group invite to land in theirs.
 - **A heads-up nearby.** A quiet toast when someone announces a campfire in the zone you are in.
+- **The Workshop.** Every camp object your professions can make: ready to craft, missing materials, missing skill or recipe, and what each one takes. One click opens the profession or marks the vendor of what you lack; vendors are learned by the network as players visit them.
 - **A compass and a ring of camp actions.** A small campfire on your screen points to the most useful fire nearby. Click it and a ring opens: light your kit, place your camp object, unroll the sleeping bag, sit, cook.
 
 ## You decide what is shared
