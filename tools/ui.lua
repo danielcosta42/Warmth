@@ -1,0 +1,222 @@
+-- The whole addon (Core/ and UI/) under a simulated client: motion bounds, the three views, pins, toast,
+-- questions, options, entry points and the ptBR table.
+--   luajit tools/ui.lua        (from the repository root)
+local S = dofile("tools/wowstub.lua")
+local check = S.check
+local W = S.load("Core/", "UI/")
+S.fire("ADDON_LOADED", "Warmth")
+S.fire("PLAYER_LOGIN")
+local UI, Camps, Motion = W.UI, W.Camps, W.UI.Motion
+local function announce(owner, f)
+	local base = { map = 1411, x = 0.5, y = 0.5, zuid = 0, tier = 1, n = 1, objs = {}, people = {}, note = "" }
+	for k, v in pairs(f or {}) do base[k] = v end
+	return Camps:Announce(owner, base)
+end
+local function draws(what, fn)
+	local ok, err = pcall(fn)
+	check(ok, what .. " draws without error: " .. tostring(err))
+end
+
+-- ── the locale ─────────────────────────────────────────────────────────────
+local keys = dofile("tools/keys.lua")(W)
+check(#keys > 120, "the key list sees the strings: " .. #keys)
+for _, k in ipairs(keys) do
+	local t = W.LOCALES.ptBR[k]
+	check(t ~= nil, "ptBR lacks: " .. k)
+	local function specs(s) local out = {}; for spec in s:gmatch("%%[%d%.]*[dsf]") do out[#out + 1] = spec end; return table.concat(out) end
+	check(specs(k) == specs(t), "ptBR keeps the format of: " .. k)
+end
+check(W.L["Lit campfires"] == "Lit campfires" and W.L["never translated"] == "never translated", "English is the default")
+
+-- ── task 5: motion stays within bounds ─────────────────────────────────────
+draws("the empty list", function() UI:Show("list") end)
+check(UI.frame.shown and UI.views.list.shown and UI.views.list.empty.text:find("first warm spot", 1, true), "an empty list explains itself and invites")
+check(UI.title.text == "Lit campfires" and UI.back.shown == false, "the list is the home view")
+
+local ana = announce("Ana Lima", { x = 0.501, tier = 2, n = 4, objs = { W.TENT, W.REPAIR }, note = "tent | here",
+	people = { { name = "Ana Lima", class = 9 }, { name = "Caio Nunes", class = 7 }, { name = "Bia Rocha", class = 0 } } })
+draws("a camp", function() UI:Show("camp", "Ana Lima") end)
+local ring = UI.ring
+check(ring.seats[1].shown and ring.seats[1].alpha == 0 and next(Motion.arriving) ~= nil, "people start clear and arrive")
+local worst, biggest = 1, 1
+for _ = 1, 600 do
+	S.now = S.now + 0.1
+	S.frame(0.1)
+	for _, f in ipairs(S.frames) do
+		worst, biggest = math.min(worst, f.scale or 1), math.max(biggest, f.scale or 1)
+	end
+end
+check(next(Motion.arriving) == nil and next(Motion.moving) == nil and ring.seats[1].alpha == 1 and ring.seats[1].scale == 1,
+	"after arriving, everyone is whole and in place")
+check(worst >= 0.4 and biggest <= 1, "a minute of animation: every scale stayed within 0.4..1 (" .. worst .. ".." .. biggest .. ")")
+check(ring.flame.tex.coords and ring.flame.tex.coords[2] <= 1, "the flame steps through its sheet")
+W.db.lessMotion = true
+UI:Show("list"); UI:Show("camp", "Ana Lima")
+S.now = S.now + 0.05; S.frame(0.05)
+check(ring.seats[1].scale == 1, "less motion: arrivals are fades only")
+W.db.lessMotion = false
+
+-- ── task 6: the views ──────────────────────────────────────────────────────
+check(UI.title.text == "Ana Lima's camp" and UI.sub.text:find("Durotar", 1, true) and UI.sub.text:find("Journeyman", 1, true), "the camp's header")
+check(ring.seats[1].crown.shown and ring.seats[2].crown.shown == false, "the owner wears the flame")
+check(ring.seats[3].label.text == "BR" and ring.seats[3].icon.shown == false, "an unknown class falls back to initials")
+check(ring.seats[4].label.text == "you" and ring.seats[5].shown == false, "an empty seat marked 'you' is the invitation")
+check(ring.slots[1].icon.texture == "icon279978" and ring.slots[3].dash.shown and ring.slots[5].shown and ring.slots[6].shown == false,
+	"the tier's five slots: two taken, three open")
+check(ring.more.text == "and 1 more around the fire", "the count the owner announced beyond the names: " .. ring.more.text)
+check(UI.views.camp.note.text == "\"tent || here\"", "the owner's note is escaped")
+check(UI.views.camp.objs.text:find("Camp Tent", 1, true) and UI.views.camp.objs.text:find("3 of 5 places open", 1, true), "what the camp offers")
+check(UI.views.camp.other.label.text == "Ask for an invite", "copy unknown: the invite is on offer")
+S.copy = 9; ana.zuid = 9; UI:Render()
+check(UI.views.camp.other.label.text == "Back to the list", "same copy: no invite needed")
+ana.zuid = 3; UI:Render()
+check(UI.views.camp.hint.text:find("another copy of the zone", 1, true), "another copy: the view says so")
+S.take()
+UI.views.camp.other:Click()
+check(S.take("Whisper")[1].payload == "C2|I|Ana Lima" and S.printed[#S.printed]:find("Asked Ana Lima", 1, true), "asking for the invite whispers the owner")
+UI.views.camp.go:Click()
+check(S.waypoint and S.waypoint.map == 1411 and S.waypoint.x == 0.501, "Go there sets the game's waypoint")
+S.bags[W.OBJECTS[4][1]] = 1; ana.zuid = 9; UI:Render()
+check(UI.views.camp.hint.text:find("Your Sharpening Wheel fits here", 1, true), "an object in my bags that the camp lacks")
+
+for i = 1, 11 do announce("Owner " .. i, { x = 0.5 + i * 0.01, map = i > 9 and 1412 or 1411, zuid = i == 2 and 3 or 0 }) end
+draws("a list of 12", function() UI:Show("list") end)
+local v = UI.views.list
+check(#v.list.items == 12 and v.list.rows[1].shown and v.list.rows[7].shown and v.list.thumb.shown, "twelve camps in seven rows, with a scroll thumb")
+check(v.list.rows[1].title.text == "Ana Lima's camp" and v.list.rows[1].sub.text:find("5 yd away", 1, true), "nearest first, with the distance")
+v.list.scripts.OnMouseWheel(v.list, -1)
+check(v.list.offset == 1 and v.list.rows[1].title.text ~= "Ana Lima's camp", "the wheel scrolls")
+local otherRow
+for _, camp in ipairs(v.list.items) do if camp.owner == "Owner 2" then otherRow = camp end end
+check(otherRow.other == true and v.list.items[#v.list.items].zone == "Mulgore", "other copies are flagged; other zones come last")
+UI.filter = "repair"; UI:Render()
+check(#v.list.items == 1, "the repairs filter")
+UI.filter = "tent"; UI:Render()
+v.list.rows[1]:Click()
+check(UI.view == "camp" and UI.sel == "Ana Lima" and UI.back.shown, "clicking a row opens its circle")
+UI.back:Click()
+UI.filter = "all"
+
+draws("set up a camp", function() UI:Show("build") end)
+local b = UI.views.build
+check(b.lines[2][1].text == "Basic Campfire Kit" and b.lines[2][2].text:find("needs Simple Wood", 1, true), "the checklist: no kit, no wood")
+S.bags[W.KITS[1]] = 2; S.bags[W.WOOD[2][1]] = 3; UI:Render()
+check(b.lines[2][2].text:find("2 in your bags", 1, true) and b.lines[3][2].text:find("craftable: 3 Star Wood", 1, true), "kits and wood in the bags")
+check(b.lines[6][1].text:find("Sharpening Wheel", 1, true) and b.lines[8][1].text:find("Open your Cooking window", 1, true), "my objects, and cooking still unknown")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[2] + 1000000)
+UI:Render()
+check(UI.tier == 2 and UI.sub.text:find("Journeyman campfire lit", 1, true) and b.tiers[2].on, "lighting a kit preselects its tier")
+check(S.printed[#S.printed]:find("nothing was sent", 1, true), "and the chat says nothing was sent")
+b.tiers[3]:Click()
+check(UI.tier == 3, "the player can correct the tier")
+b.input.text = "come sit"
+function b.input:GetText() return self.text end
+S.take()
+b.go:Click()
+local sent = S.take("Realm")
+check(#sent == 1 and sent[1].payload:find("|3|1||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
+	"Announce sends the camp and opens my circle: " .. tostring(sent[1] and sent[1].payload))
+check(UI.title.text == "Your camp" and UI.views.camp.other.label.text == "End announce", "my own camp")
+UI.views.camp.other:Click()
+check(Camps:Get("Chehul Costa") == nil and UI.view == "list" and S.take("Realm")[1].payload == "C2|X", "ending it tells the network and returns to the list")
+
+-- ── task 7: pins, toast, questions, options, entry ─────────────────────────
+WorldMapFrame.shown = true
+S.shownMap = 1411
+UI.Pins:RefreshWorld()
+local function shownPins(list) local n = 0; for _, p in ipairs(list) do if p.shown then n = n + 1 end end; return n end
+check(shownPins(UI.Pins.world) == 10, "one pin per camp of the zone shown: " .. shownPins(UI.Pins.world))
+check(UI.Pins.world[1].point[4] == 501 and UI.Pins.world[1].point[5] == -300 and UI.Pins.world[1].count.text == 4, "placed by map position, with the head count")
+S.shownMap = 1414
+UI.Pins:RefreshWorld()
+check(shownPins(UI.Pins.world) == 12, "the continent shows every camp of its zones: " .. shownPins(UI.Pins.world))
+S.shownMap = 1412
+UI.Pins:RefreshWorld()
+check(shownPins(UI.Pins.world) == 2, "another zone shows only its own")
+W.db.pins = false
+UI.Pins:RefreshWorld(); UI.Pins:RefreshMini()
+check(shownPins(UI.Pins.world) == 0 and shownPins(UI.Pins.mini) == 0, "pins can be turned off")
+W.db.pins = true
+local dx, dy, rim = UI.Pins.MinimapOffset(100, 0, 200, 70)
+check(dx == 0 and dy == 35 and not rim, "minimap: 100 yards north at a 200 yard radius is half way up")
+dx, dy, rim = UI.Pins.MinimapOffset(0, 600, 200, 70)
+check(math.abs(dx - 64.4) < 0.01 and dy == 0 and rim, "beyond the radius the pin waits on the rim")
+check(UI.Pins.MinimapOffset(0, 1500, 200, 70) == nil, "and beyond 1000 yards it is not shown")
+dx, dy = UI.Pins.MinimapOffset(0, -100, 200, 70, math.pi / 2)
+check(math.abs(dx) < 0.001 and math.abs(dy - 35) < 0.001, "a rotating minimap: facing west, a camp to the west is up")
+UI.Pins:RefreshMini()
+check(shownPins(UI.Pins.mini) == 10 and UI.Pins.mini[1].point[4] ~= nil, "minimap pins for the camps of my map")
+UI.Pins.world[1].scripts.OnEnter(UI.Pins.world[1])
+check(#S.tooltip >= 2, "a pin's tooltip")
+
+check(UI.toast and UI.toast.shown, "the camps announced above already raised the toast")
+UI.toast:Hide()
+announce("New Fire", { map = 1412 })
+check(not (UI.toast and UI.toast.shown), "a campfire in another zone: no toast")
+W.db.toast = false
+announce("Quiet Fire", {})
+check(not (UI.toast and UI.toast.shown), "toasts can be turned off")
+W.db.toast = true
+announce("Near Fire", { note = "soup's on" })
+check(UI.toast.shown and UI.toast.title.text == "A campfire in Durotar" and UI.toast.line.text == "Near Fire: soup's on", "a campfire in my zone: the toast")
+check(W.db.consent == nil and not (UI.prompt and UI.prompt.shown), "nobody asked about circles yet")
+S.take()
+S.advance(10); for _ = 1, 10 do S.now = S.now + 0.1; S.frame(0.1) end
+check(UI.toast.shown == false, "it leaves by itself")
+check(UI.prompt and UI.prompt.shown and UI.prompt.title.text == "Appear in circles?" and #S.take() == 0, "by an announced fire: the one question, nothing sent")
+S.handler("C2|I|Chehul Costa", "Caio Nunes", "WHISPER") -- no camp of mine: ignored
+UI.prompt.no:Click()
+check(W.db.consent == false and UI.prompt.shown == false, "the answer is stored")
+S.advance(30)
+check(#S.take() == 0 and UI.prompt.shown == false, "no: never asked again, nothing sent")
+W.db.consent = nil
+W.Net:Announce(1, "")
+S.take()
+S.handler("C2|I|Chehul Costa", "Caio Nunes", "WHISPER")
+check(UI.prompt.shown and UI.prompt.title.text == "Caio Nunes wants to come to your fire", "an invite request asks the owner")
+UI.prompt.yes:Click()
+check(S.invited == "Caio Nunes", "accepting invites them")
+
+check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 5, "the options live in the game's AddOns tab")
+UI.options.checks[1]:Click()
+check(W.db.consent == true, "the consent switch")
+UI.options.checks[5]:Click()
+check(W.db.lessMotion == true, "the less-motion switch")
+W.db.lessMotion = false
+
+local toc = io.open("Warmth.toc"):read("*a")
+for fn in toc:gmatch("AddonCompartmentFunc%a*: (%S+)") do check(type(_G[fn]) == "function", "the toc names " .. fn .. ", which exists") end
+for path in toc:gmatch("\n([%w/_%.%-]+%.lua)") do check(io.open(path), "the toc lists " .. path .. ", which exists") end
+UI.frame.shown = false
+Warmth_OnCompartmentClick("Warmth", "LeftButton")
+check(UI.frame.shown, "the native button opens the window")
+Warmth_OnCompartmentClick("Warmth", "RightButton")
+check(UI.view == "build", "right click goes to setting up")
+draws("the native button's tooltip", function() Warmth_OnCompartmentEnter("Warmth", UIParent) end)
+SlashCmdList.WARMTH("")
+check(UI.frame.shown == false, "/warmth toggles")
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.take()
+SlashCmdList.WARMTH("demo")
+check(#Camps:List() == 3 and UI.view == "list" and #S.take() == 0, "/warmth demo: three camps here, nothing sent")
+draws("the demo's big circle", function() UI:Show("camp", "Lia Velha") end)
+check(ring.seats[9].shown and ring.seats[10].label.text == "you" and ring.more.text == "and 5 more around the fire" and ring.slots[10].shown,
+	"nine seats, the invitation, the rest as a count, ten slots")
+W.db.consent = true
+S.advance(30)
+check(#S.take() == 0 and select(2, W.Net:RequestInvite("Lia Velha")) == "no_camp", "a demo camp never receives a whisper")
+SlashCmdList.WARMTH("clear")
+check(#Camps:List() == 0, "/warmth clear")
+SlashCmdList.WARMTH("options")
+check(S.openedOptions, "/warmth options")
+
+-- ptBR end to end
+S.locale = "ptBR"
+local S2 = dofile("tools/wowstub.lua")
+S2.locale = "ptBR"
+local W2 = S2.load("Core/", "UI/")
+S2.fire("ADDON_LOADED", "Warmth"); S2.fire("PLAYER_LOGIN")
+W2.UI:Show("list")
+check(W2.UI.title.text == "Fogueiras acesas", "the window in Portuguese")
+
+S.done("ui")

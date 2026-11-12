@@ -47,6 +47,7 @@ function Camps:Join(who, owner, class, obj)
 		h = { obj = 0 }
 		camp.heard[who] = h
 	end
+	if not camp.order[who] then seq = seq + 1; camp.order[who] = seq end
 	h.at, h.class = time(), (class and class > 0) and class or h.class or 0
 	if obj and obj > 0 then h.obj = obj end
 	W:Fire("CAMPS")
@@ -66,6 +67,7 @@ function Camps:People(camp)
 		if h.at >= cutoff then by[name] = { name = name, class = h.class or 0, obj = h.obj or 0 } else camp.heard[name] = nil end
 	end
 	for _, p in ipairs(camp.roster or {}) do
+		if not camp.order[p.name] then seq = seq + 1; camp.order[p.name] = seq end -- the owner's order, kept
 		if not by[p.name] then by[p.name] = { name = p.name, class = p.class or 0, obj = 0 }
 		elseif by[p.name].class == 0 then by[p.name].class = p.class or 0 end
 	end

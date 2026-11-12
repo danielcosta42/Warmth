@@ -58,12 +58,14 @@ function W.Position()
 	return map, x, y
 end
 
--- World position (yards; first grows north, second grows west) of a point on a map; nil when the client won't say.
+-- World position (yards; first grows north, second grows west) of a point on a map, and its continent; nil when
+-- the client won't say.
 function W.World(map, x, y)
 	if not (C_Map and C_Map.GetWorldPosFromMapPos and CreateVector2D) then return nil end
-	local ok, _, v = pcall(C_Map.GetWorldPosFromMapPos, map, CreateVector2D(x, y))
+	local ok, continent, v = pcall(C_Map.GetWorldPosFromMapPos, map, CreateVector2D(x, y))
 	if not (ok and v) then return nil end
-	return v:GetXY()
+	local n, w = v:GetXY()
+	return n, w, continent
 end
 
 -- Yards from the player to a camp on the player's map; nil for another map.

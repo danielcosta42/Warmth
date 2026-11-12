@@ -22,7 +22,7 @@ end
 function Watch:Near()
 	local out = {}
 	for _, camp in ipairs(W.Camps:List()) do
-		if camp.dist and camp.dist <= self.NEAR and camp.other ~= true then out[#out + 1] = camp end
+		if camp.dist and camp.dist <= self.NEAR and camp.other ~= true and not camp.demo then out[#out + 1] = camp end
 	end
 	return out
 end

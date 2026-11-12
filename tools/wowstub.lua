@@ -90,11 +90,15 @@ UiMapPoint = { CreateFromCoordinates = function(map, x, y) return { map = map, x
 C_Map = {
 	GetBestMapForUnit = function() return S.pos and S.pos.map or nil end,
 	GetPlayerMapPosition = function() return S.pos and vec(S.pos.x, S.pos.y) or nil end,
-	GetWorldPosFromMapPos = function(_, v) local x, y = v:GetXY(); return 1, vec(-y * 5000, -x * 5000) end,
+	-- Mulgore (1412) lies 6000 yards east of Durotar (1411) here, so the two zones do not overlap.
+	GetWorldPosFromMapPos = function(map, v)
+		local x, y = v:GetXY()
+		return 1, vec(-y * 5000, -(x * 5000 + (map == 1412 and 6000 or 0)))
+	end,
 	GetMapPosFromWorldPos = function(_, v, map)
 		local n, w = v:GetXY()
 		if map == 1414 then return map, vec(0.25 + (-w) / 20000, 0.25 + (-n) / 20000) end
-		return map, vec(-w / 5000, -n / 5000)
+		return map, vec((-w - (map == 1412 and 6000 or 0)) / 5000, -n / 5000)
 	end,
 	GetMapInfo = function(map) return { name = ({ [1411] = "Durotar", [1412] = "Mulgore", [1414] = "Kalimdor" })[map] or ("Zone" .. map), parentMapID = 1414 } end,
 	SetUserWaypoint = function(p) S.waypoint = p end,
@@ -166,6 +170,8 @@ WorldMapFrame = Widget()
 WorldMapFrame.shown = false
 S.canvas = Widget()
 S.canvas.w, S.canvas.h = 1000, 600
+function WorldMapFrame.OnMapChanged() end
+function hooksecurefunc(_, name, fn) S.hooks = S.hooks or {}; S.hooks[name] = fn end
 function WorldMapFrame:GetCanvas() return S.canvas end
 function WorldMapFrame:GetMapID() return S.shownMap or 1411 end
 Settings = {

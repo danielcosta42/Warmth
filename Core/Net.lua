@@ -88,7 +88,7 @@ end
 -- "I am in <owner>'s circle". Without the player's yes, nothing is sent and nothing is recorded.
 function Net:Presence(owner)
 	local camp = W.Camps:Get(owner)
-	if not camp then return false end
+	if not camp or camp.demo then return false end -- a demo camp (/warmth demo) exists on this client only
 	if owner == W.me then
 		return W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.myObject or 0) -- goes out in my next announce
 	end
@@ -110,7 +110,7 @@ end
 -- Ask the owner for a group invite, to land in their copy of the zone.
 function Net:RequestInvite(owner)
 	local camp = W.Camps:Get(owner)
-	if not camp or owner == W.me then return false, "no_camp" end
+	if not camp or camp.demo or owner == W.me then return false, "no_camp" end
 	if GetTime() - (lastInviteTo[owner] or -1e9) < self.INVITE_GAP then return false, "too_soon" end
 	local mesh = Mesh()
 	if not mesh then return false, "no_network" end
