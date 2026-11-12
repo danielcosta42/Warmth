@@ -101,7 +101,10 @@ end
 local still
 function Watch:Sight()
 	local mine = W.Camps:Get(W.me)
-	if mine and mine.spotted then
+	-- A camp I walked away from stays on the map for a while, but it no longer holds me: by another fire, the new
+	-- one takes its place (one camp per player; whoever is still at the old fire sights it in turn).
+	local away = mine and (W.Distance(mine) or math.huge) > W.Net.OWNER_NEAR
+	if mine and mine.spotted and not away then
 		for _, other in ipairs(W.Camps:List()) do
 			local d = other ~= mine and not other.demo and other.other ~= true and Apart(other, mine.map, mine.x, mine.y)
 			if d and d <= W.Net.OWNER_NEAR and (not other.spotted or other.owner < mine.owner) then
@@ -111,9 +114,9 @@ function Watch:Sight()
 		end
 		return false
 	end
-	if mine or W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then still = nil; return false end
+	if (mine and not away) or W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then still = nil; return false end
 	for _, camp in ipairs(W.Camps:List()) do
-		if camp.dist and camp.dist <= W.Net.OWNER_NEAR and camp.other ~= true and not camp.demo then still = nil; return false end
+		if camp ~= mine and camp.dist and camp.dist <= W.Net.OWNER_NEAR and camp.other ~= true and not camp.demo then still = nil; return false end
 	end
 	local map, x, y = W.Position()
 	if not map then still = nil; return false end

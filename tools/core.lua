@@ -610,6 +610,21 @@ check(found.tier == 2, "pointing at the fire tells its tier")
 check(W.Watch:Sight() == false and Camps:Get(W.me) == found, "nothing more while it stands")
 S.handler("C2|T|Chehul Costa", "Caio Nunes", "WHISPER")
 check(not Social:CanThank(found), "a sighting is nobody's to thank")
+-- walking away from it to another fire: the new one takes its place, without waiting for the old to expire
+local posWas = S.pos
+S.pos = { map = posWas.map, x = posWas.x + 0.2, y = posWas.y }
+S.advance(30)
+S.take()
+W.Watch:Sight()
+local second = Camps:Get(W.me)
+check(second ~= found and second.spotted and math.abs(second.x - S.pos.x) < 0.001, "by another fire, far from the one I found before, the new one is announced")
+S.pos = posWas
+W.Watch.lastSight = nil
+S.advance(30)
+W.Watch:Sight()
+found = Camps:Get(W.me)
+check(found ~= second and found.spotted, "and back again")
+S.take()
 -- the lighter's own announce replaces it, and it is not made again while that camp is known
 S.handler("C2|A|1411|" .. math.floor(found.x * 10000) .. "|" .. math.floor(found.y * 10000) .. "|77|2|1|0|||", "Real Owner", "RELAY")
 W.Watch:Sight()

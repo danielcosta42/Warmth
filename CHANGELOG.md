@@ -5,6 +5,9 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- Corrigido: depois de sair de uma fogueira, parar ao lado de outra não a anunciava enquanto o acampamento anterior
+  ainda estava no mapa (até 12 minutos). Agora a nova toma o lugar.
+
 ## [0.4.0]
 
 - **Fogueira avistada.** Quem tem o Warmth e para ao lado de uma fogueira que a rede não conhece (acesa por quem
