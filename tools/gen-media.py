@@ -189,6 +189,27 @@ def logo(S=64):
     return rows
 
 
+def store_logo(S=512):
+    """The store page's logo: the campfire on a full warm-night square (no transparency, nothing near the edges,
+    so it survives being cropped to a circle or shown tiny)."""
+    c = S / 2.0
+    fire = fire_cell(S, 0.6)
+    back = layers(S, S, [
+        (NIGHT, lambda x, y: 1.0),
+        ((0.42, 0.20, 0.07), lambda x, y: smooth(S * 0.62, 0, math.hypot(x - c, y - c * 1.12)) * 0.95),
+        ((0.75, 0.38, 0.12), lambda x, y: smooth(S * 0.30, 0, math.hypot(x - c, y - c * 1.05)) * 0.45),
+    ])
+    rows = []
+    for j in range(S):
+        row = []
+        for i in range(S):
+            br, bg, bb, _ = back[j][i]
+            fr, fg, fb, fa = fire[j][i]
+            row.append((fr * fa + br * (1 - fa), fg * fa + bg * (1 - fa), fb * fa + bb * (1 - fa), 1.0))
+        rows.append(row)
+    return rows
+
+
 # ── light, shapes, paper ───────────────────────────────────────────────────
 def glow():
     c = 64.0
@@ -322,6 +343,8 @@ def main(argv):
         return 0
     with open(os.path.join(MEDIA, "logo-512.png"), "wb") as f:
         f.write(png(logo(512)))
+    with open(os.path.join(MEDIA, "logo-square-512.png"), "wb") as f:
+        f.write(png(store_logo(512)))
     print("gen-media: wrote %d textures to Media/" % len(TEXTURES))
     return 0
 
