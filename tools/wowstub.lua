@@ -135,8 +135,18 @@ local METHODS = {
 	GetCenter = function() return 300, 200 end, GetEffectiveScale = function() return 1 end,
 	SetAttribute = function(self, k, v) self.attributes = self.attributes or {}; self.attributes[k] = v end,
 	GetOwner = function() return nil end,
-	Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end,
-	SetShown = function(self, v) self.shown = v and true or false end,
+	-- like the client, a change of visibility runs the frame's OnShow / OnHide
+	Show = function(self)
+		local was = self.shown
+		self.shown = true
+		if was == false and self.scripts.OnShow then self.scripts.OnShow(self) end
+	end,
+	Hide = function(self)
+		local was = self.shown
+		self.shown = false
+		if was ~= false and self.scripts.OnHide then self.scripts.OnHide(self) end
+	end,
+	SetShown = function(self, v) if v then self:Show() else self:Hide() end end,
 	IsShown = function(self) return self.shown end,
 	IsVisible = function(self)
 		local f = self

@@ -377,7 +377,8 @@ function UI.SyncLight()
 	if InCombatLockdown and InCombatLockdown() then return end
 	local kit = W.KITS[UI.tier]
 	local slot = UI.views.build and UI.views.build.lightSlot
-	local want = slot and UI.frame:IsShown() and UI.view == "build" and W.Count(kit) > 0
+	-- UI.frame is still nil while the window is being built (its first Hide runs OnHide, which calls this)
+	local want = slot and UI.frame and UI.frame:IsShown() and UI.view == "build" and W.Count(kit) > 0
 	local b = UI.light
 	if not want then
 		if b and b:IsShown() then b:Hide() end
