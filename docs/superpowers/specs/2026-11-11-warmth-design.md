@@ -103,8 +103,12 @@ conferido no jogo**; os ids em especial.
 | Erros do jogo ao montar | "You cannot place a new campfire within 100 yards of an existing campfire." e "You cannot place a feature that close to a creature or object." (`UI_ERROR_MESSAGE`) | Ainda não usados |
 | APIs que faltam no Forever | `GetItemSpell` global (há `C_Item.GetItemSpell`), as de ofício clássicas `GetTradeSkill*` (há `C_TradeSkillUI`), `C_SuperTrack.SetSuperTrackingUserWaypoint`, `InviteUnit` global (há `C_PartyInfo.InviteUnit`) | Culinária lê por `C_TradeSkillUI`; o waypoint é posto sem a seta |
 
-**Ainda a medir:** quanto dura a fogueira; o que a bolsa de dormir (item 211527) põe no jogador e como combina com o
-fogo; os campos de `C_TradeSkillUI` na janela de Culinária (a sonda já os grava); Flint and Tinder e a perícia dos
+| Bolsa de dormir (Cozy Sleeping Bag, item 211527) | Usar lança Unroll Bag (429961, 15 s); o jogador fica "resting" e cerca de um minuto depois ganha "Well-Rested" (429959, 2 h). Pelo dono: 1% de experiência por minuto deitado, até 3%, e combina com a fogueira | Aparece no checklist com essa explicação |
+| Culinária | `C_TradeSkillUI.GetBaseProfessionInfo()` traz `professionName=Cooking`, `profession=5`; 132 receitas listadas | O addon reconhece a janela de Culinária; a contagem do que dá para fazer ainda não foi vista com materiais na bolsa |
+
+**Ainda a medir:** quanto dura a fogueira. Os guias dizem 10 minutos (entrevista de um designer) ou 15 (dados do
+jogo), e nenhum cronometrou. O addon cronometra o fogo do próprio jogador, do acender até a aura "Campfire Nearby"
+cair, se ele ficou junto do fogo, e guarda por nível em `WarmthDB.burn`. Também: Flint and Tinder e a perícia dos
 kits maiores.
 
 ## 5. Rede

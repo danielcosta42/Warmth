@@ -115,6 +115,10 @@ W:On("INVITE_REQUEST", function(name)
 		L["Invite"], L["Not now"], function(yes) W.Net:AnswerInvite(name, yes) end)
 end)
 
+W:On("BURNED", function(tier, seconds)
+	W.Print(L["Your %s campfire burned for %d min %d s."]:format(L[W.TIERS[tier]], math.floor(seconds / 60), seconds % 60))
+end)
+
 W:On("FIRE_OUT", function()
 	W.Print(L["Your fire went out: the announce ended."])
 end)

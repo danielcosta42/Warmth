@@ -314,7 +314,10 @@ UI.View("build", function(v)
 end, function(v)
 	local lit = W.lit and (time() - W.lit.at) < 3600 and W.lit
 	UI.title:SetText(L["Set up a camp"])
-	UI.sub:SetText(lit and (C.ok .. L["%s campfire lit %s."]:format(L[W.TIERS[lit.tier]], Ago(lit.at)) .. C.r .. " " .. L["Now call the network."])
+	local burn = lit and W.db.burn and W.db.burn[lit.tier]
+	local left = burn and math.floor((burn - (time() - lit.at)) / 60)
+	UI.sub:SetText(lit and (C.ok .. L["%s campfire lit %s."]:format(L[W.TIERS[lit.tier]], Ago(lit.at)) .. C.r .. " "
+			.. ((left and left > 0) and L["About %d min of fire left."]:format(left) or L["Now call the network."]))
 		or L["Light it with the kit in your bags; here you see what you have and call the network."])
 
 	local rows = { { C.ember .. L["Light it"] .. C.r, "" } }
@@ -335,7 +338,7 @@ end, function(v)
 	end
 	if have == 0 then rows[#rows + 1] = { C.mute .. L["None in your bags. Each profession crafts its own (from skill 20)."] .. C.r, "" } end
 	if W.Count(W.SLEEPING_BAG) > 0 then
-		rows[#rows + 1] = { W.ItemName(W.SLEEPING_BAG, "Sleeping Bag") .. C.mute .. "   " .. L["bonus experience, by the fire"] .. C.r, C.ok .. L["in your bags"] .. C.r }
+		rows[#rows + 1] = { W.ItemName(W.SLEEPING_BAG, "Sleeping Bag") .. C.mute .. "   " .. L["1% experience a minute lying in it, up to 3%"] .. C.r, C.ok .. L["in your bags"] .. C.r }
 	end
 	rows[#rows + 1] = { C.ember .. L["Cook at the fire"] .. C.r, "" }
 	if W.cooking then

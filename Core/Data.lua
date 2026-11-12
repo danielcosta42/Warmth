@@ -59,8 +59,9 @@ W.OBJECT_BY_ID = {}
 for i, o in ipairs(W.OBJECTS) do W.OBJECT_BY_ID[o[1]] = i end
 W.TENT, W.REPAIR = W.OBJECT_BY_ID[279978], W.OBJECT_BY_ID[279949]
 
--- The sleeping bag: its experience buff goes with the campfire's (the owner's word, 2026-11-11; what it puts on
--- the player is still to be measured with /warmth probe).
+-- The Cozy Sleeping Bag (measured 2026-11-11): using it casts Unroll Bag (429961, 15 s), the player becomes
+-- rested, and about a minute later gets Well-Rested (429959, 2 hours). The owner's word on what it is worth: 1%
+-- experience per minute lying in it, up to 3%, and it goes together with the campfire.
 W.SLEEPING_BAG = 211527
 
 W.COOKING_SPELL = 2550 -- the Cooking profession spell, for its localized name
@@ -70,6 +71,7 @@ W.AURA = {
 	NEARBY   = 1283391, -- "Campfire Nearby": on while a lit campfire is in range, whoever lit it
 	WELCOME  = 1229739, -- "Welcoming Campfire": the minute of resting by the fire, 60 s
 	BENEFITS = 1229741, -- "Camp Benefits": what the minute gives; 1 hour, 2 hours from a fire with violet flames
+	RESTED   = 429959,  -- "Well-Rested": from the Cozy Sleeping Bag
 	VIOLET   = 1328375, -- "Violet Flames": by a fire someone threw Violet Dust into (the launch celebration toy);
 	                    -- such a fire gives its benefits for 2 hours instead of 1 (the owner, 2026-11-11)
 }

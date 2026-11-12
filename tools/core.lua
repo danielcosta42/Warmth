@@ -287,6 +287,27 @@ S.handler("C2|A|1411|5500|5000|77|1v|1|0|||", "Purple Camp", "RELAY")
 check(Camps:Violet(Camps:Get("Purple Camp")), "a far camp is violet on the owner's word")
 S.handler("C2|X", "Purple Camp", "RELAY")
 W.Net:End()
+
+-- timing my own fire: from the kit's cast until the game's aura drops, only if I stayed by it
+local burned
+W:On("BURNED", function(tier, seconds) burned = { tier, seconds } end)
+auras[W.AURA.NEARBY] = { spellId = W.AURA.NEARBY }
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.KITS[1] + 1000000)
+S.advance(600)
+check(burned == nil and W.db.burn == nil, "the fire still burns: nothing measured yet")
+auras[W.AURA.NEARBY] = nil
+S.advance(10)
+check(burned and burned[1] == 1 and math.abs(burned[2] - 600) <= 10 and W.db.burn[1] == burned[2], "it went out with me beside it: " .. tostring(burned and burned[2]) .. " s, kept per tier")
+burned = nil
+auras[W.AURA.NEARBY] = { spellId = W.AURA.NEARBY }
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.KITS[2] + 1000000)
+S.advance(100)
+S.pos = { map = 1411, x = 0.6, y = 0.5 }
+S.advance(20)
+auras[W.AURA.NEARBY] = nil
+S.advance(20)
+check(burned == nil and W.db.burn[2] == nil, "I walked away from it: that is not a measurement")
+S.pos = keep
 C_UnitAuras = nil
 
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")

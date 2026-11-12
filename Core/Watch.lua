@@ -49,9 +49,35 @@ function Watch:Near()
 	end
 end
 
+-- How long a campfire burns is not published (guides say 10 or 15 minutes). This client times its own: from the
+-- kit's cast to the moment the game's Campfire Nearby aura drops, provided the player stayed by the fire all
+-- along. The answer, per tier, is kept in WarmthDB.burn (seconds, to the tick's 10 s).
+local burning
+local function TimeTheFire()
+	local b = burning
+	if not b then return end
+	local fire = W.FireNearby()
+	local map, x, y = W.Position()
+	local an, aw = W.World(b.map, b.x, b.y)
+	local pn, pw
+	if map == b.map then pn, pw = W.World(map, x, y) end
+	if fire == nil or not (an and pn) or math.sqrt((an - pn) ^ 2 + (aw - pw) ^ 2) > Watch.NEAR then
+		burning = nil -- walked away, or the client cannot tell: this one is not a measurement
+	elseif fire then
+		b.seen = GetTime()
+	elseif b.seen then
+		burning = nil
+		local seconds = math.floor(b.seen - b.t0 + 5)
+		W.db.burn = W.db.burn or {}
+		W.db.burn[b.tier] = seconds
+		W:Fire("BURNED", b.tier, seconds)
+	end
+end
+
 local asked = false
 function Watch:Tick()
 	Resolve()
+	TimeTheFire()
 	local camp = self:Near()
 	if camp and W.FireNearby() == false then
 		-- Standing where the camp is, and the game shows no fire: it went out, or it burns in another copy of the
@@ -96,6 +122,8 @@ local function OnCast(spellID)
 	if not what then return end
 	if what[1] == "kit" then
 		W.lit = { at = time(), tier = what[2] }
+		local map, x, y = W.Position()
+		burning = map and { tier = what[2], t0 = GetTime(), map = map, x = x, y = y } or nil
 		W:Fire("LIT", what[2])
 	else
 		local map, x, y = W.Position()
