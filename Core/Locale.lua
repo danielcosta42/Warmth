@@ -50,6 +50,8 @@ local ptBR = {
 	["Your %s fits here."] = "Seu objeto %s cabe aqui.",
 	["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."] =
 		"Nenhum objeto de acampamento informado aqui: o fogo sozinho não dá benefício. Traga um da sua profissão.",
+	["Point at a piece someone else placed and Warmth notes it."] =
+		"Aponte o mouse para uma peça que outra pessoa colocou e o Warmth anota.",
 	["You carry Camp Benefits: resting at a fire with no objects may end them."] =
 		"Você está com Camp Benefits: descansar num fogo sem objetos pode acabar com eles.",
 	["Go there"] = "Ir até lá",

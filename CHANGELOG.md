@@ -16,6 +16,8 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 - **Calor do anfitrião.** Quem senta no seu fogo pode agradecer com um clique, uma vez por dia; os agradecimentos
   viram calor e o anfitrião sobe de nível (Graveto, Brasa, Lareira, Fogueira, Farol), que aparece no acampamento.
 - **Livro de visitas.** Os acampamentos em que você sentou, e o seu calor como anfitrião.
+- **Peças de quem não tem o addon.** Estando no acampamento, aponte o mouse para a tenda, a cadeira ou outra peça
+  e o Warmth anota; o seu acampamento deixa de pedir o que já está lá.
 - O Warmth responde ao diagnóstico do operador da rede (contagens e opções, nada sobre onde você está).
 
 ## [0.2.0]

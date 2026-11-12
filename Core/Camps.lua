@@ -101,6 +101,9 @@ function Camps:Objects(camp)
 	end
 	for _, o in ipairs(camp.objs or {}) do add(o) end
 	for _, p in ipairs(self:People(camp)) do add(p.obj) end
+	for i = 1, #W.OBJECTS do -- pieces this player pointed at (Watch:Spot)
+		if camp.seen and camp.seen[i] then add(i) end
+	end
 	return out
 end
 

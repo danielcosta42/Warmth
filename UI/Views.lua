@@ -240,6 +240,7 @@ end, function(v, fresh)
 		-- A fire with no camp object gives nothing (guides, and measured: a minute at one ended the Camp Benefits
 		-- the player already had). The addon only knows the objects its own users placed, hence "reported".
 		hint = L["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."]
+		if W.Watch:Near() == camp then hint = hint .. " " .. L["Point at a piece someone else placed and Warmth notes it."] end
 		if W.HasAura(W.AURA.BENEFITS) == true then
 			hint = hint .. " " .. C.miss .. L["You carry Camp Benefits: resting at a fire with no objects may end them."] .. C.r
 		end

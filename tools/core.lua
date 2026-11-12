@@ -568,5 +568,24 @@ C_UnitAuras = nil
 S.extras = nil
 check(S.diag():find("asking=1;heat=3", 1, true), "the diagnostic reports asking and warmth")
 
+-- pieces placed by someone without Warmth: noted when the player points at them
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(30)
+S.take()
+check(W.Watch:Spot("Camp Tent") == nil, "pointing at a tent away from any camp notes nothing")
+local spotCamp = W.Net:Announce(2, "")
+S.take()
+S.extras = true
+check(W.Watch:Spot("Camp Tent") == W.TENT and Camps:Has(spotCamp, W.TENT), "at my camp, the tent under the mouse is noted")
+local told = S.take("Realm")
+check(#told == 1 and told[1].payload:find("^C2|E|") and not told[1].payload:find("|" .. W.TENT .. ",", 1, true), "and my camp stops asking for it: " .. tostring(told[1] and told[1].payload))
+local chair
+for i, o in ipairs(W.OBJECTS) do if o[2] == "Camp Chair" then chair = i end end
+check(W.Watch:Spot("Chair") == chair and W.Watch:Spot("Chair") == chair and #Camps:Objects(spotCamp) == 2, "the world object's name may drop the item's Camp; twice is once")
+check(W.Watch:Spot("Basic Campfire") == nil and W.Watch:Spot("Mailbox") == nil, "other things under the mouse are nothing")
+S.extras = nil
+W.Net:End()
+S.take()
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")
