@@ -1,0 +1,22 @@
+# Saída do empacotador
+.release/
+
+# Lixo de SO
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Backups do WoW
+*.bak
+
+# Docs internos (gerados por IA) — ficam locais, fora do repo público
+ARCHITECTURE.md
+BRANDING.md
+LOCALIZATION.md
+DEPLOY.md
