@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fogueiras: telas na direção Brasa</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#120d09;color:#f3e6d2;font-family:Nunito,system-ui,sans-serif;padding:24px 18px 50px}
+  header{max-width:1180px;margin:0 auto 16px}
+  header h1{font-family:Fraunces,serif;font-weight:600;font-size:24px;margin:0 0 6px}
+  header p{margin:0;color:#a8927a;max-width:78ch;line-height:1.5;font-size:14.5px}
+  header b{color:#ffc77a;font-weight:700}
+  button{font-family:Nunito;cursor:pointer}
+  .stage{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 400px;gap:16px}
+  @media(max-width:900px){.stage{grid-template-columns:1fr}}
+
+  /* mapa */
+  .map{position:relative;height:620px;border-radius:14px;overflow:hidden;border:1px solid #3a2616;
+    background:radial-gradient(60% 50% at 30% 30%,#3d4a2e 0,transparent 70%),radial-gradient(50% 45% at 72% 62%,#5a4326 0,transparent 70%),radial-gradient(40% 40% at 45% 85%,#4a3a22 0,transparent 70%),#1d2a2e}
+  .map::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 90% at 50% 50%,transparent 55%,rgba(10,6,4,.75));pointer-events:none}
+  .zone{position:absolute;font-family:Fraunces,serif;font-size:15px;color:rgba(243,230,210,.45);letter-spacing:.12em;text-transform:uppercase}
+  .me{position:absolute;left:61%;top:52%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#7fd1ff;border:2px solid #0d1a22;box-shadow:0 0 0 5px rgba(127,209,255,.2)}
+  .pin{position:absolute;margin:-22px;width:44px;height:44px;border:0;background:none;padding:0;z-index:2}
+  .pin .g{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(255,170,70,.7),rgba(255,120,40,.15) 55%,transparent 72%);animation:glow 3s ease-in-out infinite}
+  .pin .f{position:relative;font-size:26px;display:block;animation:flick 1.6s ease-in-out infinite;transform-origin:50% 100%}
+  .pin .n{position:absolute;right:-6px;top:-6px;min-width:20px;height:20px;border-radius:10px;background:#2a1a10;border:1.5px solid #ffb454;color:#ffc77a;font:700 11.5px Nunito;display:grid;place-items:center;padding:0 4px}
+  .pin.big .g{inset:-26px}.pin.big .f{font-size:32px}
+  .pin.sel .g{background:radial-gradient(circle,rgba(255,210,120,.95),rgba(255,140,50,.3) 55%,transparent 72%)}
+  .tip{position:absolute;z-index:3;transform:translate(-50%,-135%);background:#24160d;border:1px solid #7a5230;border-radius:10px;padding:8px 11px;font-size:12.5px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+  .pin:hover + .tip{opacity:1;transform:translate(-50%,-150%)}
+  .tip b{font-family:Fraunces,serif;font-size:14px;display:block}
+  .tip span{color:#c9a983}
+  .toast{position:absolute;right:14px;top:14px;z-index:4;width:290px;background:rgba(36,22,13,.94);border:1px solid #7a5230;border-left:3px solid #ffb454;border-radius:10px;padding:10px 12px;font-size:13px;transform:translateX(120%);transition:transform .6s cubic-bezier(.2,.9,.3,1.15)}
+  .toast.on{transform:none}
+  .toast b{display:block;font-family:Fraunces,serif;font-size:14.5px}
+  .toast span{color:#c9a983}
+  .build{position:absolute;left:14px;bottom:14px;z-index:4;font-weight:700;font-size:14px;padding:11px 16px;border-radius:12px;border:0;background:linear-gradient(#ffb454,#f08a2c);color:#2a1505;box-shadow:0 6px 22px rgba(240,138,44,.35)}
+  .legend{position:absolute;right:14px;bottom:14px;z-index:4;font-size:12px;color:#c9a983;background:rgba(18,12,8,.7);padding:6px 10px;border-radius:8px}
+
+  /* painel */
+  .panel{position:relative;height:620px;border-radius:14px;overflow:hidden;border:1px solid #3a2616;background:radial-gradient(120% 70% at 50% 40%,#4a2a14 0%,#24160d 48%,#120c08 100%)}
+  .view{position:absolute;inset:0;padding:18px;opacity:0;transform:translateY(16px) scale(.98);pointer-events:none;transition:opacity .35s,transform .45s cubic-bezier(.2,.9,.3,1.1);overflow:auto}
+  .view.on{opacity:1;transform:none;pointer-events:auto}
+  h2{font-family:Fraunces,serif;font-weight:600;font-size:20px;margin:0}
+  .sub{color:#c9a983;font-size:12.5px;margin-top:2px}
+  .back{background:none;border:0;color:#c9a983;font-size:13px;padding:0;margin-bottom:8px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px}
+  .chip{font-size:12.5px;padding:5px 10px;border-radius:99px;border:1px solid rgba(255,180,84,.3);background:transparent;color:#e9d3b4}
+  .chip.on{background:rgba(255,180,84,.18);color:#ffc77a}
+  .card{display:flex;gap:12px;align-items:center;width:100%;text-align:left;color:inherit;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 12px;margin-bottom:8px;transition:background .2s,transform .2s}
+  .card:hover{background:rgba(255,180,84,.1);transform:translateX(3px)}
+  .card .e{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:radial-gradient(circle,rgba(255,170,70,.5),transparent 70%)}
+  .card b{font-family:Fraunces,serif;font-size:15px;display:block}
+  .card small{color:#c9a983;font-size:12px}
+  .card .o{margin-left:auto;font-size:15px;white-space:nowrap}
+  .badge{font-size:11.5px;padding:4px 9px;border-radius:99px;background:rgba(255,180,84,.14);color:#ffc77a;border:1px solid rgba(255,180,84,.3)}
+
+  /* roda */
+  .ring{position:relative;width:270px;height:270px;margin:26px auto 22px}
+  .halo{position:absolute;inset:38px;border-radius:50%;background:radial-gradient(circle,rgba(255,170,70,.55),rgba(255,120,40,.12) 55%,transparent 72%);animation:glow 3.2s ease-in-out infinite}
+  .fire{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%)}
+  .flame{transform-origin:50% 100%;animation:flick 1.6s ease-in-out infinite}
+  .seat{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;border:2px solid;background:#2a1a10;animation:arrive .7s cubic-bezier(.2,.9,.3,1.3) both}
+  .seat.empty{border-style:dashed;border-color:#6b4c33;color:#8a6646;background:transparent;font-size:11.5px}
+  .obj{position:absolute;width:34px;height:34px;margin:-17px;border-radius:9px;background:#3a2414;border:1px solid #7a5230;display:grid;place-items:center;font-size:17px;box-shadow:0 0 14px rgba(255,150,60,.25);animation:arrive .5s both}
+  .obj.free{background:transparent;border-style:dashed;border-color:#5d4129;color:#7a5230;font-size:15px;box-shadow:none}
+  .buffs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .buffs span{font-size:12px;padding:4px 9px;border-radius:8px;background:rgba(255,255,255,.06);color:#e9d3b4}
+  .btns{display:flex;gap:8px}
+  .btns button{flex:1;font-weight:700;font-size:13.5px;padding:10px;border-radius:10px;border:0}
+  .go{background:linear-gradient(#ffb454,#f08a2c);color:#2a1505}
+  .ghost{background:rgba(255,255,255,.08);color:#f3e6d2;border:1px solid rgba(255,255,255,.14)!important}
+  .note{font-size:12.5px;color:#c9a983;margin:10px 0 0;line-height:1.45}
+
+  /* montar */
+  .step{border-left:2px solid #5d4129;padding:2px 0 14px 16px;margin-left:8px;position:relative}
+  .step::before{content:attr(data-n);position:absolute;left:-13px;top:0;width:24px;height:24px;border-radius:50%;background:#2a1a10;border:2px solid #ffb454;color:#ffc77a;font:700 12px Nunito;display:grid;place-items:center}
+  .step h3{font-family:Fraunces,serif;font-size:15.5px;margin:0 0 6px;font-weight:600}
+  .req{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+  .ok{color:#9fd47a}.miss{color:#ff9a7a}
+  input{width:100%;background:rgba(0,0,0,.3);border:1px solid #5d4129;border-radius:9px;padding:9px 10px;color:#f3e6d2;font:13.5px Nunito;margin:6px 0 10px}
+  @keyframes flick{0%,100%{transform:scale(1) rotate(-1deg)}40%{transform:scale(1.06,.95) rotate(1.5deg)}70%{transform:scale(.96,1.07) rotate(-.5deg)}}
+  @keyframes glow{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
+  @keyframes arrive{0%{opacity:0;transform:translateY(14px) scale(.6)}100%{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>As telas na direção Brasa: dá para clicar</h1>
+  <p>É um protótipo de rascunho para sentir o fluxo e as transições. Tente: <b>passar o mouse num pino</b>, <b>clicar num pino ou num item da lista</b> (a roda abre), <b>Voltar</b>, e <b>Montar acampamento</b> no canto do mapa (checklist, acender, anunciar e ver o povo chegar). O aviso no alto do mapa aparece sozinho depois de 2 segundos.</p>
+</header>
+
+<div class="stage">
+  <div class="map" id="map">
+    <span class="zone" style="left:16%;top:22%">Mulgore</span>
+    <span class="zone" style="left:44%;top:78%">The Barrens</span>
+    <span class="zone" style="left:66%;top:38%">Durotar</span>
+    <i class="me" title="você"></i>
+    <div class="toast" id="toast"><b>Fogueira acesa em Durotar</b><span>Ana Lima chamou: "tem tenda e conserto, cheguem". 140 m de você.</span></div>
+    <button class="build" onclick="show('build')">🔥 Montar acampamento</button>
+    <div class="legend">Tamanho do brilho: quanta gente na roda</div>
+  </div>
+
+  <div class="panel">
+    <!-- lista -->
+    <div class="view on" id="v-list">
+      <h2>Fogueiras acesas</h2>
+      <div class="sub">3 na rede agora · 12 pessoas em volta do fogo</div>
+      <div class="chips"><button class="chip on">Todas</button><button class="chip">⛺ Com tenda</button><button class="chip">🔧 Com conserto</button><button class="chip">Com espaço livre</button></div>
+      <div id="cards"></div>
+      <p class="note">Só aparecem as fogueiras que alguém anunciou. Ordenadas pela distância de você.</p>
+    </div>
+
+    <!-- acampamento -->
+    <div class="view" id="v-camp">
+      <button class="back" onclick="show('list')">← Voltar às fogueiras</button>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h2 id="c-title"></h2><div class="sub" id="c-sub"></div></div><span class="badge" id="c-tier"></span></div>
+      <div class="ring" id="ring"></div>
+      <div class="buffs" id="c-buffs"></div>
+      <div class="btns"><button class="go">Ir até lá</button><button class="ghost" id="c-bring">Levo minha Sharpening Wheel</button></div>
+      <p class="note" id="c-note"></p>
+    </div>
+
+    <!-- montar -->
+    <div class="view" id="v-build">
+      <button class="back" onclick="show('list')">← Voltar às fogueiras</button>
+      <h2>Montar acampamento</h2>
+      <div class="sub" style="margin-bottom:16px">Durotar · nenhuma fogueira a menos de 100 m: aqui pode.</div>
+      <div class="step" data-n="1"><h3>Acender</h3>
+        <div class="req"><span>Basic Campfire Kit</span><span class="ok">2 na bolsa ✓</span></div>
+        <div class="req"><span>Journeyman Campfire Kit</span><span class="miss">falta 1 Star Wood</span></div></div>
+      <div class="step" data-n="2"><h3>Seu objeto de profissão</h3>
+        <div class="req"><span>Sharpening Wheel (Ferraria)</span><span class="ok">1 pronta ✓</span></div>
+        <div class="req"><span>Camp Chair (Esfolamento)</span><span class="miss">faltam 2 Simple Wood</span></div></div>
+      <div class="step" data-n="3"><h3>Cozinhar no fogo</h3>
+        <div class="req"><span>Dá para fazer agora</span><span class="ok">3 receitas</span></div></div>
+      <div class="step" data-n="4" style="border-color:transparent"><h3>Chamar a rede</h3>
+        <input value="tem roda de afiar, falta tenda e mana" aria-label="Recado do acampamento">
+        <div class="btns"><button class="go" onclick="light()">Acender e anunciar</button><button class="ghost" onclick="light(true)">Só acender</button></div>
+        <p class="note">Nada vai para a rede sem você clicar em anunciar.</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLASS={An:'#ff7c0a',Ca:'#3fc7eb',Bi:'#f48cba',Da:'#aad372',Ru:'#c69b6d',Li:'#8788ee',Jo:'#fff468',Te:'#0070dd',Vo:'#ffc77a'};
+const CAMPS=[
+ {id:'ana',x:70,y:46,title:'Acampamento de Ana Lima',sub:'Durotar · aceso há 12 min · 140 m de você',tier:'Journeyman',slots:5,objs:['⛺','💧','🔧'],who:['An','Ca','Bi','Da'],buffs:['⛺ XP de descanso','💧 Regeneração de mana','🔧 Conserto']},
+ {id:'rui',x:48,y:66,title:'Fogueira de Rui Novo',sub:'The Barrens · acesa há 3 min · 1,2 km de você',tier:'Basic',slots:3,objs:['⛺'],who:['Ru'],buffs:['⛺ XP de descanso']},
+ {id:'fdh',x:22,y:36,big:1,title:'Acampamento dos Filhos da Horda',sub:'Mulgore · aceso há 41 min · 3,4 km de você',tier:'Journeyman',slots:5,objs:['⛺','💧','🔧','🕯️','🐟'],who:['Li','Jo','Te','An','Ca','Bi','Da'],buffs:['⛺ XP de descanso','💧 Mana','🔧 Conserto','🕯️ Intelecto','🐟 +8% em tudo']}
+];
+const map=document.getElementById('map'),cards=document.getElementById('cards');
+CAMPS.forEach(c=>{
+  map.insertAdjacentHTML('beforeend',`<button class="pin ${c.big?'big':''}" id="p-${c.id}" style="left:${c.x}%;top:${c.y}%" onclick="openCamp('${c.id}')"><i class="g"></i><span class="f">🔥</span><span class="n">${c.who.length}</span></button>
+   <div class="tip" style="left:${c.x}%;top:${c.y}%"><b>${c.title}</b><span>${c.who.length} na roda · ${c.objs.join(' ')} · ${c.objs.length} de ${c.slots}</span></div>`);
+  cards.insertAdjacentHTML('beforeend',`<button class="card" onclick="openCamp('${c.id}')"><span class="e">🔥</span><span><b>${c.title}</b><small>${c.sub.split(' · ')[0]} · ${c.sub.split(' · ')[2]} · ${c.who.length} na roda</small></span><span class="o">${c.objs.slice(0,3).join('')}</span></button>`);
+});
+function show(v){document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+  if(v!=='camp')document.querySelectorAll('.pin').forEach(p=>p.classList.remove('sel'));}
+const FIRE=`<div class="halo"></div><svg class="fire" width="74" height="92" viewBox="0 0 74 92"><g class="flame"><path d="M37 4c10 16 26 26 26 48a26 26 0 0 1-52 0c0-12 6-18 10-26 2 8 6 12 8 12 0-12 2-22 8-34z" fill="#f0872a"/><path d="M37 34c6 8 14 14 14 24a14 14 0 0 1-28 0c0-8 6-12 8-18 2 4 4 6 6 6z" fill="#ffd27a"/></g><rect x="10" y="80" width="54" height="8" rx="4" fill="#5a3a22" transform="rotate(-8 37 84)"/><rect x="10" y="80" width="54" height="8" rx="4" fill="#6b452a" transform="rotate(8 37 84)"/></svg>`;
+function around(i,n,r){const a=-Math.PI/2+i/n*2*Math.PI;return `left:${50+r*Math.cos(a)}%;top:${50+r*Math.sin(a)}%`}
+function ring(c,stagger){
+  let h=FIRE;const seats=c.who.length+1;
+  c.who.forEach((w,i)=>h+=`<span class="seat" style="${around(i,seats,50)};border-color:${CLASS[w]};color:${CLASS[w]};animation-delay:${(stagger?1+i*.9:i*.12)}s">${w}</span>`);
+  h+=`<span class="seat empty" style="${around(c.who.length,seats,50)}">${c.mine?'vaga':'você'}</span>`;
+  for(let i=0;i<c.slots;i++)h+=c.objs[i]?`<span class="obj" style="${around(i+.5,c.slots,29)};animation-delay:${.3+i*.1}s">${c.objs[i]}</span>`:`<span class="obj free" style="${around(i+.5,c.slots,29)}">+</span>`;
+  document.getElementById('ring').innerHTML=h;
+}
+function openCamp(id,own){
+  const c=own||CAMPS.find(x=>x.id===id);
+  document.getElementById('c-title').textContent=c.title;document.getElementById('c-sub').textContent=c.sub;
+  document.getElementById('c-tier').textContent=c.tier;
+  document.getElementById('c-buffs').innerHTML=c.buffs.map(b=>`<span>${b}</span>`).join('')+`<span>${c.slots-c.objs.length} espaços livres</span>`;
+  document.getElementById('c-bring').textContent=c.mine?'Apagar o anúncio':(c.objs.length<c.slots?'Levo minha Sharpening Wheel':'Sem espaço para objeto');
+  document.getElementById('c-note').textContent=c.note||'Sente perto do fogo por 1 minuto para ganhar os buffs por 1 hora.';
+  ring(c,!!own);
+  document.querySelectorAll('.pin').forEach(p=>p.classList.toggle('sel',p.id==='p-'+c.id));
+  show('camp');
+}
+function light(quiet){
+  openCamp(null,{id:'me',mine:1,title:'Seu acampamento',sub:quiet?'Durotar · aceso agora · só você vê':'Durotar · aceso agora · anunciado a 23 pessoas da rede na região',tier:'Basic',slots:3,objs:['⚙️'],
+    who:quiet?['Vo']:['Vo','Ca','Bi','Ru'],buffs:['⚙️ Força'],note:quiet?'Você pode anunciar depois, a qualquer momento.':'Quem vem aparece na roda quando senta. Falta: tenda, mana.'});
+}
+setTimeout(()=>document.getElementById('toast').classList.add('on'),2000);
+setTimeout(()=>document.getElementById('toast').classList.remove('on'),10000);
+</script>
+</body>
+</html>

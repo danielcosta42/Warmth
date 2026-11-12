@@ -1,0 +1,40 @@
+## Interface: 16001
+## Title: Warmth
+## Notes: Campfires lit by players, on your map: see what each camp offers and who is around the fire, and set up your own.
+## Notes-ptBR: Fogueiras acesas por jogadores, no seu mapa: veja o que cada acampamento oferece e quem está em volta do fogo, e monte o seu.
+## Author: Chehul (danielcosta42)
+## Version: @project-version@
+## SavedVariables: WarmthDB
+## IconTexture: Interface\AddOns\Warmth\Media\logo
+## AddonCompartmentFunc: Warmth_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: Warmth_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: Warmth_OnCompartmentLeave
+## X-Website: https://github.com/danielcosta42/Warmth
+## X-License: MIT
+
+Libs/LibStub/LibStub.lua
+Libs/CallbackHandler-1.0/CallbackHandler-1.0.lua
+Libs/AceComm-3.0/ChatThrottleLib.lua
+Libs/AceComm-3.0/AceComm-3.0.lua
+Libs/LibChehulMesh.lua
+Libs/ChehulNet.lua
+
+Core/Init.lua
+Core/Locale.lua
+Core/Data.lua
+Core/Util.lua
+Core/Wire.lua
+Core/Camps.lua
+Core/Net.lua
+Core/Watch.lua
+
+UI/Theme.lua
+UI/Motion.lua
+UI/Widgets.lua
+UI/Ring.lua
+UI/Window.lua
+UI/Views.lua
+UI/Pins.lua
+UI/Toast.lua
+UI/Options.lua
+UI/Entry.lua

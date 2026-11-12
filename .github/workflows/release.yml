@@ -1,0 +1,38 @@
+name: Release
+
+# Publica quando uma tag vX.Y.Z chega. Quem cria a tag é o workflow
+# "Auto-tag on main" (a partir do arquivo VERSION) — você não precisa taggear
+# à mão. Rodar a partir da TAG é o que faz o packager gerar um release de
+# verdade (num build de branch ele recusa com "future tag").
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+    steps:
+      - name: Clone do projeto
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo -> changelog automático entre tags
+
+      - name: Aviso se faltar o token da CurseForge
+        if: ${{ env.CF_API_KEY == '' }}
+        run: echo "::warning::CF_API_KEY não configurado — pulando publicação. Adicione o secret em Settings → Secrets and variables → Actions."
+
+      - name: Empacotar e publicar (CurseForge + GitHub Release)
+        if: ${{ env.CF_API_KEY != '' }}
+        uses: BigWigsMods/packager@v2
+        env:
+          # CF_API_KEY vem do env do job. GITHUB_OAUTH usa o token automático.
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+          # --- Outras plataformas (opcional) ---
+          # WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+          # WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
