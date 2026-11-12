@@ -140,6 +140,7 @@ local ptBR = {
 	-- the compass
 	["%d yd"] = "%d jardas",
 	["Sit"] = "Sentar",
+	["A campfire burns nearby: the game wants 100 yards between two."] = "Há uma fogueira acesa por perto: o jogo pede 100 jardas entre duas.",
 	["A minute resting by a fire that has camp objects gives its benefits."] = "Um minuto descansando junto a um fogo com objetos de acampamento dá os benefícios dele.",
 	["Open the window"] = "Abrir a janela",
 	["No campfire announced near you."] = "Nenhuma fogueira anunciada perto de você.",

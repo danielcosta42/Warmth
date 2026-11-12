@@ -321,8 +321,8 @@ check(UI.frame.shown and Compass.open == false and win.shown == false, "the rele
 C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return id == W.AURA.NEARBY and {} or nil end }
 W.db.violetToy = true
 Compass.frame:Click("LeftButton")
-check(not slice("Light the Journeyman campfire") and slice("Pouch of Violet Dust").attributes.macrotext == "/use Pouch of Violet Dust",
-	"by a fire there is nothing to light; a player seen using the Violet Dust gets its slice")
+check(slice("Light the Journeyman campfire").action.text:find("100 yards", 1, true) and slice("Pouch of Violet Dust").attributes.macrotext == "/use Pouch of Violet Dust",
+	"by a fire the Light slice stays and says why the game will refuse; a player seen using the Violet Dust gets its slice")
 C_UnitAuras = nil
 S.combat = true
 S.fire("PLAYER_REGEN_DISABLED")

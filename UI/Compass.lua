@@ -48,12 +48,13 @@ end
 -- What the ring offers right now, in order. kind: "item" (use it), "spell", "macro", or "fn" (plain click).
 function Compass.Actions()
 	local out = {}
-	if W.FireNearby() ~= true then -- no fire here: the best kit in the bags lights one
-		for tier = #W.KITS, 1, -1 do
-			if W.Count(W.KITS[tier]) > 0 then
-				out[#out + 1] = { kind = "item", item = W.KITS[tier], title = L["Light the %s campfire"]:format(L[W.TIERS[tier]]) }
-				break
-			end
+	-- The best kit in the bags, always: a slice that comes and goes with what the game thinks is nearby reads as
+	-- a broken menu (seen in game: it vanished after a cancelled placement). By a fire the game itself refuses.
+	for tier = #W.KITS, 1, -1 do
+		if W.Count(W.KITS[tier]) > 0 then
+			out[#out + 1] = { kind = "item", item = W.KITS[tier], title = L["Light the %s campfire"]:format(L[W.TIERS[tier]]),
+				text = W.FireNearby() == true and L["A campfire burns nearby: the game wants 100 yards between two."] or nil }
+			break
 		end
 	end
 	local objects = 0
