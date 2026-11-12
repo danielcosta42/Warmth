@@ -9,6 +9,7 @@
 ## AddonCompartmentFunc: Warmth_OnCompartmentClick
 ## AddonCompartmentFuncOnEnter: Warmth_OnCompartmentEnter
 ## AddonCompartmentFuncOnLeave: Warmth_OnCompartmentLeave
+## X-Curse-Project-ID: 1799681
 ## X-Website: https://github.com/danielcosta42/Warmth
 ## X-License: MIT
 
