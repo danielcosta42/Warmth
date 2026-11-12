@@ -43,9 +43,9 @@ do projeto pesa o visual e as transições tanto quanto a função.
 
 **Anti-objetivos (seria fracasso mesmo funcionando)**
 
-- Mandar à rede algo que o jogador não autorizou: a fogueira só é anunciada com um clique naquela hora (as
-  repetições do mesmo anúncio valem pelo clique, e não sobrevivem a um `/reload` ou relog: o dono anuncia de novo);
-  a presença na roda só sai depois do "sim" dado uma vez.
+- Mandar à rede algo que o jogador não sabe que sai: a fogueira é anunciada ao ser acesa (o addon avisa no chat
+  na primeira vez e a opção desliga isso) ou, com o automático desligado, só com um clique; as repetições do
+  anúncio não sobrevivem a um `/reload` ou relog; a presença na roda só sai depois do "sim" dado uma vez.
 - Parecer ferramenta de eficiência: tabela densa, números por toda parte, cara de planilha.
 - Pesar na rede: mensagens frequentes, ou qualquer coisa que faça o servidor bloquear o canal da malha de novo.
 - Quebrar a tela do jogador (ver "Armadilhas do cliente").
@@ -53,7 +53,13 @@ do projeto pesa o visual e as transições tanto quanto a função.
 ## 3. O que o dono do projeto decidiu
 
 - **Só fogueiras de jogadores**, vistas por **toda a rede** (mesma facção e ruleset, que é até onde a malha vai).
-- **Anúncio só manual.** Nada sai sem o jogador clicar em anunciar.
+- **Anúncio automático** (mudou em 2026-11-12; antes era só manual): "a rede sempre sabe quando alguém usando o
+  addon montou uma fogueira". Acender um kit anuncia o acampamento sozinho, um instante depois, com o fogo de
+  verdade ali. Há uma opção para desligar; desligado, vale o clique em anunciar, como antes.
+- **Bússola e roda de ações** (2026-11-12): uma fogueirinha sempre na tela, arrastável, aponta para a fogueira
+  mais útil por perto (com objetos antes de vazia, depois a mais perto; nunca de outra cópia da zona). Clicar abre
+  uma roda em volta: acender, meus objetos de acampamento, saco de dormir, sentar, cozinhar, Pó Violeta e a janela.
+  A tela "Set up a camp" continua existindo.
 - **Acampamento é fogueira com gente:** o mapa mostra quantos estão em volta.
 - Quem está longe ganha: **pino no mapa, aviso de proximidade, seta até lá e lista**. O pino e a lista mostram
   **quais benefícios** a fogueira tem.

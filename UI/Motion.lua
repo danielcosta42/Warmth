@@ -15,7 +15,7 @@
 -- With "less motion" on (W.db.lessMotion) only the fades remain.
 --=============================================================================
 local _, W = ...
-local Motion = { breathing = {}, books = {}, arriving = {}, moving = {} }
+local Motion = { breathing = {}, books = {}, arriving = {}, moving = {}, fading = {} }
 W.UI.Motion = Motion
 
 local ARRIVE, ENTER, LEAVE = 0.45, 0.32, 0.5
@@ -79,8 +79,19 @@ function Motion.Leave(frame, onDone)
 	Motion.moving[frame] = { t0 = GetTime(), dur = LEAVE, dy = 0, leaving = true, onDone = onDone }
 end
 
+-- Alpha only, after a delay. The one motion that is safe on a secure frame: it never moves, scales or hides it.
+function Motion.FadeIn(frame, delay)
+	frame:SetAlpha(0)
+	Motion.fading[frame] = GetTime() + (delay or 0)
+end
+
 function Motion.Tick(now)
 	local less = Less()
+	for frame, t0 in pairs(Motion.fading) do
+		local p = math.min(1, math.max(0, (now - t0) / 0.22))
+		frame:SetAlpha(p)
+		if p >= 1 then Motion.fading[frame] = nil end
+	end
 	for _, b in ipairs(Motion.breathing) do
 		if b.region:IsVisible() then b.apply((math.sin(now * b.speed + b.phase) + 1) / 2) end
 	end

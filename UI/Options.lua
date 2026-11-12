@@ -22,9 +22,12 @@ W:On("LOADED", function()
 	local rows = {
 		{ L["Appear in the circle when I stand by an announced campfire"],
 			function() return W.db.consent == true end, function(v) W.db.consent = v end },
+		{ L["Announce my campfires to the network when I light them"], Flag("auto") },
 		{ L["Let visitors ask me for an invite to my camp"], Flag("invites") },
 		{ L["Tell me when a campfire is announced in my zone"], Flag("toast") },
 		{ L["Show campfires on the map and the minimap"], Flag("pins") },
+		{ L["Show the compass (the small campfire that points to the best fire nearby)"],
+			function() return W.db.compass ~= false end, function(v) W.db.compass = v; UI.Compass:Apply() end },
 		{ L["Less motion (fades only)"], Flag("lessMotion") },
 	}
 	panel.checks = {}
@@ -40,7 +43,7 @@ W:On("LOADED", function()
 	note:SetPoint("TOPLEFT", 16, -64 - (#rows + 1) * 30 - 6)
 	note:SetWidth(520)
 	note:SetWordWrap(true)
-	note:SetText(L["A campfire is only announced when you click announce. /warmth opens the window."])
+	note:SetText(L["/warmth opens the window. The compass opens the camp actions."])
 
 	UI.options = panel
 	if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then

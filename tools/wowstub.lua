@@ -134,6 +134,7 @@ local METHODS = {
 	GetFrameLevel = function() return 1 end,
 	GetCenter = function() return 300, 200 end, GetEffectiveScale = function() return 1 end,
 	SetAttribute = function(self, k, v) self.attributes = self.attributes or {}; self.attributes[k] = v end,
+	SetRotation = function(self, v) self.rotation = v end,
 	GetOwner = function() return nil end,
 	-- like the client, a change of visibility runs the frame's OnShow / OnHide
 	Show = function(self)

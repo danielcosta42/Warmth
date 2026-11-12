@@ -263,6 +263,18 @@ def crown():
     return white(32, 32, lambda x, y: cov(shape(x, y)))
 
 
+def pointer():
+    """The compass needle: a small arrowhead at twelve o'clock on the rim of an otherwise empty square, so that
+    rotating the texture about its centre swings it around the compass."""
+    def a(x, y):
+        # a triangle with its tip at (32, 2) and its base at y = 11
+        if y < 2 or y > 11:
+            return 0.0
+        half = (y - 2) * 0.62
+        return clamp(half - abs(x - 32) + 0.5) * clamp(11.5 - y) * clamp(y - 1.5)
+    return white(64, 64, a)
+
+
 def copies():
     """Another copy of the zone: two stacked sheets."""
     def a(x, y):
@@ -275,7 +287,7 @@ def copies():
 TEXTURES = [
     ("flame", flame_sheet), ("flame-violet", lambda: flame_sheet(VIOLET)), ("logo", logo), ("glow", glow), ("ring", ring), ("disc", disc), ("slot", slot),
     ("slot-ring", slot_ring), ("slot-dash", slot_dash), ("grain", grain), ("vignette", vignette),
-    ("corner", corner), ("crown", crown), ("copies", copies),
+    ("corner", corner), ("crown", crown), ("copies", copies), ("pointer", pointer),
 ]
 
 

@@ -29,8 +29,11 @@ bash tools/chehulnet-lock.sh          # the vendored network library is untouche
 
 Rules that are easy to break:
 
-- **Nothing about a player leaves without consent.** Announcing is a click; presence in a circle needs the
-  one-time yes (`WarmthDB.consent`). `tools/core.lua` asserts both on a fake mesh.
+- **What leaves the client is what the player knows about.** A campfire is announced as it is lit
+  (`WarmthDB.auto`, on by default, said in chat the first time) or, with that off, only by a click; presence in a
+  circle needs the one-time yes (`WarmthDB.consent`). `tools/core.lua` asserts all of it on a fake mesh.
+- **Secure buttons are owned by UIParent and touched only outside combat** (the Light button, the ring's slices):
+  anchored to the window or the compass they would make it protected.
 - **Only the owner's announce uses the realm bus.** Presence and invite requests go to the owner by whisper.
 - **No looping `Scale` animation.** On the Forever client it accumulates until the region covers the screen.
   Everything that moves is computed per frame in `UI/Motion.lua`.

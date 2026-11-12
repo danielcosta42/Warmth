@@ -12,7 +12,8 @@ W.VERSION = (type(version) == "string" and not version:find("@", 1, true)) and v
 W.me = ""
 
 -- consent: nil = never asked, true/false = the player's answer to "appear in circles?"
-local DEFAULTS = { toast = true, lessMotion = false, pins = true, invites = true }
+-- auto: a campfire the player lights is announced by itself (the owner's decision, 2026-11-12; it can be turned off)
+local DEFAULTS = { toast = true, lessMotion = false, pins = true, invites = true, auto = true, compass = true }
 
 local handlers = {}
 function W:On(event, fn)

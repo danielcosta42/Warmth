@@ -124,8 +124,13 @@ W:On("FIRE_OUT", function()
 end)
 
 local told
-W:On("LIT", function()
+W:On("AUTO_ANNOUNCED", function()
 	if told then return end
+	told = true
+	W.Print(L["Campfire lit and announced to the network. (You can turn the automatic announce off in the options.)"])
+end)
+W:On("LIT", function()
+	if told or W.db.auto ~= false then return end
 	told = true
 	W.Print(L["Campfire lit. Open Warmth to announce it; it has not been announced."])
 end)

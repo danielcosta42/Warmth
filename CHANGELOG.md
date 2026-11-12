@@ -17,7 +17,7 @@ Primeira versão, para o **WoW: Forever** (interface 16001).
   livre.
 - **Ir até lá** põe o marcador do jogo na fogueira.
 - **Montar acampamento.** Checklist dos kits e da madeira, dos objetos das suas profissões e do que dá para
-  cozinhar agora; depois, o anúncio com um recado. Nada vai para a rede antes do clique em anunciar.
+  cozinhar agora, e o recado do acampamento.
 - **Você decide se aparece.** O addon pergunta uma vez se você quer aparecer nas rodas dos outros; sem o sim,
   nada sobre você é enviado.
 - **Cópias da zona.** Os acampamentos de outra cópia vêm marcados, e dá para pedir ao dono um convite de grupo
@@ -28,6 +28,9 @@ Primeira versão, para o **WoW: Forever** (interface 16001).
   põe você na roda com fogo presente, e encerra o anúncio sozinho quando o seu fogo apaga.
 - **Chamas violetas.** Uma fogueira com Pó Violeta (o brinquedo da celebração de lançamento) aparece violeta no
   mapa, na lista e na roda, com o aviso de que ali os benefícios duram duas horas.
+- **Bússola e roda de ações.** Uma fogueirinha na tela aponta para a fogueira mais útil por perto; um clique abre
+  uma roda com acender, os seus objetos de acampamento, o saco de dormir, sentar, cozinhar e o Pó Violeta.
+- **Anúncio automático.** Acender uma fogueira avisa a rede; dá para desligar nas opções.
 - **Botão nativo** no compartimento de addons do jogo, opções na aba AddOns e `/warmth`.
 - `/warmth probe` grava o que o cliente revela sobre acampamentos, para conferir no jogo o que hoje vem de guias.
 - Em inglês e em português do Brasil.

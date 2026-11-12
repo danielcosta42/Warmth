@@ -36,6 +36,7 @@ UI/Ring.lua
 UI/Window.lua
 UI/Views.lua
 UI/Pins.lua
+UI/Compass.lua
 UI/Toast.lua
 UI/Options.lua
 UI/Entry.lua

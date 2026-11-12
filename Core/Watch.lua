@@ -133,6 +133,7 @@ end
 
 local function OnCast(spellID)
 	if W.IsSecret(spellID) or type(spellID) ~= "number" then return end
+	if spellID == W.VIOLET_DUST_SPELL then W.db.violetToy = true end -- the player owns the toy: the ring offers it
 	Resolve()
 	local what = spells[spellID]
 	if not what then return end
@@ -142,6 +143,16 @@ local function OnCast(spellID)
 		W.db.lit = W.lit
 		burning = map and { tier = what[2], t0 = GetTime(), map = map, x = x, y = y } or nil
 		W:Fire("LIT", what[2])
+		if W.db.auto ~= false then
+			-- The network learns of a campfire as it is lit, unless the player turned that off. A moment later, so
+			-- the game has put its Campfire Nearby aura on the player and the announce is of a real fire.
+			local tier = what[2]
+			C_Timer.After(1.5, function()
+				if W.db.auto == false or W.FireNearby() == false then return end
+				local camp = W.Net:Announce(tier, "")
+				if camp then W:Fire("AUTO_ANNOUNCED", camp) end
+			end)
+		end
 	else
 		local map, x, y = W.Position()
 		if not map then return end

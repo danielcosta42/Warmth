@@ -390,6 +390,8 @@ end, function(v)
 	v.lightSlot:SetShown(UI.canLight)
 	v.go:Set((mode == "light" and L["Light a campfire first"]) or (W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"]),
 		nil, mode == "light")
+	v.foot:SetText(W.db.auto ~= false and L["The campfires you light are announced to the network by themselves (see the options)."]
+		or L["Your campfire is not announced until you click."])
 	UI.SyncLight()
 	local lighting = UI.light and UI.light:IsShown()
 	v.lightText:SetText(lighting and "" or ((InCombatLockdown and InCombatLockdown()) and L["You are in combat."]

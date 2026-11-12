@@ -65,6 +65,7 @@ W.TENT, W.REPAIR = W.OBJECT_BY_ID[279978], W.OBJECT_BY_ID[279949]
 W.SLEEPING_BAG = 211527
 
 W.COOKING_SPELL = 2550 -- the Cooking profession spell, for its localized name
+W.VIOLET_DUST_SPELL = 1328348 -- "Throw Violet Dust": what the Pouch of Violet Dust toy casts
 
 -- Auras the game puts on the player around a campfire (measured with /warmth probe, build 1.60.1.70888).
 W.AURA = {

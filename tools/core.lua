@@ -6,6 +6,8 @@ WarmthDB = { consent = false }
 local W = S.load("Core/")
 S.fire("ADDON_LOADED", "Warmth")
 S.fire("PLAYER_LOGIN")
+check(W.db.auto == true and W.db.compass == true, "a campfire is announced as it is lit, by default")
+W.db.auto = false -- most of this file exercises the manual path
 
 -- ── task 1: namespace, saved variables, network identity ───────────────────
 check(Warmth == W and W.VERSION == "0.1.0" and W.me == "Chehul Costa", "namespace, version and the Forever name")
@@ -308,6 +310,34 @@ auras[W.AURA.NEARBY] = nil
 S.advance(20)
 check(burned == nil and W.db.burn[2] == nil, "I walked away from it: that is not a measurement")
 S.pos = keep
+
+-- the automatic announce: on by default, the network learns of a campfire as it is lit
+W.db.auto = true
+local auto = 0
+W:On("AUTO_ANNOUNCED", function() auto = auto + 1 end)
+auras[W.AURA.NEARBY], auras[W.AURA.VIOLET] = nil, nil
+S.advance(30)
+S.take()
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.KITS[1] + 1000000)
+S.advance(2)
+check(auto == 0 and #S.take() == 0, "the cast went through but the game shows no fire: nothing is announced")
+auras[W.AURA.NEARBY] = { spellId = W.AURA.NEARBY }
+S.advance(30)
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.KITS[3] + 1000000)
+check(#S.take() == 0, "not in the same instant as the cast")
+S.advance(2)
+local autoSent = S.take("Realm")
+check(auto == 1 and #autoSent == 1 and autoSent[1].payload:find("^C2|A|1411|5000|5000|77|3|1|0|") and Camps:Get("Chehul Costa").tier == 3,
+	"a moment later, with the fire there: announced by itself, with the tier of the kit")
+W.Net:End()
+W.db.auto = false
+S.advance(30)
+S.take()
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.KITS[1] + 1000000)
+S.advance(5)
+check(auto == 1 and #S.take() == 0, "turned off in the options: lighting announces nothing")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.VIOLET_DUST_SPELL)
+check(W.db.violetToy == true, "throwing Violet Dust tells the addon the player owns the toy")
 C_UnitAuras = nil
 
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")

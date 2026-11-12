@@ -6,6 +6,7 @@ local check = S.check
 local W = S.load("Core/", "UI/")
 S.fire("ADDON_LOADED", "Warmth")
 S.fire("PLAYER_LOGIN")
+W.db.auto = false -- the views below are exercised on the manual path; the automatic announce is in tools/core.lua
 local UI, Camps, Motion = W.UI, W.Camps, W.UI.Motion
 local function announce(owner, f)
 	local base = { map = 1411, x = 0.5, y = 0.5, zuid = 0, tier = 1, n = 1, objs = {}, people = {}, note = "" }
@@ -259,12 +260,86 @@ check(UI.prompt.shown and UI.prompt.title.text == "Caio Nunes wants to come to y
 UI.prompt.yes:Click()
 check(S.invited == "Caio Nunes", "accepting invites them")
 
-check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 5, "the options live in the game's AddOns tab")
+check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 7, "the options live in the game's AddOns tab")
 UI.options.checks[1]:Click()
 check(W.db.consent == true, "the consent switch")
-UI.options.checks[5]:Click()
+UI.options.checks[2]:Click()
+check(W.db.auto == true, "the automatic-announce switch")
+W.db.auto = false
+UI.options.checks[7]:Click()
 check(W.db.lessMotion == true, "the less-motion switch")
 W.db.lessMotion = false
+
+-- ── the compass and its ring ───────────────────────────────────────────────
+local Compass = UI.Compass
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(20)
+check(Compass.frame and Compass.frame.shown and Compass.Best() == nil, "the compass is on the screen; with no campfire it points nowhere")
+Compass:Refresh(); Compass:Point()
+check(Compass.frame.pointer.shown == false and Compass.frame.text.text == "", "no needle, no distance")
+announce("Empty Near", { x = 0.51 })                                   -- 50 yards east, no objects
+announce("Rich Far", { x = 0.5, y = 0.46, objs = { W.TENT }, n = 3 })  -- 200 yards north, with a tent
+announce("Other Copy", { x = 0.502, zuid = 3, objs = { W.TENT } })     -- next to me, but in another copy
+S.copy = 9
+check(Compass.Best().owner == "Rich Far", "the most useful fire: one with camp objects beats a nearer empty one, another copy never")
+Camps:End("Rich Far")
+check(Compass.Best().owner == "Empty Near", "an empty fire only when there is nothing better")
+announce("North Fire", { x = 0.5, y = 0.46, objs = { W.TENT }, n = 3 }) -- a new owner: Rich Far's End is too recent
+S.facing = 0
+Compass:Refresh(); Compass:Point()
+check(Compass.frame.pointer.shown and math.abs(Compass.frame.pointer.rotation) < 0.001 and Compass.frame.text.text == "200 yd",
+	"facing north, a fire to the north: the needle points up, with the distance")
+S.facing = math.pi / 2
+Compass:Point()
+check(math.abs(Compass.frame.pointer.rotation + math.pi / 2) < 0.001, "facing west, the same fire is to the right")
+Camps:End("North Fire"); announce("West Fire", { x = 0.46, objs = { W.TENT } })
+Compass:Refresh(); Compass:Point()
+check(math.abs(Compass.frame.pointer.rotation) < 0.001, "facing west, a fire to the west is straight ahead")
+S.facing = 0
+S.pos = { map = 1411, x = 0.461, y = 0.5 }
+Compass:Refresh(); Compass:Point()
+check(Compass.frame.pointer.shown == false and Compass.frame.text.text == "", "at the fire the needle rests")
+S.pos = { map = 1411, x = 0.5, y = 0.5 }
+
+S.bags = { [W.KITS[1]] = 3, [W.KITS[2]] = 1, [W.OBJECTS[4][1]] = 2, [W.SLEEPING_BAG] = 1 }
+W.db.violetToy = nil
+Compass.frame:Click("LeftButton")
+local function slice(title) for _, sl in ipairs(Compass.slices) do if sl.shown and sl.action.title == title then return sl end end end
+local lightSlice, wheel, bag, sit, cook, win = slice("Light the Journeyman campfire"), slice("Sharpening Wheel"), slice("Sleeping Bag"), slice("Sit"), slice("Cooking"), slice("Warmth")
+check(Compass.open and lightSlice and wheel and bag and sit and cook and win and not slice("Pouch of Violet Dust"), "the ring: light, my object, the bag, sit, cook, the window")
+check(lightSlice.template == "SecureActionButtonTemplate" and lightSlice.parent == UIParent and lightSlice.attributes.type == "item"
+	and lightSlice.attributes.item == "item:" .. W.KITS[2], "lighting uses the best kit in the bags, on a secure button")
+check(wheel.attributes.item == "item:" .. W.OBJECTS[4][1] and wheel.count.text == 2 and bag.attributes.item == "item:" .. W.SLEEPING_BAG, "objects and the bag use their items")
+check(sit.attributes.type == "macro" and sit.attributes.macrotext == "/sit" and cook.attributes.type == "spell" and cook.attributes.spell == "Cooking"
+	and win.attributes.type == nil, "sit is a macro, cooking a spell, the window a plain click")
+check(lightSlice.point[2] == UIParent and lightSlice.point[4] == 300 and lightSlice.point[5] == 270, "the first slice sits at twelve o'clock, placed on the screen and not on the compass")
+UI.frame:Hide()
+win.scripts.PostClick(win, "LeftButton", true)
+check(UI.frame.shown == false and Compass.open, "the press does nothing by itself")
+win.scripts.PostClick(win, "LeftButton", false)
+check(UI.frame.shown and Compass.open == false and win.shown == false, "the release opens the window and closes the ring")
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return id == W.AURA.NEARBY and {} or nil end }
+W.db.violetToy = true
+Compass.frame:Click("LeftButton")
+check(not slice("Light the Journeyman campfire") and slice("Pouch of Violet Dust").attributes.macrotext == "/use Pouch of Violet Dust",
+	"by a fire there is nothing to light; a player seen using the Violet Dust gets its slice")
+C_UnitAuras = nil
+S.combat = true
+S.fire("PLAYER_REGEN_DISABLED")
+check(Compass.open == false and wheel.shown == false, "combat closes the ring")
+Compass.frame:Click("LeftButton")
+check(Compass.open == false and S.printed[#S.printed] == "|cffffb454Warmth|r You are in combat.", "and it does not open in combat")
+S.combat = false
+Compass.frame:Click("RightButton")
+check(UI.frame.shown == false, "right click on the compass toggles the window")
+UI.options.checks[6]:Click()
+check(W.db.compass == false and Compass.frame.shown == false, "the compass can be turned off")
+UI.options.checks[6]:Click()
+check(Compass.frame.shown, "and on again")
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.bags = {}
+S.advance(20)
+if UI.toast then UI.toast:Hide() end -- raised by the camps announced for the compass
 
 local toc = io.open("Warmth.toc"):read("*a")
 for fn in toc:gmatch("AddonCompartmentFunc%a*: (%S+)") do check(type(_G[fn]) == "function", "the toc names " .. fn .. ", which exists") end
