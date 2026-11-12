@@ -31,7 +31,9 @@ function UI:Build()
 
 	-- Night, paper grain, the warmth coming from where the fire sits, and darker edges.
 	Wd.Fill(f, T.night, 0.98):SetAllPoints()
-	local grain = Wd.Tex(f, "grain", T.ember, 0.05, "BORDER")
+	local grain = f:CreateTexture(nil, "BORDER")
+	grain:SetTexture(UI.MEDIA .. "grain", "REPEAT", "REPEAT") -- tiling needs the wrap mode set with the file
+	grain:SetVertexColor(T.ember[1], T.ember[2], T.ember[3], 0.05)
 	grain:SetAllPoints()
 	grain:SetHorizTile(true)
 	grain:SetVertTile(true)

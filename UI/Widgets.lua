@@ -179,6 +179,12 @@ function Wd.Slot(parent, size)
 	o.icon:SetPoint("TOPLEFT", 4, -4)
 	o.icon:SetPoint("BOTTOMRIGHT", -4, 4)
 	o.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	if o.CreateMaskTexture then -- round the icon's corners to the slot's shape
+		local mask = o:CreateMaskTexture()
+		mask:SetTexture(UI.MEDIA .. "slot", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+		mask:SetAllPoints(o.icon)
+		o.icon:AddMaskTexture(mask)
+	end
 	o.frame = Wd.Tex(o, "slot-ring", T.ember, 1, "OVERLAY")
 	o.frame:SetAllPoints()
 	o.dash = Wd.Tex(o, "slot-dash", T.line, 1, "OVERLAY")
