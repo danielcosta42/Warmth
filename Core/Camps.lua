@@ -18,6 +18,45 @@ local ended = {} -- [owner] = GetTime() of their End
 
 function Camps:Get(owner) return self.all[owner or ""] end
 
+-- Yards between two points of one map; nil on different maps or where the client cannot say.
+local function Yards(a, b)
+	if a.map ~= b.map then return nil end
+	local an, aw = W.World(a.map, a.x, a.y)
+	local bn, bw = W.World(b.map, b.x, b.y)
+	return an and bn and math.sqrt((an - bn) ^ 2 + (aw - bw) ^ 2) or nil
+end
+
+-- A sighting: a fire somebody saw burning and nobody announced. It belongs to no one (its key is the place), so
+-- one player crossing a region can leave several; it lives while people keep seeing it. `by`: who saw it last.
+-- A known camp at the same place (SAME yards, the same copy of the zone) stands: a lit camp is left alone, a
+-- sighting is refreshed. Returns the sighting and whether it is new; nil when it added nothing.
+Camps.SAME, Camps.SIGHTS = 60, 40
+function Camps:Sight(by, f)
+	local key = ("@%d:%d:%d"):format(f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5))
+	local known, sights = self.all[key], 0
+	for _, camp in pairs(self.all) do
+		if camp.sight then sights = sights + 1 end
+		local d = not known and not camp.demo and Yards(camp, f)
+		if d and d <= self.SAME and ((camp.zuid or 0) == 0 or (f.zuid or 0) == 0 or camp.zuid == f.zuid) then
+			if not camp.sight then return nil end -- the lighter's own word stands
+			known = camp
+		end
+	end
+	if known then
+		known.last, known.by = time(), by
+		known.tier, known.flame = math.max(known.tier, f.tier), f.flame or 0 -- a tier someone read off the fire is kept
+		W:Fire("CAMPS")
+		return known, false
+	end
+	if sights >= self.SIGHTS then return nil end
+	local camp = { owner = key, sight = true, spotted = true, by = by, heard = {}, order = {}, at = time(), last = time(),
+		map = f.map, x = f.x, y = f.y, zuid = f.zuid or 0, tier = f.tier, flame = f.flame or 0, n = 0, objs = {}, roster = {}, note = "" }
+	self.all[key] = camp
+	W:Fire("CAMPS")
+	if by ~= W.me then W:Fire("CAMP_NEW", camp) end
+	return camp, true
+end
+
 -- fields: what Wire.Decode returns for an announce. Returns the camp and whether it is new.
 -- `here`: made on this client (my own camp, a demo camp), not heard from the network.
 function Camps:Announce(owner, f, here)
@@ -29,6 +68,9 @@ function Camps:Announce(owner, f, here)
 			local n = 0
 			for _ in pairs(self.all) do n = n + 1 end
 			if n >= self.MAX then return nil end
+		end
+		for key, sight in pairs(self.all) do -- the lighter announces: a sighting of the same fire has done its part
+			if sight.sight and (Yards(sight, f) or math.huge) <= self.SAME then self.all[key] = nil end
 		end
 		camp = { owner = owner, heard = {}, order = {} }
 		self.all[owner] = camp

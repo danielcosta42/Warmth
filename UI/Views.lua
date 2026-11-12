@@ -7,7 +7,10 @@ local T, Wd, L, C = UI.T, UI.Widgets, W.L, UI.C
 local PAD, WIDTH = UI.PAD, UI.W - 2 * UI.PAD
 
 function UI.CampTitle(camp)
-	if camp.spotted then return camp.owner == W.me and L["A campfire you found"] or L["Campfire seen by %s"]:format(W.Esc(camp.owner)) end
+	if camp.spotted then
+		local by = camp.by or camp.owner
+		return by == W.me and L["A campfire you found"] or L["Campfire seen by %s"]:format(W.Esc(by))
+	end
 	if camp.owner == W.me then return L["Your camp"] end
 	return L["%s's camp"]:format(W.Esc(camp.owner))
 end
@@ -262,7 +265,11 @@ end, function(v, fresh)
 
 	v.go:Set(L["Go there"])
 	v.go.fn = function() UI.Waypoint(camp) end
-	if camp.owner == W.me then
+	if camp.sight then
+		v.other:Set(L["Back to the list"])
+		v.other.tip = nil
+		v.other.fn = function() UI:Show("list") end
+	elseif camp.owner == W.me then
 		-- at my own fire there is nowhere to go: the main button is whether the camp asks for what it lacks
 		v.go:Set(W.db.asking ~= false and L["Asking for objects"] or L["Not asking"])
 		v.go.fn = function()

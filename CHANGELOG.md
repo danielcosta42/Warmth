@@ -5,6 +5,12 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+## [0.5.0]
+
+- **Fogueiras semeadas.** Uma fogueira vista deixa de ser o acampamento de quem a viu: vira um avistamento sem
+  dono. Basta passar por ela, e um jogador cruzando uma região deixa várias no mapa, tenha ou não um acampamento
+  seu. Quem está ao lado a mantém viva; o anúncio de quem acendeu toma o lugar.
+
 ## [0.4.0]
 
 - **Fogueira avistada.** Quem tem o Warmth e para ao lado de uma fogueira que a rede não conhece (acesa por quem

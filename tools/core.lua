@@ -587,38 +587,62 @@ S.extras = nil
 W.Net:End()
 S.take()
 
--- a fire someone without Warmth lit: the player who stops by it announces it as a sighting
+-- a fire someone without Warmth lit: a player passing by tells the network of a sighting, which is nobody's camp
 for owner in pairs(Camps.all) do Camps:End(owner) end
-S.advance(30)
+S.advance(300)
 S.take()
 local near = true
 W.lit = nil -- by a fire of my own lighting there is nothing to find
-W.Watch.lastSight = nil
-local autoWas = W.db.auto
+local autoWas, posWas = W.db.auto, S.pos
 W.db.auto = true
 C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return id == W.AURA.NEARBY and near and {} or nil end }
-local sighted = 0
-W:On("SIGHTED", function() sighted = sighted + 1 end)
-check(W.Watch:Sight() == false and Camps:Get(W.me) == nil, "a fire seen once is not yet announced: the player may be riding past")
-check(W.Watch:Sight() == true and sighted == 1, "standing still by it, the second look announces it")
-local found = Camps:Get(W.me)
+local function sights()
+	local out = {}
+	for _, camp in pairs(Camps.all) do if camp.sight then out[#out + 1] = camp end end
+	return out
+end
+S.advance(10)
 local sent = S.take("Realm")
-check(found.spotted and found.tier == 1 and sent[1].payload:find("|1s|", 1, true), "as a sighting, Basic until known: " .. tostring(sent[1] and sent[1].payload))
-check(Wire.Decode(sent[1].payload).spotted == true and Wire.Decode("C2|A|1411|5010|5000|77|2|1|0|||").spotted == nil, "the flag round trips; a lit camp does not carry it")
+local found = sights()[1]
+check(#sights() == 1 and #sent == 1 and sent[1].payload:find("^C2|S|") and sent[1].payload:find("|1$") and Camps:Get(W.me) == nil,
+	"passing a fire the network does not know: a sighting goes out, and it is not my camp: " .. tostring(sent[1] and sent[1].payload))
+check(found.by == W.me and found.tier == 1 and Wire.Decode(sent[1].payload).kind == "S", "Basic until known, seen by me")
+S.advance(60)
+check(#S.take("Realm") == 0 and #sights() == 1, "known now: not told again while fresh")
 W.Watch:Spot("Journeyman Campfire")
-check(found.tier == 2, "pointing at the fire tells its tier")
-check(W.Watch:Sight() == false and Camps:Get(W.me) == found, "nothing more while it stands")
-S.handler("C2|T|Chehul Costa", "Caio Nunes", "WHISPER")
-check(not Social:CanThank(found), "a sighting is nobody's to thank")
--- the lighter's own announce replaces it, and it is not made again while that camp is known
-S.handler("C2|A|1411|" .. math.floor(found.x * 10000) .. "|" .. math.floor(found.y * 10000) .. "|77|2|1|0|||", "Real Owner", "RELAY")
-W.Watch:Sight()
-check(Camps:Get(W.me) == nil and W.Watch:Sight() == false and W.Watch:Sight() == false and Camps:Get(W.me) == nil, "the lighter's own word wins")
-S.handler("C2|X", "Real Owner", "RELAY")
+sent = S.take("Realm")
+check(found.tier == 2 and #sent == 1 and sent[1].payload:find("|2$"), "pointing at the fire tells its tier, to the network too")
+S.advance(250)
+check(#S.take("Realm") == 1 and found.tier == 2 and #sights() == 1, "whoever is by it refreshes it once it is a beat old")
+-- with a camp of my own elsewhere, the next fire is still sighted: one player seeds a region
+S.pos = { map = posWas.map, x = posWas.x + 0.2, y = posWas.y }
+near = false
 S.advance(30)
-check(W.Watch:Sight() == false and W.Watch:Sight() == false and Camps:Get(W.me) == nil, "a sighting that ended is not made again at the same place")
+local own = W.Net:Announce(1, "")
+S.take()
+S.pos = { map = posWas.map, x = posWas.x + 0.4, y = posWas.y }
+near = true
+S.advance(10)
+check(#sights() == 2 and Camps:Get(W.me) == own and S.take("Realm")[1].payload:find("^C2|S|"), "a second fire, with a camp of my own standing: both sightings and my camp live")
+W.Net:End()
+-- heard from the network: merged by place, replaced by the lighter's word, capped
+S.pos = posWas
+S.handler(Wire.Sight({ map = found.map, x = found.x + 0.0005, y = found.y, zuid = found.zuid, tier = 1 }), "Other Seer", "RELAY")
+check(#sights() == 2 and found.by == "Other Seer" and found.tier == 2, "the same fire seen by another is the same sighting; a known tier is kept")
+check(not Social:CanThank(found) and not W.Net:Presence(found.owner) and not W.Net:RequestInvite(found.owner), "a sighting has no host: no thanks, no presence, no invite")
+S.handler("C2|A|" .. found.map .. "|" .. math.floor(found.x * 10000) .. "|" .. math.floor(found.y * 10000) .. "|" .. found.zuid .. "|2|1|0|||", "Real Owner", "RELAY")
+check(#sights() == 1 and Camps:Get("Real Owner") ~= nil, "the lighter's own announce takes the sighting's place")
+S.handler(Wire.Sight({ map = found.map, x = found.x, y = found.y, zuid = found.zuid, tier = 1 }), "Other Seer", "RELAY")
+check(#sights() == 1, "and a sighting of a fire with a known camp adds nothing")
+for n = 1, 60 do S.handler("C2|S|" .. (2000 + n) .. "|5000|5000|0|1", "Flooder", "RELAY") end
+check(#sights() == Camps.SIGHTS, "sightings are capped")
+for _, bad in ipairs({ "C2|S|1411|5000|5000|0|0", "C2|S|1411|5000|5000|0|4", "C2|S|1411|5000|5000|0|1|x", "C2|S|1411|50000|5000|0|1" }) do
+	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
+end
 W.db.auto = false
-check(W.Watch:Sight() == false, "nor with the automatic announce off")
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(30)
+check(#sights() == 0 and W.Watch:Sight() == false, "nothing is sighted with the automatic announce off")
 W.db.auto = autoWas
 C_UnitAuras = nil
 S.take()

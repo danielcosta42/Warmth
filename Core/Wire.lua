@@ -7,10 +7,11 @@
 --   C2|I|owner                                           "invite me to your copy of the zone" (whisper to the owner)
 --   C2|V|npc|map|x|y|i,i,i|name                          a vendor of camp materials: who, where, which items
 --   C2|E|o,o,o|level                                     the owner's extras: the objects the camp asks for, the host's warmth level
+--   C2|S|map|x|y|zuid|tier                                a sighting: a fire burning here that nobody announced (tier: a guess)
 --   C2|T|owner                                           "thank you for the fire" (whisper to the owner, guild, group)
 --
--- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames; s = a sighting: the
--- announcer found this fire burning, someone else lit it (the tier is then a guess). Unknown letters are
+-- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames; s = (0.4.0 only, still
+-- read) the announcer found this fire burning; since 0.5.0 a sighting is its own message, S. Unknown letters are
 -- ignored, so a flag can be added later without breaking older clients.
 -- x, y: 0..10000. zuid: the zone copy, 0 = unknown. n: people in the circle. age: minutes since it was first
 -- announced. o: object index (Core/Data.lua).
@@ -79,6 +80,10 @@ function Wire.Join(owner, class, obj)
 	return table.concat({ "C2", "J", owner, ClassChar(class), obj or 0 }, "|")
 end
 function Wire.End() return "C2|X" end
+function Wire.Sight(f)
+	return table.concat({ "C2", "S", f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5), f.zuid or 0,
+		f.tier .. (f.flame == 1 and "v" or "") }, "|")
+end
 function Wire.Extras(wants, level)
 	return "C2|E|" .. table.concat(wants or {}, ",") .. "|" .. (level or 0)
 end
@@ -106,6 +111,12 @@ function Wire.Decode(payload)
 		return a == nil and { kind = "X" } or nil
 	elseif kind == "I" then
 		return (GoodName(a) and b == nil) and { kind = "I", owner = a } or nil
+	elseif kind == "S" then
+		local map, x, y, zuid = Int(a, 1, 99999), Int(b, 0, 10000), Int(c, 0, 10000), Int(d, 0, 2147483647)
+		local digit, flags = tostring(e):match("^(%d)(%l?%l?%l?%l?)$")
+		local tier = Int(digit, 1, #W.SLOTS)
+		if not (map and x and y and zuid and tier and f == nil) then return nil end
+		return { kind = "S", map = map, x = x / 10000, y = y / 10000, zuid = zuid, tier = tier, flame = flags:find("v", 1, true) and 1 or 0 }
 	elseif kind == "T" then
 		return (GoodName(a) and b == nil) and { kind = "T", owner = a } or nil
 	elseif kind == "E" then
