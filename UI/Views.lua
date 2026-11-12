@@ -27,10 +27,9 @@ local function Ago(ts)
 end
 
 function UI.Waypoint(camp)
-	local ok = pcall(function()
-		C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(camp.map, camp.x, camp.y))
-		C_SuperTrack.SetSuperTrackingUserWaypoint(true)
-	end)
+	local ok = pcall(function() C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(camp.map, camp.x, camp.y)) end)
+	-- the arrow that follows the waypoint: Forever does not have this call (measured), so it is tried apart
+	pcall(function() C_SuperTrack.SetSuperTrackingUserWaypoint(true) end)
 	if ok then W.Print(L["Waypoint set to %s."]:format(UI.CampTitle(camp)))
 	else W.Print(("%s: %s %.1f, %.1f"):format(UI.CampTitle(camp), W.Esc(W.ZoneName(camp.map)), camp.x * 100, camp.y * 100)) end
 end
@@ -102,6 +101,8 @@ local function FillRow(r, camp)
 		if objs[j] then s:SetObject(objs[j]); s:Show() else s:Hide() end
 	end
 	r.glow.strength = math.min(1, 0.6 + W.Camps:Count(camp) * 0.06)
+	r.glow:SetViolet(W.Camps:Violet(camp))
+	r.flame:SetViolet(W.Camps:Violet(camp))
 end
 
 UI.View("list", function(v)
@@ -203,11 +204,13 @@ end, function(v, fresh)
 		lines[#lines + 1] = C.ember .. W.ObjectName(index) .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"]) .. C.r
 	end
 	lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
+	if W.Camps:Violet(camp) then lines[#lines + 1] = UI.Hex(T.violet) .. L["Violet flames: someone threw Violet Dust into this fire."] .. C.r end
 	v.objs:SetText(table.concat(lines, "\n"))
 
 	local bring = CanBring(camp)
 	local hint = L["Sit by the fire for a minute to get the camp's benefits for an hour."]
-	if other == true then hint = C.copy .. L["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] .. C.r
+	if camp.notHere then hint = C.copy .. L["You are where this camp is and there is no fire: it burns in another copy of the zone, or it went out."] .. C.r
+	elseif other == true then hint = C.copy .. L["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] .. C.r
 	elseif bring then hint = C.ok .. L["Your %s fits here."]:format(bring) .. C.r .. " " .. hint end
 	v.hint:SetText(hint)
 
@@ -238,6 +241,7 @@ UI.REASONS = {
 	full = "Too many campfires known right now.",
 	bad_tier = "Pick the campfire you lit.",
 	no_camp = "That camp is gone.",
+	no_fire = "There is no campfire near you. Light one first.",
 	demo = "This is a demo camp: nobody is there to invite you.",
 }
 
@@ -330,6 +334,9 @@ end, function(v)
 		end
 	end
 	if have == 0 then rows[#rows + 1] = { C.mute .. L["None in your bags. Each profession crafts its own (from skill 20)."] .. C.r, "" } end
+	if W.Count(W.SLEEPING_BAG) > 0 then
+		rows[#rows + 1] = { W.ItemName(W.SLEEPING_BAG, "Sleeping Bag") .. C.mute .. "   " .. L["bonus experience, by the fire"] .. C.r, C.ok .. L["in your bags"] .. C.r }
+	end
 	rows[#rows + 1] = { C.ember .. L["Cook at the fire"] .. C.r, "" }
 	if W.cooking then
 		rows[#rows + 1] = { W.cooking.ready > 0 and W.Esc(table.concat(W.cooking.names, ", ")) or L["Nothing with what you carry."],

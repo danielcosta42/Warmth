@@ -20,6 +20,8 @@ MEDIA = os.path.join(ROOT, "Media")
 FRAMES, CELL = 8, 128  # the flame sheet: 8 cells of 128 px in a row
 
 EMBER, DEEP, CORE = (1.0, 0.63, 0.20), (0.91, 0.36, 0.09), (1.0, 0.90, 0.56)
+FIRE = (DEEP, EMBER, CORE)
+VIOLET = ((0.40, 0.19, 0.78), (0.66, 0.43, 0.98), (0.94, 0.86, 1.0))  # Violet Dust thrown into the fire
 LOG, LOG_DARK, LOG_END = (0.42, 0.26, 0.15), (0.29, 0.17, 0.10), (0.72, 0.52, 0.33)
 NIGHT = (0.070, 0.047, 0.031)
 
@@ -142,24 +144,25 @@ def logs_stack(S):
     return out
 
 
-def fire_cell(S, phase):
+def fire_cell(S, phase, colours=FIRE):
+    deep, ember, core_colour = colours
     outer, mid, core = flame_shape(S, phase, 1.0, 0.0), flame_shape(S, phase + 0.9, 0.68, -0.035), flame_shape(S, phase + 1.7, 0.38, -0.06)
     sparks = []
     for k in range(3):
         t = (phase / (2 * math.pi) + k / 3.0) % 1.0
         sx = S * (0.5 + 0.16 * math.sin(k * 2.1 + t * 3))
         sy = S * (0.34 - 0.26 * t)
-        sparks.append((CORE, lambda x, y, sx=sx, sy=sy, t=t: cov(circle(x, y, sx, sy, S * 0.012)) * (1 - t) * 0.9))
+        sparks.append((core_colour, lambda x, y, sx=sx, sy=sy, t=t: cov(circle(x, y, sx, sy, S * 0.012)) * (1 - t) * 0.9))
     return layers(S, S, [
-        (DEEP, lambda x, y: smooth(S * 0.10, 0, outer(x, y)) * 0.35),  # the halo hugging the flame
-        (DEEP, lambda x, y: cov(outer(x, y))),
-        (EMBER, lambda x, y: cov(mid(x, y))),
-        (CORE, lambda x, y: cov(core(x, y))),
+        (deep, lambda x, y: smooth(S * 0.10, 0, outer(x, y)) * 0.35),  # the halo hugging the flame
+        (deep, lambda x, y: cov(outer(x, y))),
+        (ember, lambda x, y: cov(mid(x, y))),
+        (core_colour, lambda x, y: cov(core(x, y))),
     ] + logs_stack(S) + sparks)
 
 
-def flame_sheet():
-    cells = [fire_cell(CELL, 2 * math.pi * k / FRAMES) for k in range(FRAMES)]
+def flame_sheet(colours=FIRE):
+    cells = [fire_cell(CELL, 2 * math.pi * k / FRAMES, colours) for k in range(FRAMES)]
     return [sum((cell[j] for cell in cells), []) for j in range(CELL)]
 
 
@@ -270,7 +273,7 @@ def copies():
 
 
 TEXTURES = [
-    ("flame", flame_sheet), ("logo", logo), ("glow", glow), ("ring", ring), ("disc", disc), ("slot", slot),
+    ("flame", flame_sheet), ("flame-violet", lambda: flame_sheet(VIOLET)), ("logo", logo), ("glow", glow), ("ring", ring), ("disc", disc), ("slot", slot),
     ("slot-ring", slot_ring), ("slot-dash", slot_dash), ("grain", grain), ("vignette", vignette),
     ("corner", corner), ("crown", crown), ("copies", copies),
 ]

@@ -42,6 +42,8 @@ function UI:Toast(camp)
 		self.toast = t
 	end
 	t.camp = camp
+	t.glow:SetViolet(W.Camps:Violet(camp))
+	t.flame:SetViolet(W.Camps:Violet(camp))
 	t.title:SetText(L["A campfire in %s"]:format(W.Esc(W.ZoneName(camp.map))))
 	local line = W.Esc(camp.owner) .. (camp.note ~= "" and (": " .. W.Esc(camp.note)) or (" " .. L["lit a camp."]))
 	if W.Camps:OtherCopy(camp) == true then line = UI.C.copy .. L["another copy"] .. UI.C.r .. "  " .. line end
@@ -111,6 +113,10 @@ W:On("INVITE_REQUEST", function(name)
 	UI.Ask(L["%s wants to come to your fire"]:format(W.Esc(name)),
 		L["They are in another copy of the zone. Inviting them to your group brings them to yours."],
 		L["Invite"], L["Not now"], function(yes) W.Net:AnswerInvite(name, yes) end)
+end)
+
+W:On("FIRE_OUT", function()
+	W.Print(L["Your fire went out: the announce ended."])
 end)
 
 local told

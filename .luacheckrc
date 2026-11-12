@@ -33,12 +33,13 @@ read_globals = {
     -- maps
     "CreateVector2D", "UiMapPoint",
     -- namespaces
-    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_SuperTrack", "C_Timer",
+    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_TradeSkillUI", "C_SuperTrack", "C_Timer",
 }
 
 files["Core/Locale.lua"] = { max_line_length = false }
 files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
 files["UI/Entry.lua"] = { max_line_length = false }
+files["Core/Probe.lua"] = { max_line_length = false }
 
 exclude_files = { ".release/", "Libs/", "tools/" }

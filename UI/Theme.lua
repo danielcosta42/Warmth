@@ -18,6 +18,7 @@ local T = {
 	ok     = { 0.640, 0.830, 0.490 },
 	miss   = { 1.000, 0.610, 0.490 },
 	copy   = { 0.560, 0.690, 0.860 }, -- "another copy of the zone": the one cool colour
+	violet = { 0.560, 0.330, 0.960 }, -- a fire with Violet Dust in it
 }
 UI.T = T
 UI.MEDIA = "Interface\\AddOns\\Warmth\\Media\\"

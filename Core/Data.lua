@@ -1,6 +1,6 @@
 --=============================================================================
--- What the game calls things. Ids come from third-party guides (wow-professions.com, November 2026) and are NOT
--- verified in game yet: everything built on them has a manual path (see the spec, section 4).
+-- What the game calls things. The item ids came from third-party guides (wow-professions.com, November 2026) and
+-- all 41 were confirmed in game with /warmth probe on build 1.60.1.70888: each resolves to a name and a spell.
 --
 -- The order of W.OBJECTS is part of the wire format (an object travels as its index): append, never reorder.
 --=============================================================================
@@ -59,4 +59,16 @@ W.OBJECT_BY_ID = {}
 for i, o in ipairs(W.OBJECTS) do W.OBJECT_BY_ID[o[1]] = i end
 W.TENT, W.REPAIR = W.OBJECT_BY_ID[279978], W.OBJECT_BY_ID[279949]
 
+-- The sleeping bag: its experience buff goes with the campfire's (the owner's word, 2026-11-11; what it puts on
+-- the player is still to be measured with /warmth probe).
+W.SLEEPING_BAG = 211527
+
 W.COOKING_SPELL = 2550 -- the Cooking profession spell, for its localized name
+
+-- Auras the game puts on the player around a campfire (measured with /warmth probe, build 1.60.1.70888).
+W.AURA = {
+	NEARBY   = 1283391, -- "Campfire Nearby": on while a lit campfire is in range, whoever lit it
+	WELCOME  = 1229739, -- "Welcoming Campfire": the minute of resting by the fire, 60 s
+	BENEFITS = 1229741, -- "Camp Benefits": what the minute gives
+	VIOLET   = 1328375, -- "Violet Flames": by a fire someone threw Violet Dust into (the launch celebration toy)
+}

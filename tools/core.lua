@@ -227,5 +227,67 @@ function GetTradeSkillInfo(i) return ({ "Meats", "Charred Wolf Meat", "Spice Bre
 S.fire("TRADE_SKILL_SHOW")
 check(W.cooking and W.cooking.ready == 1 and W.cooking.names[1] == "Charred Wolf Meat", "the Cooking window tells what can be made now")
 
+-- the same through the modern API, which is what Forever has
+GetTradeSkillLine, GetNumTradeSkills, GetTradeSkillInfo = nil, nil, nil
+W.cooking = nil
+C_TradeSkillUI = {
+	GetBaseProfessionInfo = function() return { professionName = "Cooking" } end,
+	GetAllRecipeIDs = function() return { 1, 2, 3 } end,
+	GetRecipeInfo = function(id) return ({ { name = "Spice Bread", learned = true, numAvailable = 2 }, { name = "Unknown", learned = false, numAvailable = 9 },
+		{ name = "Smoked Boar", learned = true, numAvailable = 0 } })[id] end,
+}
+S.fire("TRADE_SKILL_LIST_UPDATE")
+check(W.cooking and W.cooking.ready == 1 and W.cooking.names[1] == "Spice Bread", "Cooking through C_TradeSkillUI: learned recipes with materials")
+C_TradeSkillUI.GetBaseProfessionInfo = function() return { professionName = "Blacksmithing" } end
+W.cooking = nil
+S.fire("TRADE_SKILL_SHOW")
+check(W.cooking == nil, "another profession's window is not Cooking")
+
+-- the game's own word on whether a fire is here ("Campfire Nearby", measured with the probe)
+check(W.FireNearby() == nil, "no aura API: the client cannot tell, and distance alone decides (everything above)")
+local auras = {}
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return auras[id] end }
+check(W.FireNearby() == false and select(2, W.Net:Announce(1, "x")) == "no_fire" and #S.take() == 0, "no campfire near: nothing to announce")
+auras[W.AURA.NEARBY] = { spellId = W.AURA.NEARBY }
+S.advance(30)
+local lit = W.Net:Announce(1, "real fire")
+check(W.FireNearby() == true and lit ~= nil, "with the game's Campfire Nearby aura the announce goes")
+S.take()
+auras[W.AURA.NEARBY] = nil
+local out = 0
+W:On("FIRE_OUT", function() out = out + 1 end)
+S.advance(10)
+check(Camps:Get("Chehul Costa") ~= nil and out == 0, "one tick without the aura is not yet a fire gone out")
+S.advance(10)
+check(Camps:Get("Chehul Costa") == nil and out == 1 and S.take("Realm")[1].payload == "C2|X", "my fire went out: the announce ends by itself and the network is told")
+S.handler("C2|A|1411|5000|5000|77|1|1|0|||", "Ghost Camp", "RELAY")
+S.take()
+S.advance(30)
+local ghost = Camps:Get("Ghost Camp")
+check(ghost.notHere == true and Camps:OtherCopy(ghost) == true and #S.take() == 0, "standing at an announced camp with no fire: it is marked not here, and I am not in its circle")
+auras[W.AURA.NEARBY] = { spellId = W.AURA.NEARBY }
+S.advance(130)
+check(ghost.notHere == nil and S.take("Whisper")[1].payload:find("^C2|J|Ghost Camp|j|"), "the fire shows up: the mark clears and presence resumes")
+-- violet flames (the Violet Dust toy): seen by whoever stands at the fire, and carried by the owner's announce
+auras[W.AURA.VIOLET] = { spellId = W.AURA.VIOLET }
+S.advance(10)
+check(ghost.violetSeen == true and Camps:Violet(ghost), "standing by a fire with violet flames: this client sees it")
+auras[W.AURA.VIOLET] = nil
+S.advance(10)
+check(not Camps:Violet(ghost), "and sees it end")
+auras[W.AURA.VIOLET] = { spellId = W.AURA.VIOLET }
+S.handler("C2|X", "Ghost Camp", "RELAY")
+S.advance(30)
+W.Net:Announce(2, "purple")
+local violet = S.take("Realm")[1].payload
+check(violet:find("|2v|1|0|", 1, true) and violet:find("Chehul Costa~j|purple", 1, true) and Wire.Decode(violet).flame == 1 and Wire.Decode(violet).tier == 2, "the owner's announce carries the flag: " .. violet)
+check(Wire.Decode("C2|A|1411|1|1|0|2|1|0|||x").flame == 0 and Wire.Decode("C2|A|1411|1|1|0|2vz|1|0|||x").tier == 2
+	and Wire.Decode("C2|A|1411|1|1|0|2V|1|0|||x") == nil and Wire.Decode("C2|A|1411|1|1|0|v2|1|0|||x") == nil, "no flag, an unknown future flag, and malformed tiers")
+S.handler("C2|A|1411|5500|5000|77|1v|1|0|||", "Purple Camp", "RELAY")
+check(Camps:Violet(Camps:Get("Purple Camp")), "a far camp is violet on the owner's word")
+S.handler("C2|X", "Purple Camp", "RELAY")
+W.Net:End()
+C_UnitAuras = nil
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")

@@ -64,6 +64,8 @@ function UI.BuildRing(parent)
 		local count = W.Camps:Count(camp)
 		self.more:SetText(count > shown and L["and %d more around the fire"]:format(count - shown) or "")
 		self.glow.strength = math.min(1, 0.7 + count * 0.05)
+		self.glow:SetViolet(W.Camps:Violet(camp))
+		self.flame:SetViolet(W.Camps:Violet(camp))
 
 		local objs, slots = W.Camps:Objects(camp), W.SLOTS[camp.tier]
 		local size, radius = slots > 5 and 26 or 34, slots > 5 and 80 or 76

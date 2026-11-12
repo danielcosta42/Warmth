@@ -91,15 +91,21 @@ conferido no jogo**; os ids em especial.
 - Acampamentos ficam a pelo menos 100 jardas um do outro, fora de cidades. Há um benefício "Campfire Nearby"
   (feitiço 1283391) perto de um acampamento.
 
-**A medir no jogo antes de fechar o plano** (primeira tarefa da construção; cada resposta pode mudar uma parte):
+**Medido no jogo com `/warmth probe`** (2026-11-11, build 1.60.1.70888, personagem em Durotar):
 
-| Pergunta | Se sim | Se não |
+| Pergunta | Resposta | O que o addon faz com ela |
 |---|---|---|
-| Os ids dos kits e objetos conferem? `GetItemSpell(item)` devolve o feitiço que `UNIT_SPELLCAST_SUCCEEDED` traz? | Detecção automática de acender e de pôr objeto, como no protótipo | Corrigir a tabela pelos ids reais; se não houver feitiço, o jogador marca à mão |
-| Quanto dura a fogueira? Há evento ou sinal quando apaga? | O anúncio expira junto com o fogo | Fica como no protótipo: expira depois que o dono se afasta, ou no "Encerrar" |
-| "Campfire Nearby" e "Camp Benefits" aparecem em `UnitAura`/`C_UnitAuras` do jogador, com que ids? | Entrar na roda quando o jogador de fato senta e ganha o benefício | Entrar na roda por distância (25 jardas), como no protótipo |
-| Dá para ler os objetos postos por quem não tem o addon (tooltip, nameplate, objeto do mundo)? | A roda mostra todos os objetos, não só os de quem tem o addon | Só aparecem objetos informados por quem tem o addon; a tela diz isso |
-| Flint and Tinder ainda é exigido? Qual a Culinária para os kits maiores (90/200 ou 140/220)? | Ajusta só o texto do checklist | idem |
+| Os ids dos kits e objetos conferem? | Sim, os 41. `C_Item.GetItemSpell` dá o feitiço de cada um (Basic Campfire 1307227, Journeyman 1307252, Expert 1307237; Camp Chair 1307229...), e `UNIT_SPELLCAST_SUCCEEDED` traz esse id. Acender leva 10 s de conjuração. | Reconhece sozinho o nível aceso e o objeto posto |
+| Há sinal de fogueira por perto? | Sim: a aura "Campfire Nearby" (1283391) liga perto de qualquer fogueira acesa, de qualquer jogador, e desliga ao se afastar | Só anuncia com fogo de verdade; só entra na roda com fogo presente; encerra o anúncio quando o fogo do dono some; marca "sem fogo aqui" o acampamento anunciado onde não há fogo (outra cópia da zona, ou apagou) |
+| Dá para saber que o jogador sentou e ganhou o benefício? | Sim: "Welcoming Campfire" (1229739, 60 s) é o minuto sentado; "Camp Benefits" (1229741) é o benefício (7200 s no teste, com o brinquedo da Twitch) | Ainda não usado (a roda entra por distância mais fogo presente) |
+| Dá para ler a fogueira ou os objetos de quem não tem o addon? | Não automaticamente. Não há alvo de interação com GUID nem marcador de minimapa; o tooltip do objeto do mundo só traz o nome ("Basic Campfire", "Chair"), e só com o mouse em cima | Só aparecem objetos informados por quem tem o addon |
+| Chamas violetas (Pouch of Violet Dust, brinquedo da celebração de lançamento) | Lança Throw Violet Dust (1328348) e deixa a aura "Violet Flames" (1328375) em quem está junto do fogo | O dono anuncia a chama violeta (letra `v` junto do nível); quem está no fogo vê na hora |
+| Erros do jogo ao montar | "You cannot place a new campfire within 100 yards of an existing campfire." e "You cannot place a feature that close to a creature or object." (`UI_ERROR_MESSAGE`) | Ainda não usados |
+| APIs que faltam no Forever | `GetItemSpell` global (há `C_Item.GetItemSpell`), as de ofício clássicas `GetTradeSkill*` (há `C_TradeSkillUI`), `C_SuperTrack.SetSuperTrackingUserWaypoint`, `InviteUnit` global (há `C_PartyInfo.InviteUnit`) | Culinária lê por `C_TradeSkillUI`; o waypoint é posto sem a seta |
+
+**Ainda a medir:** quanto dura a fogueira; o que a bolsa de dormir (item 211527) põe no jogador e como combina com o
+fogo; os campos de `C_TradeSkillUI` na janela de Culinária (a sonda já os grava); Flint and Tinder e a perícia dos
+kits maiores.
 
 ## 5. Rede
 

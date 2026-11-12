@@ -31,7 +31,8 @@ local function Fields(camp)
 	local people = W.Camps:People(camp)
 	local list = {}
 	for i, p in ipairs(people) do list[i] = { name = p.name, class = p.class } end
-	return { map = camp.map, x = camp.x, y = camp.y, zuid = camp.zuid, tier = camp.tier, n = #people,
+	camp.flame = (W.HasAura(W.AURA.VIOLET) == true) and 1 or 0 -- read when I announce: I am by my fire then
+	return { map = camp.map, x = camp.x, y = camp.y, zuid = camp.zuid, tier = camp.tier, flame = camp.flame, n = #people,
 		age = (time() - camp.at) / 60, objs = W.Camps:Objects(camp), people = list, note = camp.note }
 end
 
@@ -49,6 +50,7 @@ function Net:Announce(tier, note)
 	local map, x, y = W.Position()
 	if not map then return nil, "no_position" end
 	if not W.SLOTS[tier or 0] then return nil, "bad_tier" end
+	if W.FireNearby() == false then return nil, "no_fire" end -- the game says there is no campfire here
 	if GetTime() - lastAnnounce < self.ANNOUNCE_GAP then return nil, "too_soon" end
 	if not Mesh() then return nil, "no_network" end
 	W.Camps:End(W.me) -- a new click is a new camp: nobody and nothing carries over from the last place
@@ -66,7 +68,7 @@ function Net:Heartbeat()
 	local camp = W.Camps:Get(W.me)
 	if not camp or GetTime() - lastBeat < self.BEAT then return false end
 	local d = W.Distance(camp)
-	if not d or d > self.OWNER_NEAR then return false end
+	if not d or d > self.OWNER_NEAR or W.FireNearby() == false then return false end
 	lastBeat = GetTime()
 	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
 	local f = Fields(camp)

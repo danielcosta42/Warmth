@@ -6,6 +6,8 @@
 --   C2|X                                                 the owner ended the camp
 --   C2|I|owner                                           "invite me to your copy of the zone" (whisper to the owner)
 --
+-- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames. Unknown letters are
+-- ignored, so a flag can be added later without breaking older clients.
 -- x, y: 0..10000. zuid: the zone copy, 0 = unknown. n: people in the circle. age: minutes since it was first
 -- announced. o: object index (Core/Data.lua).
 -- c: class as one letter, 'a' = unknown, 'b' = W.CLASSES[1]... An announce must fit ONE addon message: people
@@ -50,7 +52,7 @@ function Wire.Announce(f)
 	for i = 1, math.min(#f.objs, W.SLOTS[f.tier]) do objs[i] = f.objs[i] end
 	local note = Wire.CleanNote(f.note)
 	local head = table.concat({ "C2", "A", f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5),
-		f.zuid or 0, f.tier, math.min(f.n or 0, Wire.COUNT_MAX), math.min(math.floor(f.age or 0), Wire.AGE_MAX),
+		f.zuid or 0, f.tier .. (f.flame == 1 and "v" or ""), math.min(f.n or 0, Wire.COUNT_MAX), math.min(math.floor(f.age or 0), Wire.AGE_MAX),
 		table.concat(objs, ",") }, "|")
 	local people, size = {}, #head + 2 + #note
 	for i = 1, math.min(#f.people, Wire.PEOPLE) do
@@ -91,7 +93,8 @@ function Wire.Decode(payload)
 		return { kind = "J", owner = a, class = ClassIndex(b), obj = obj }
 	elseif kind == "A" then
 		local map, x, y, zuid = Int(a, 1, 99999), Int(b, 0, 10000), Int(c, 0, 10000), Int(d, 0, 2147483647)
-		local tier, n = Int(e, 1, #W.SLOTS), Int(f, 0, Wire.COUNT_MAX)
+		local digit, flags = tostring(e):match("^(%d)(%l?%l?%l?%l?)$")
+		local tier, n = Int(digit, 1, #W.SLOTS), Int(f, 0, Wire.COUNT_MAX)
 		age = Int(age, 0, Wire.AGE_MAX)
 		if not (map and x and y and zuid and tier and n and age and type(g) == "string" and type(h) == "string" and note) then return nil end
 		local objs, seen = {}, {}
@@ -107,6 +110,7 @@ function Wire.Decode(payload)
 			people[#people + 1] = { name = name, class = ClassIndex(ch) }
 		end
 		return { kind = "A", map = map, x = x / 10000, y = y / 10000, zuid = zuid, tier = tier, n = n, age = age,
+			flame = flags:find("v", 1, true) and 1 or 0,
 			objs = objs, people = people, note = Wire.CleanNote(note) }
 	end
 	return nil

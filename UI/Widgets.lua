@@ -101,6 +101,10 @@ function Wd.Glow(parent, size, layer)
 	g.tex:SetBlendMode("ADD")
 	g.strength = 1
 	Motion.Breathe(g, 1.9, function(s) g:SetAlpha(g.strength * (0.72 + 0.28 * s)) end)
+	function g:SetViolet(on)
+		local c = on and T.violet or T.deep
+		self.tex:SetVertexColor(c[1], c[2], c[3], 1)
+	end
 	return g
 end
 
@@ -112,6 +116,11 @@ function Wd.Flame(parent, size)
 	f.tex:SetTexture(UI.MEDIA .. "flame")
 	f.tex:SetAllPoints()
 	Motion.Flipbook(f.tex, 8, 9)
+	function f:SetViolet(on)
+		if (self.violet or false) == (on or false) then return end
+		self.violet = on or false
+		self.tex:SetTexture(UI.MEDIA .. (on and "flame-violet" or "flame"))
+	end
 	return f
 end
 

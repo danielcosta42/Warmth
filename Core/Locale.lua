@@ -42,6 +42,7 @@ local ptBR = {
 	["lit %s"] = "aceso %s",
 	["and %d more"] = "e mais %d",
 	["Every place is taken."] = "Todos os lugares ocupados.",
+	["Violet flames: someone threw Violet Dust into this fire."] = "Chamas violetas: alguém jogou Pó Violeta neste fogo.",
 	["%d of %d places open."] = "%d de %d lugares livres.",
 	["Sit by the fire for a minute to get the camp's benefits for an hour."] = "Sente perto do fogo por um minuto para ganhar os benefícios do acampamento por uma hora.",
 	["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] =
@@ -78,6 +79,8 @@ local ptBR = {
 	["Your camp objects"] = "Seus objetos de acampamento",
 	["None in your bags. Each profession crafts its own (from skill 20)."] = "Nenhum na bolsa. Cada profissão faz o seu (a partir de 20 de perícia).",
 	["Cook at the fire"] = "Cozinhar no fogo",
+	["bonus experience, by the fire"] = "experiência extra, junto ao fogo",
+	["in your bags"] = "na bolsa",
 	["Nothing with what you carry."] = "Nada com o que você carrega.",
 	["%d recipes ready"] = "%d receitas prontas",
 	["Open your Cooking window once to see what you can make."] = "Abra a janela de Culinária uma vez para ver o que dá para fazer.",
@@ -90,6 +93,10 @@ local ptBR = {
 	["Too many campfires known right now."] = "Fogueiras demais conhecidas agora.",
 	["Pick the campfire you lit."] = "Escolha a fogueira que você acendeu.",
 	["That camp is gone."] = "Esse acampamento não existe mais.",
+	["There is no campfire near you. Light one first."] = "Não há fogueira perto de você. Acenda uma primeiro.",
+	["Your fire went out: the announce ended."] = "Seu fogo apagou: o anúncio foi encerrado.",
+	["You are where this camp is and there is no fire: it burns in another copy of the zone, or it went out."] =
+		"Você está onde fica este acampamento e não há fogo: ele queima em outra cópia da zona, ou apagou.",
 	-- pins, toast, questions
 	["%d by the fire"] = "%d na roda",
 	["In another copy of the zone"] = "Em outra cópia da zona",

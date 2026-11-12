@@ -44,7 +44,8 @@ end
 -- the zone. One fire at a time: a pile of camps on one spot must not multiply what this client sends.
 function Watch:Near()
 	for _, camp in ipairs(W.Camps:List()) do -- nearest first
-		if camp.dist and camp.dist <= self.NEAR and camp.other ~= true and not camp.demo then return camp end
+		-- a camp marked "no fire here" stays in the running: standing there is how the mark gets cleared
+		if camp.dist and camp.dist <= self.NEAR and (camp.other ~= true or camp.notHere) and not camp.demo then return camp end
 	end
 end
 
@@ -52,7 +53,32 @@ local asked = false
 function Watch:Tick()
 	Resolve()
 	local camp = self:Near()
+	if camp and W.FireNearby() == false then
+		-- Standing where the camp is, and the game shows no fire: it went out, or it burns in another copy of the
+		-- zone. Two ticks in a row, so a moment of lag is not taken for it.
+		camp.gone = (camp.gone or 0) + 1
+		if camp.gone >= 2 then
+			if camp.owner == W.me then
+				W.Net:End() -- my fire went out: the announce goes with it
+				W:Fire("FIRE_OUT")
+			else
+				camp.notHere = true
+				W:Fire("CAMPS")
+			end
+		end
+		camp = nil -- nobody is in the circle of a fire that is not there
+	elseif camp then
+		if camp.gone or camp.notHere then
+			camp.gone, camp.notHere = nil, nil
+			W:Fire("CAMPS")
+		end
+	end
 	if camp then
+		local violet = W.HasAura(W.AURA.VIOLET)
+		if violet ~= nil and (camp.violetSeen == true) ~= violet then
+			camp.violetSeen = violet or nil
+			W:Fire("CAMPS")
+		end
 		if camp.owner == W.me or W.db.consent == true then
 			W.Net:Presence(camp.owner)
 		elseif W.db.consent == nil and not asked then
@@ -81,21 +107,36 @@ local function OnCast(spellID)
 	end
 end
 
--- Cooking recipes that can be made right now, read while the Cooking window is open (the classic trade skill
--- API; where the client lacks it, W.cooking stays nil and the checklist says to open Cooking).
+-- Cooking recipes that can be made right now, read while the Cooking window is open. Forever has the modern
+-- C_TradeSkillUI and not the classic GetTradeSkill* globals (measured); both are tried, guarded. Where neither
+-- answers, W.cooking stays nil and the checklist says to open Cooking.
 local function OnTradeSkill()
-	if not (GetTradeSkillLine and GetNumTradeSkills and GetTradeSkillInfo) then return end
-	local ok, line = pcall(GetTradeSkillLine)
-	local name = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(W.COOKING_SPELL))
+	local cooking = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(W.COOKING_SPELL))
 		or (GetSpellInfo and GetSpellInfo(W.COOKING_SPELL))
-	if not ok or W.IsSecret(line, name) or not name or line ~= name then return end
+	if W.IsSecret(cooking) or not cooking then return end
 	local ready, names = 0, {}
-	for i = 1, GetNumTradeSkills() or 0 do
-		local recipe, kind, available = GetTradeSkillInfo(i)
-		if kind ~= "header" and (tonumber(available) or 0) > 0 then
-			ready = ready + 1
-			if #names < 3 then names[#names + 1] = recipe end
+	local function add(recipe, available)
+		if W.IsSecret(recipe, available) or (tonumber(available) or 0) <= 0 then return end
+		ready = ready + 1
+		if #names < 3 and type(recipe) == "string" then names[#names + 1] = recipe end
+	end
+	local TS = C_TradeSkillUI
+	if TS and TS.GetBaseProfessionInfo and TS.GetAllRecipeIDs and TS.GetRecipeInfo then
+		local base = TS.GetBaseProfessionInfo()
+		if type(base) ~= "table" or W.IsSecret(base.professionName) then return end
+		if base.professionName ~= cooking and base.parentProfessionName ~= cooking then return end
+		for _, id in ipairs(TS.GetAllRecipeIDs() or {}) do
+			local info = TS.GetRecipeInfo(id)
+			if type(info) == "table" and info.learned ~= false then add(info.name, info.numAvailable) end
 		end
+	elseif GetTradeSkillLine and GetNumTradeSkills and GetTradeSkillInfo then
+		if GetTradeSkillLine() ~= cooking then return end
+		for i = 1, GetNumTradeSkills() or 0 do
+			local recipe, kind, available = GetTradeSkillInfo(i)
+			if kind ~= "header" then add(recipe, available) end
+		end
+	else
+		return
 	end
 	W.cooking = { at = time(), ready = ready, names = names }
 	W:Fire("CAMPS")

@@ -92,6 +92,17 @@ function W.Distance(camp)
 	return math.sqrt((an - bn) ^ 2 + (aw - bw) ^ 2)
 end
 
+-- Is there a lit campfire in range of the player, in the player's copy of the zone? The game says so with an aura.
+-- true / false, or nil where the client cannot tell (no aura API, or the answer is secret).
+function W.HasAura(id)
+	local get = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
+	if not get then return nil end
+	local ok, aura = pcall(get, id)
+	if not ok or W.IsSecret(aura) then return nil end
+	return aura ~= nil
+end
+function W.FireNearby() return W.HasAura(W.AURA.NEARBY) end
+
 function W.ZoneName(map)
 	local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(map)
 	return (info and info.name) or ("#" .. tostring(map))

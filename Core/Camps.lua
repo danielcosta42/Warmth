@@ -36,6 +36,7 @@ function Camps:Announce(owner, f, here)
 	camp.at = time() - (f.age or 0) * 60 -- when it was first announced, by the owner's count
 	camp.map, camp.x, camp.y, camp.zuid, camp.tier = f.map, f.x, f.y, f.zuid or 0, f.tier
 	camp.n, camp.objs, camp.roster, camp.note = f.n or 0, f.objs or {}, f.people or {}, f.note or ""
+	camp.flame = f.flame or 0
 	camp.last = time()
 	W:Fire("CAMPS")
 	if isNew and owner ~= W.me then W:Fire("CAMP_NEW", camp) end
@@ -110,12 +111,19 @@ function Camps:Has(camp, obj)
 	return false
 end
 
+-- Violet flames: the owner said so, or this player is standing by the fire and sees them.
+function Camps:Violet(camp)
+	return camp.flame == 1 or camp.violetSeen == true
+end
+
 function Camps:Count(camp)
 	return math.max(camp.n or 0, #self:People(camp))
 end
 
 -- true: another copy of the zone; false: mine; nil: unknown (or another map).
+-- camp.notHere: the player stood where the camp is and the game showed no fire there (Core/Watch.lua).
 function Camps:OtherCopy(camp)
+	if camp.notHere then return true end
 	local mine = W.MyCopy(camp.map)
 	if mine == 0 or (camp.zuid or 0) == 0 then return nil end
 	return camp.zuid ~= mine

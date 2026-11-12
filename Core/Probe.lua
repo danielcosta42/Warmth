@@ -118,6 +118,7 @@ local function Items()
 	end
 	for i, kit in ipairs(W.KITS) do add("kit" .. i, kit, W.TIERS[i] .. " Campfire Kit") end
 	for _, wood in ipairs(W.WOOD) do add("wood", wood[1], wood[2]) end
+	add("bag", W.SLEEPING_BAG, "Sleeping Bag")
 	for _, o in ipairs(W.OBJECTS) do add("object", o[1], o[2]) end
 	return out
 end
@@ -140,6 +141,7 @@ local auras, vignettes, counts, lastTip, lastInteract = {}, {}, {}, nil, nil
 local function Counts()
 	local out = {}
 	for _, kit in ipairs(W.KITS) do out[kit] = W.Count(kit) end
+	out[W.SLEEPING_BAG] = W.Count(W.SLEEPING_BAG)
 	for _, o in ipairs(W.OBJECTS) do out[o[1]] = W.Count(o[1]) end
 	return out
 end
@@ -147,7 +149,7 @@ end
 local EVENTS = { "UNIT_SPELLCAST_SENT", "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_FAILED",
 	"UNIT_SPELLCAST_INTERRUPTED", "UNIT_AURA", "CHAT_MSG_SYSTEM", "UI_INFO_MESSAGE", "UI_ERROR_MESSAGE",
 	"VIGNETTES_UPDATED", "VIGNETTE_MINIMAP_UPDATED", "BAG_UPDATE_DELAYED", "PLAYER_UPDATE_RESTING",
-	"PLAYER_SOFT_INTERACT_CHANGED", "TRADE_SKILL_SHOW", "UPDATE_EXHAUSTION", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
+	"PLAYER_SOFT_INTERACT_CHANGED", "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 
 local function OnEvent(_, event, a, b, c, d)
 	if not Probe.on then return end
@@ -170,6 +172,26 @@ local function OnEvent(_, event, a, b, c, d)
 			if n ~= (counts[id] or 0) then Log("bags", id, W.ItemName(id, "?"), (counts[id] or 0) .. " -> " .. n) end
 		end
 		counts = now
+	elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE" then
+		-- what the profession window says about itself and about one recipe that can be made
+		local TS = C_TradeSkillUI
+		local function dump(t)
+			local parts = {}
+			for k, v in pairs(type(t) == "table" and t or {}) do
+				if #parts < 16 and type(v) ~= "table" then parts[#parts + 1] = S(k) .. "=" .. S(v) end
+			end
+			table.sort(parts)
+			return table.concat(parts, " ")
+		end
+		local ids = Safe(TS and TS.GetAllRecipeIDs) or {}
+		Log(event, "base: " .. dump(Safe(TS and TS.GetBaseProfessionInfo)), "recipes=" .. #ids)
+		for _, id in ipairs(ids) do
+			local info = Safe(TS.GetRecipeInfo, id)
+			if type(info) == "table" and not W.IsSecret(info.numAvailable) and (tonumber(info.numAvailable) or 0) > 0 then
+				Log("recipe", dump(info))
+				break
+			end
+		end
 	elseif event == "PLAYER_UPDATE_RESTING" or event == "UPDATE_EXHAUSTION" then
 		Log(event, "resting=" .. S(Safe(IsResting)), "restState=" .. S(Safe(GetRestState)), "exhaustion=" .. S(Safe(GetXPExhaustion)))
 	else

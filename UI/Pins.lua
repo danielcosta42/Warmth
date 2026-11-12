@@ -47,6 +47,8 @@ local function Dress(p, camp)
 	local count = W.Camps:Count(camp)
 	p.camp = camp
 	p.glow.strength = math.min(1, 0.55 + count * 0.08)
+	p.glow:SetViolet(W.Camps:Violet(camp))
+	p.flame:SetViolet(W.Camps:Violet(camp))
 	p:SetAlpha(W.Camps:OtherCopy(camp) == true and 0.55 or 1)
 	if p.count then p.count:SetText(count) end
 end
