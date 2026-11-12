@@ -389,11 +389,30 @@ check(W.Probe.on == false and W.db.probe == nil, "the probe is off and has writt
 S.take()
 SlashCmdList.WARMTH("probe")
 check(W.Probe.on and #W.db.probe.api > 30 and #W.db.probe.items == 42 and W.db.probe.items[1]:find("kit1", 1, true), "starting it snapshots the APIs and the 42 camp items")
+check(#W.db.probe.recipes == 35 and W.db.probe.recipes[4]:find("Sharpening Wheel", 1, true) and W.db.probe.recipes[4]:find("recipe=1230171", 1, true),
+	"and the 35 camp recipes, with whether the client knows them")
+-- a merchant, a trainer and a profession window are written down when opened
+function GetMerchantNumItems() return 2 end
+function GetMerchantItemID(i) return ({ 4470, 2320 })[i] end
+function GetMerchantItemInfo(i) return ({ "Simple Wood", "Coarse Thread" })[i], nil, ({ 38, 10 })[i] end
+function UnitGUID(unit) return unit == "npc" and "Creature-0-1-1-1-3313-0" or nil end
+S.fire("MERCHANT_SHOW")
+C_TradeSkillUI = {
+	GetBaseProfessionInfo = function() return { professionName = "Blacksmithing", skillLevel = 95 } end,
+	GetAllRecipeIDs = function() return { 2660, 1230171 } end,
+	GetRecipeInfo = function(id) return { recipeID = id, name = id == 1230171 and "Sharpening Wheel" or "Rough Sharpening Stone", learned = true, numAvailable = 0 } end,
+	GetRecipeSchematic = function(id) return { reagentSlotSchematics = { { quantityRequired = id == 1230171 and 1 or 2, reagents = { { itemID = 2835 } } } } } end,
+}
+S.fire("TRADE_SKILL_SHOW")
+C_TradeSkillUI = nil
 SlashCmdList.WARMTH("probe lit the basic kit")
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[1] + 1000000)
 S.fire("CHAT_MSG_SYSTEM", "You feel cozy.")
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "target", "g", 5)
 local log = table.concat(W.db.probe.log, "\n")
+check(log:find("npc=Creature-0-1-1-1-3313-0", 1, true) and log:find("item=4470  Simple Wood  price=38", 1, true), "the merchant, where it stands and what it sells")
+check(log:find("camp recipe", 1, true) and log:find("id=1230171", 1, true) and log:find("item=2835", 1, true) and log:find("x1", 1, true),
+	"a camp recipe in the profession window, and what it takes")
 check(log:find(">>> lit the basic kit", 1, true) and log:find("spell=1279981", 1, true) and log:find("You feel cozy.", 1, true) and not log:find("spell=5", 1, true),
 	"marks, my casts and system lines are recorded; other units are not")
 SlashCmdList.WARMTH("probe")

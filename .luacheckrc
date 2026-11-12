@@ -29,11 +29,13 @@ read_globals = {
     "GetXPExhaustion",
     -- items, spells, professions (the classic trade skill API is used guarded)
     "GetItemCount", "GetItemSpell", "GetItemIcon", "GetItemInfo", "GetSpellInfo",
-    "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo",
+    "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo", "GetProfessions", "GetProfessionInfo", "IsPlayerSpell",
+    "IsSpellKnown", "GetMerchantNumItems", "GetMerchantItemID", "GetMerchantItemInfo", "GetNumTrainerServices",
+    "GetTrainerServiceInfo", "GetQuestID", "GetTitleText",
     -- maps
     "CreateVector2D", "UiMapPoint",
     -- namespaces
-    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_TradeSkillUI", "C_SuperTrack", "C_Timer",
+    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_MerchantFrame", "C_SpellBook", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_TradeSkillUI", "C_SuperTrack", "C_Timer",
 }
 
 files["Core/Locale.lua"] = { max_line_length = false }

@@ -55,6 +55,12 @@ W.OBJECTS = {
 	{ 279965, "Fishing Rack", "Fishing" },
 	{ 279966, "Fishing Hut", "Fishing" },
 }
+-- The spell that crafts each object, in W.OBJECTS order (wow-professions.com, NOT verified: /warmth probe
+-- records what the client says about each, and whether the player knows it).
+W.RECIPES = { 1230564, 1263005, 1263078, 1230171, 1263041, 1263073, 1230643, 1263056, 1263082, 1230656, 1263034, 1263083,
+	1229705, 1262980, 1263070, 1229432, 1263031, 1263079, 1230161, 1262975, 1263071, 1229517, 1262985, 1262982,
+	1229504, 1263032, 1263080, 1262978, 1263067, 1230117, 1262996, 1263001, 1229745, 1262990, 1262998 }
+
 W.OBJECT_BY_ID = {}
 for i, o in ipairs(W.OBJECTS) do W.OBJECT_BY_ID[o[1]] = i end
 W.TENT, W.REPAIR = W.OBJECT_BY_ID[279978], W.OBJECT_BY_ID[279949]
