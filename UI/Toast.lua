@@ -31,7 +31,8 @@ end
 -- Someone announced a campfire on the map where the player is.
 --------------------------------------------------------------------------------
 local token = 0
-function UI:Toast(camp)
+-- `title` and `line` replace the usual "a campfire in <zone>" (a camp asking for an object, for one).
+function UI:Toast(camp, title, line)
 	local t = self.toast
 	if not t then
 		t = Card(340, 60, -150)
@@ -44,9 +45,12 @@ function UI:Toast(camp)
 	t.camp = camp
 	t.glow:SetViolet(W.Camps:Violet(camp))
 	t.flame:SetViolet(W.Camps:Violet(camp))
-	t.title:SetText(L["A campfire in %s"]:format(W.Esc(W.ZoneName(camp.map))))
-	local line = W.Esc(camp.owner) .. (camp.note ~= "" and (": " .. W.Esc(camp.note)) or (" " .. L["lit a camp."]))
-	if W.Camps:OtherCopy(camp) == true then line = UI.C.copy .. L["another copy"] .. UI.C.r .. "  " .. line end
+	if not title then
+		title = L["A campfire in %s"]:format(W.Esc(W.ZoneName(camp.map)))
+		line = W.Esc(camp.owner) .. (camp.note ~= "" and (": " .. W.Esc(camp.note)) or (" " .. L["lit a camp."]))
+		if W.Camps:OtherCopy(camp) == true then line = UI.C.copy .. L["another copy"] .. UI.C.r .. "  " .. line end
+	end
+	t.title:SetText(title)
 	t.line:SetText(line)
 	Motion.Enter(t, -24)
 	token = token + 1
@@ -117,6 +121,24 @@ end)
 
 W:On("BURNED", function(tier, seconds)
 	W.Print(L["Your %s campfire burned for %d min %d s."]:format(L[W.TIERS[tier]], math.floor(seconds / 60), seconds % 60))
+end)
+
+-- A camp nearby asks for an object this player carries or can craft: once per camp and object.
+local answered = {}
+W:On("CAMP_WANTS", function(camp)
+	if not W.db.toast or camp.owner == W.me or W.Camps:OtherCopy(camp) == true then return end
+	local d = W.Distance(camp)
+	if not d or d > 1500 then return end
+	local index, how = W.Social:CanAnswer(camp)
+	if not index or answered[camp.owner .. index] then return end
+	answered[camp.owner .. index] = true
+	UI:Toast(camp, L["A camp needs a %s"]:format(W.ObjectName(index)),
+		UI.CampTitle(camp) .. ", " .. UI.Where(camp) .. ". " .. (how == "bags" and L["You carry one."] or L["You can craft one."]))
+end)
+
+W:On("THANKED", function(who, points, level)
+	W.Print(L["%s thanked you for the fire. Your warmth: %d."]:format(W.Esc(who), points))
+	if level then W.Print(L["You are now a %s host."]:format(L[W.Social.LEVELS[level]])) end
 end)
 
 W:On("FIRE_OUT", function()

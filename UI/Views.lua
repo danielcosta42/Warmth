@@ -132,6 +132,15 @@ UI.View("list", function(v)
 	v.work:SetWidth(WIDTH * 0.4 - 4)
 	v.work:Set(L["Workshop"])
 	v.work.fn = function() UI:Show("workshop") end
+	-- between the list and the buttons: the way to the guestbook, with the player's warmth as a host
+	v.book = CreateFrame("Button", nil, v)
+	v.book:SetSize(WIDTH, 20)
+	v.book:SetPoint("BOTTOM", 0, PAD + 40)
+	v.book.label = Wd.Text(v.book, 12, T.mute)
+	v.book.label:SetPoint("CENTER")
+	v.book:SetScript("OnClick", function() UI:Show("book") end)
+	v.book:SetScript("OnEnter", function() v.book.label:SetTextColor(T.ember[1], T.ember[2], T.ember[3], 1) end)
+	v.book:SetScript("OnLeave", function() v.book.label:SetTextColor(T.mute[1], T.mute[2], T.mute[3], 1) end)
 end, function(v)
 	local all, shown, people, match = W.Camps:List(), {}, 0, FILTERS[1][3]
 	-- Laid out on every draw: a font string only knows its width once it has been shown, so a width measured
@@ -159,6 +168,7 @@ end, function(v)
 	-- first, and it has to read as an invitation, not as a broken addon.
 	v.empty:SetText(#shown > 0 and "" or (#all > 0 and L["No campfire matches that filter."] or
 		L["Only campfires someone chose to announce show up here, and the network is still young: for now you mostly hear your guild, your group and a few others.\n\nLight a fire, announce it, and be the first warm spot on the map."]))
+	v.book.label:SetText(L["Guestbook"] .. "  ·  " .. UI.WarmthLine())
 	v.build:Set(W.Camps:Get(W.me) and L["Your camp"] or L["Set up a camp"])
 	v.build.fn = function()
 		if W.Camps:Get(W.me) then UI:Show("camp", W.me) else UI:Show("build") end
@@ -197,7 +207,9 @@ end, function(v, fresh)
 	local objs, slots = W.Camps:Objects(camp), W.SLOTS[camp.tier]
 	local other = W.Camps:OtherCopy(camp)
 	UI.title:SetText(UI.CampTitle(camp))
-	UI.sub:SetText(("%s  ·  %s  ·  %s  ·  %s"):format(W.Esc(W.ZoneName(camp.map)), L[W.TIERS[camp.tier]], L["lit %s"]:format(Ago(camp.at)), UI.Where(camp)))
+	local host = W.Social.LEVELS[camp.host or 0]
+	UI.sub:SetText(("%s  ·  %s  ·  %s  ·  %s"):format(W.Esc(W.ZoneName(camp.map)), L[W.TIERS[camp.tier]], L["lit %s"]:format(Ago(camp.at)), UI.Where(camp))
+		.. (host and ("  ·  " .. C.ember .. L["%s host"]:format(L[host]) .. C.r) or ""))
 	UI.ring:Set(camp, fresh)
 	v.note:SetText(camp.note ~= "" and ("\"" .. W.Esc(camp.note) .. "\"") or "")
 
@@ -206,7 +218,17 @@ end, function(v, fresh)
 		-- four fit above the hint; the ring's slots name the rest on hover
 		if i > 4 then lines[#lines + 1] = C.mute .. L["and %d more"]:format(#objs - 4) .. C.r; break end
 		local o = W.OBJECTS[index]
-		lines[#lines + 1] = C.ember .. W.ObjectName(index) .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"]) .. C.r
+		-- a camp buff does not stack with its class equivalent: say so when the player already carries that one
+		local have = W.Social:AlreadyHave(index)
+		lines[#lines + 1] = C.ember .. W.ObjectName(index) .. C.r .. C.mute .. "   " .. (o[4] and L[o[4]] or L["A crafting station"])
+			.. (have and ("  " .. L["(you already have %s)"]:format(have)) or "") .. C.r
+	end
+	if camp.wants and #camp.wants > 0 then
+		local names = {}
+		for i, index in ipairs(camp.wants) do
+			if i <= 3 then names[i] = W.ObjectName(index) end
+		end
+		lines[#lines + 1] = C.ember .. L["Asks for: %s"]:format(table.concat(names, ", ")) .. (#camp.wants > 3 and "..." or "") .. C.r
 	end
 	lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
 	if W.Camps:Violet(camp) then lines[#lines + 1] = UI.Hex(T.violet) .. L["Violet flames: the benefits of this fire last two hours instead of one."] .. C.r end
@@ -218,6 +240,7 @@ end, function(v, fresh)
 		-- A fire with no camp object gives nothing (guides, and measured: a minute at one ended the Camp Benefits
 		-- the player already had). The addon only knows the objects its own users placed, hence "reported".
 		hint = L["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."]
+		if W.Watch:Near() == camp then hint = hint .. " " .. L["Point at a piece someone else placed and Warmth notes it."] end
 		if W.HasAura(W.AURA.BENEFITS) == true then
 			hint = hint .. " " .. C.miss .. L["You carry Camp Benefits: resting at a fire with no objects may end them."] .. C.r
 		end
@@ -239,9 +262,21 @@ end, function(v, fresh)
 	v.go:Set(L["Go there"])
 	v.go.fn = function() UI.Waypoint(camp) end
 	if camp.owner == W.me then
+		-- at my own fire there is nowhere to go: the main button is whether the camp asks for what it lacks
+		v.go:Set(W.db.asking ~= false and L["Asking for objects"] or L["Not asking"])
+		v.go.fn = function()
+			W.db.asking = W.db.asking == false
+			W.Net:Extras()
+		end
 		v.other:Set(L["End announce"])
 		v.other.tip = nil
 		v.other.fn = function() W.Net:End() end
+	elseif W.Social:CanThank(camp) then
+		v.other:Set(L["Thank the host"])
+		v.other.tip = L["Warms the host: one thanks a day per host counts toward their level."]
+		v.other.fn = function()
+			if W.Net:Thank(camp.owner) then W.Print(L["You thanked %s for the fire."]:format(W.Esc(camp.owner))) end
+		end
 	elseif other == false then
 		v.other:Set(L["Back to the list"])
 		v.other.tip = nil
@@ -471,4 +506,53 @@ combat:SetScript("OnEvent", function(_, event)
 	elseif UI.frame then
 		UI.SyncLight()
 	end
+end)
+
+--------------------------------------------------------------------------------
+-- The guestbook: the camps this player sat at, and their warmth as a host
+--------------------------------------------------------------------------------
+-- "warmth 7, Ember host (3 more for Hearth)"
+function UI.WarmthLine()
+	local S = W.Social
+	local points, level = W.db.heat.points, W.Social:MyLevel()
+	local text = L["warmth %d"]:format(points)
+	if level > 0 then text = text .. ", " .. L["%s host"]:format(L[S.LEVELS[level]]) end
+	local nextStep = S.STEPS[level + 1]
+	if nextStep then text = text .. " (" .. L["%d more for %s"]:format(nextStep - points, L[S.LEVELS[level + 1]]) .. ")" end
+	return text
+end
+
+UI.View("book", function(v)
+	v.list = Wd.ScrollList(v, 46, 9, function(list)
+		local r = CreateFrame("Frame", nil, list)
+		r:SetHeight(46)
+		r.bg = Wd.Fill(r, T.panel, 0.45)
+		r.bg:SetPoint("TOPLEFT", 0, -2); r.bg:SetPoint("BOTTOMRIGHT", 0, 2)
+		r.title = Wd.Text(r, 13.5, T.text, "title")
+		r.title:SetPoint("TOPLEFT", 12, -7)
+		r.sub = Wd.Text(r, 11.5, T.mute)
+		r.sub:SetPoint("TOPLEFT", 12, -26)
+		return r
+	end, function(r, visit)
+		r.title:SetText(L["%s's camp"]:format(W.Esc(visit.owner)))
+		r.sub:SetText(("%s  ·  %s  ·  %s"):format(W.Esc(W.ZoneName(visit.map)), date("%d/%m %H:%M", visit.at), L["%d by the fire"]:format(visit.n)))
+	end)
+	v.list:SetPoint("TOPLEFT", PAD, -4)
+	v.list:SetSize(WIDTH, 9 * 46)
+	v.empty = Wd.Text(v, 13, T.mute)
+	v.empty:SetPoint("TOPLEFT", PAD, -30)
+	v.empty:SetWidth(WIDTH)
+	v.empty:SetWordWrap(true)
+	v.empty:SetSpacing(5)
+	v.foot = Wd.Text(v, 12, T.mute)
+	v.foot:SetPoint("BOTTOMLEFT", PAD, PAD)
+	v.foot:SetWidth(WIDTH)
+	v.foot:SetWordWrap(true)
+	v.foot:SetSpacing(4)
+end, function(v)
+	UI.title:SetText(L["Guestbook"])
+	UI.sub:SetText(L["The camps you sat at. As a host: %s."]:format(UI.WarmthLine()))
+	v.list:Set(W.db.guestbook)
+	v.empty:SetText(#W.db.guestbook == 0 and L["No camp yet. Sit by an announced campfire and it is written here."] or "")
+	v.foot:SetText(L["Visitors who sit at your fire can thank you; each person counts once a day toward your warmth."])
 end)

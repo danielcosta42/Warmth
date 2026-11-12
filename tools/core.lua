@@ -2,6 +2,16 @@
 --   luajit tools/core.lua        (from the repository root)
 local S = dofile("tools/wowstub.lua")
 local check = S.check
+-- The owner's extras (message E) ride along with every announce. The checks written before it existed count
+-- announces, so they look at the traffic without it; the ones about it set S.extras.
+local take = S.take
+S.take = function(bus)
+	local out = {}
+	for _, m in ipairs(take(bus)) do
+		if S.extras or not m.payload:find("^C2|E|") then out[#out + 1] = m end
+	end
+	return out
+end
 WarmthDB = { consent = false }
 local W = S.load("Core/")
 S.fire("ADDON_LOADED", "Warmth")
@@ -15,6 +25,8 @@ check(W.db.toast == true and W.db.pins == true and W.db.invites == true and W.db
 check(W.db.consent == false and type(W.db.meshPeers) == "table", "a saved answer survives the defaults")
 check(S.prefix == "ChehulCamp" and S.relayable == "ChehulCamp" and S.tag == "cf" and S.caps() == "cfv=0.1.0", "one prefix, relayable, node tag cf")
 check(S.peerStore() == W.db.meshPeers, "the mesh saves its peers in WarmthDB")
+check(S.diagTag == "cf" and S.diag() == "v=0.1.0;camps=0;mine=0;auto=0;consent=0;share=1;vend=0/0;burn=0/0/0;compass=1;asking=1;heat=0",
+	"what the operator's diagnostic gets from Warmth: " .. S.diag())
 W.db.consent = nil
 
 -- ── task 2: data, wire, camps ──────────────────────────────────────────────
@@ -472,6 +484,108 @@ check(kind(2318) == "skin" and kind(10940) ~= "unknown" and kind(6291) == "fish"
 check(kind(2447) == "nodes" and kind(2319) == "skin", "three herb vendors or one leather vendor are a limited stock: gathering or skinning comes first")
 check(W.ItemName(2770, "x") == "Copper Ore", "raw materials have a name before the client caches them")
 S.bags, S.profs, S.known, C_TradeSkillUI = {}, nil, nil, nil
+
+-- ── what a camp asks for, thanking the host, the guestbook ─────────────────
+local Social = W.Social
+S.extras = true
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(30)
+S.take()
+local home = W.Net:Announce(2, "")
+local out = S.take("Realm")
+check(#out == 2 and out[2].payload == "C2|E|16,33,7,1,4|0" and #home.wants == 5 and home.wants[1] == W.TENT,
+	"my announce is followed by what the camp lacks, the tent first, as many as there are open places: " .. tostring(out[2] and out[2].payload))
+local e = Wire.Decode("C2|E|16,33|3")
+check(e.kind == "E" and e.wants[2] == 33 and e.level == 3 and Wire.Decode("C2|E||0").kind == "E", "extras round trip, with nothing asked too")
+for _, bad in ipairs({ "C2|E|16|6", "C2|E|99|1", "C2|E|1,2,3,4,5,6,7|1", "C2|E|16", "C2|E|16|1|x", "C2|T|", "C2|T|a|b" }) do
+	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
+end
+W.db.asking = false
+W.Net:Extras()
+check(S.take("Realm")[1].payload == "C2|E||0" and #home.wants == 0, "asking can be turned off: the camp asks for nothing")
+W.db.asking = true
+
+-- a host is thanked: only by someone heard in the circle, once a day each
+local thanked = {}
+W:On("THANKED", function(who, points, level) thanked[#thanked + 1] = { who, points, level } end)
+S.handler("C2|T|Chehul Costa", "Stranger", "WHISPER")
+check(#thanked == 0 and W.db.heat.points == 0, "thanks from someone who is not in my circle do not count")
+S.handler(Wire.Join("Chehul Costa", 7, 0), "Caio Nunes", "WHISPER")
+S.handler("C2|T|Chehul Costa", "Caio Nunes", "RELAY")
+check(#thanked == 0, "nor relayed ones, whose sender is only claimed")
+S.handler("C2|T|Chehul Costa", "Caio Nunes", "WHISPER")
+S.handler("C2|T|Chehul Costa", "Caio Nunes", "WHISPER")
+check(#thanked == 1 and thanked[1][1] == "Caio Nunes" and W.db.heat.points == 1, "a guest's thanks count once a day")
+for n = 1, 2 do
+	S.handler(Wire.Join("Chehul Costa", 1, 0), "Guest " .. n, "WHISPER")
+	S.handler("C2|T|Chehul Costa", "Guest " .. n, "WHISPER")
+end
+check(W.db.heat.points == 3 and Social:MyLevel() == 1 and thanked[3][3] == 1 and Social:Level(9) == 1 and Social:Level(10) == 2 and Social:Level(999) == 5,
+	"three thanks make a Kindling host; the steps are 3, 10, 25, 60, 150")
+W.Net:Extras()
+check(S.take("Realm")[1].payload:find("|1$"), "and the level goes out with the camp")
+W.Net:End()
+
+-- a guest: what the camp asks for, thanking, the guestbook
+S.take()
+W.db.consent = true
+S.copy, S.pos = 77, keep
+S.handler("C2|A|1411|5010|5000|77|2|1|0|||", "Ana Lima", "RELAY")
+local wantsFired = 0
+W:On("CAMP_WANTS", function() wantsFired = wantsFired + 1 end)
+S.handler("C2|E|16,4|4", "Ana Lima", "RELAY")
+S.handler("C2|E|16,4|4", "Ana Lima", "RELAY")
+local anaCamp = Camps:Get("Ana Lima")
+check(anaCamp.wants[2] == 4 and anaCamp.host == 4 and wantsFired == 1, "a camp's extras: what it asks for and its host's level; the same request again is not news")
+check(Social:CanAnswer(anaCamp) == nil, "nothing of mine answers it")
+S.bags = { [W.OBJECTS[4][1]] = 1 }
+local answer, how = Social:CanAnswer(anaCamp)
+check(answer == 4 and how == "bags", "a Sharpening Wheel in my bags does")
+S.bags = {}
+check(not Social:CanThank(anaCamp) and not W.Net:Thank("Ana Lima"), "I cannot thank a host whose circle I am not in")
+local visits = #W.db.guestbook -- the checks above already sat at a few fires
+S.advance(130)
+S.take()
+check(anaCamp.heard["Chehul Costa"] and #W.db.guestbook == visits + 1 and W.db.guestbook[1].owner == "Ana Lima", "sitting at her fire writes the guestbook")
+S.advance(130)
+check(#W.db.guestbook == visits + 1, "once per camp")
+S.take()
+check(Social:CanThank(anaCamp) and W.Net:Thank("Ana Lima"), "in her circle, I can thank her")
+local thanks = S.take()
+check(#thanks == 3 and thanks[1].bus == "Whisper" and thanks[1].target == "Ana Lima" and thanks[1].payload == "C2|T|Ana Lima", "thanks go to the host by whisper, and to guild and group")
+check(not Social:CanThank(anaCamp) and not W.Net:Thank("Ana Lima") and #S.take() == 0, "once a day per host")
+S.handler("C2|X", "Ana Lima", "RELAY")
+
+-- which of a camp's benefits I would really gain
+C_Spell.GetSpellName = function(id) return ({ [2550] = "Cooking", [1126] = "Mark of the Wild", [1243] = "Power Word: Fortitude" })[id] end
+C_UnitAuras = { GetAuraDataByIndex = function(_, i) return ({ { name = "Mark of the Wild" }, { name = "Ghost Wolf" } })[i] end,
+	GetPlayerAuraBySpellID = function(id) return id == W.AURA.WELCOME and { duration = 60, expirationTime = GetTime() + 45 } or nil end }
+check(Social:AlreadyHave(7) == "Mark of the Wild" and Social:AlreadyHave(30) == nil and Social:AlreadyHave(W.TENT) == nil,
+	"the Enchanted Lute adds nothing to someone with Mark of the Wild; the First Aid Kit and the tent do")
+local left, total = W.AuraLeft(W.AURA.WELCOME)
+check(left == 45 and total == 60 and W.AuraLeft(W.AURA.BENEFITS) == nil, "the minute by the fire: seconds left and its length")
+C_UnitAuras = nil
+S.extras = nil
+check(S.diag():find("asking=1;heat=3", 1, true), "the diagnostic reports asking and warmth")
+
+-- pieces placed by someone without Warmth: noted when the player points at them
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(30)
+S.take()
+check(W.Watch:Spot("Camp Tent") == nil, "pointing at a tent away from any camp notes nothing")
+local spotCamp = W.Net:Announce(2, "")
+S.take()
+S.extras = true
+check(W.Watch:Spot("Camp Tent") == W.TENT and Camps:Has(spotCamp, W.TENT), "at my camp, the tent under the mouse is noted")
+local told = S.take("Realm")
+check(#told == 1 and told[1].payload:find("^C2|E|") and not told[1].payload:find("|" .. W.TENT .. ",", 1, true), "and my camp stops asking for it: " .. tostring(told[1] and told[1].payload))
+local chair
+for i, o in ipairs(W.OBJECTS) do if o[2] == "Camp Chair" then chair = i end end
+check(W.Watch:Spot("Chair") == chair and W.Watch:Spot("Chair") == chair and #Camps:Objects(spotCamp) == 2, "the world object's name may drop the item's Camp; twice is once")
+check(W.Watch:Spot("Basic Campfire") == nil and W.Watch:Spot("Mailbox") == nil, "other things under the mouse are nothing")
+S.extras = nil
+W.Net:End()
+S.take()
 
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")

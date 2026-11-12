@@ -285,7 +285,28 @@ function Compass:Refresh()
 	f.glow:SetViolet(violet)
 	f.flame:SetViolet(violet)
 	local d = camp and W.Distance(camp)
-	f.text:SetText((d and d > AT_FIRE) and L["%d yd"]:format(d) or "")
+	-- under the compass: the way to the fire; at it, the minute of rest counting down; then what is left of the benefits
+	local resting = W.AuraLeft(W.AURA.WELCOME)
+	local benefits = W.AuraLeft(W.AURA.BENEFITS)
+	if resting then f.text:SetText(UI.C.ember .. L["%d s"]:format(math.ceil(resting)) .. UI.C.r)
+	elseif d and d > AT_FIRE then f.text:SetText(L["%d yd"]:format(d))
+	elseif benefits then f.text:SetText(UI.C.ok .. L["%d min"]:format(math.ceil(benefits / 60)) .. UI.C.r)
+	else f.text:SetText("") end
+end
+
+-- The minute of rest as a ring of dots filling around the compass.
+local DOTS = 24
+function Compass:Rest()
+	local f = self.frame
+	local left, duration = W.AuraLeft(W.AURA.WELCOME)
+	local lit = left and math.floor((1 - left / duration) * DOTS + 0.5) or -1
+	if lit == f.lit then return end
+	f.lit = lit
+	for i, dot in ipairs(f.dots) do
+		dot:SetShown(lit >= 0)
+		local c = i <= lit and T.ember or T.line
+		dot:SetVertexColor(c[1], c[2], c[3], i <= lit and 1 or 0.7)
+	end
 end
 
 function Compass:Point()
@@ -318,6 +339,15 @@ function Compass:Build()
 	f.pointer = Wd.Tex(f, "pointer", T.ember, 1, "OVERLAY")
 	f.pointer:SetSize(SIZE + 26, SIZE + 26)
 	f.pointer:SetPoint("CENTER")
+	f.dots = {}
+	for i = 1, DOTS do
+		local a = math.pi / 2 - (i - 0.5) / DOTS * 2 * math.pi -- from twelve o'clock, clockwise
+		local dot = Wd.Tex(f, "disc", T.line, 0.7, "OVERLAY")
+		dot:SetSize(4, 4)
+		dot:SetPoint("CENTER", f, "CENTER", (SIZE / 2 + 6) * math.cos(a), (SIZE / 2 + 6) * math.sin(a))
+		dot:Hide()
+		f.dots[i] = dot
+	end
 	f.text = Wd.Text(f, 11.5, T.text, "title")
 	f.text:SetFont(UI.Font("title"), 11.5, "OUTLINE")
 	f.text:SetPoint("TOP", f, "BOTTOM", 0, -3)
@@ -339,6 +369,8 @@ function Compass:Build()
 	f:SetScript("OnEnter", function(frame)
 		local camp = Compass.best
 		local lines = camp and Describe(camp) or { L["No campfire announced near you."] }
+		local benefits = W.AuraLeft(W.AURA.BENEFITS)
+		if benefits then lines[#lines + 1] = UI.C.ok .. L["Camp Benefits: %d min left."]:format(math.ceil(benefits / 60)) .. UI.C.r end
 		lines[#lines + 1] = UI.C.mute .. L["Click: camp actions.  Right click: Warmth.  Drag to move."] .. UI.C.r
 		Wd.Tip(frame, camp and UI.CampTitle(camp) or "Warmth", lines, "ANCHOR_LEFT")
 	end)
@@ -347,7 +379,7 @@ function Compass:Build()
 	f:SetScript("OnUpdate", function(_, elapsed)
 		slow, fast = slow + elapsed, fast + elapsed
 		if slow >= 1 then slow = 0; Compass:Refresh() end
-		if fast >= 0.05 then fast = 0; Compass:Point() end
+		if fast >= 0.05 then fast = 0; Compass:Point(); Compass:Rest() end
 	end)
 	self.frame = f
 	self:Refresh()

@@ -230,6 +230,7 @@ _G.ChehulMesh = mesh
 _G.ChehulNet = {
 	peers = {},
 	Register = function(_, tag, caps) S.tag, S.caps = tag, caps end,
+	RegisterDiag = function(_, tag, fn) S.diagTag, S.diag = tag, fn end,
 	MyLayer = function() return S.pos and S.pos.map or 0, S.copy end,
 }
 -- What was sent since the last call, optionally only one bus.

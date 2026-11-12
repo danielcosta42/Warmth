@@ -198,6 +198,38 @@ local function OnTradeSkill()
 	W:Fire("CAMPS")
 end
 
+-- A piece someone without Warmth placed is invisible to the addon, except for one thing the client does say: the
+-- name of the world object under the mouse (measured 2026-11-12: "Camp Tent", "Chair", "Basic Campfire"; the
+-- object's name can drop the item's "Camp "). Pointing at a piece while standing at a camp notes it there.
+function Watch:Spot(text)
+	if W.IsSecret(text) or type(text) ~= "string" or text == "" then return nil end
+	local camp = self:Near()
+	if not camp then return nil end
+	for i, o in ipairs(W.OBJECTS) do
+		if text == o[2] or text == W.ObjectName(i) or "Camp " .. text == o[2] then
+			camp.seen = camp.seen or {}
+			if not camp.seen[i] then
+				camp.seen[i] = true
+				W:Fire("CAMPS")
+				if camp.owner == W.me then W.Net:Extras() end -- my camp no longer asks for it
+			end
+			return i
+		end
+	end
+	return nil
+end
+
+local lastTip
+local function PollTooltip()
+	local tip = _G.GameTooltip
+	if not (tip and tip:IsShown() and tip:GetOwner() == UIParent and tip:NumLines() == 1) then lastTip = nil; return end
+	local fs = _G.GameTooltipTextLeft1
+	local text = fs and fs:GetText()
+	if W.IsSecret(text) or text == lastTip then return end
+	lastTip = text
+	Watch:Spot(text)
+end
+
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "UNIT_SPELLCAST_SUCCEEDED", "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE" }) do pcall(f.RegisterEvent, f, e) end
 f:SetScript("OnEvent", function(_, event, unit, _, spellID)
@@ -213,6 +245,7 @@ W:On("LOADED", function()
 	else W.db.lit = nil end
 end)
 W:On("LOGIN", function()
+	C_Timer.NewTicker(0.5, function() pcall(PollTooltip) end)
 	Resolve()
 	C_Timer.NewTicker(10, function() Watch:Tick() end)
 end)
