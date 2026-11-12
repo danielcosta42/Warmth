@@ -5,6 +5,8 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+## [0.3.0]
+
 - **Os tempos na bússola.** Um aro de pontos enche durante o minuto sentado, com os segundos que faltam; depois,
   quanto resta do benefício.
 - **Benefícios para você.** A tela do acampamento marca o benefício que você não ganharia, porque já tem o de
