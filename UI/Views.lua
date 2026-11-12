@@ -125,8 +125,13 @@ UI.View("list", function(v)
 	v.empty:SetSpacing(5)
 	v.build = Wd.Button(v, true)
 	v.build:SetPoint("BOTTOMLEFT", PAD, PAD)
-	v.build:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+	v.build:SetWidth(WIDTH * 0.6 - 4)
 	v.build.fn = function() UI:Show("build") end
+	v.work = Wd.Button(v)
+	v.work:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+	v.work:SetWidth(WIDTH * 0.4 - 4)
+	v.work:Set(L["Workshop"])
+	v.work.fn = function() UI:Show("workshop") end
 end, function(v)
 	local all, shown, people, match = W.Camps:List(), {}, 0, FILTERS[1][3]
 	-- Laid out on every draw: a font string only knows its width once it has been shown, so a width measured
@@ -219,7 +224,16 @@ end, function(v, fresh)
 	end
 	if camp.notHere then hint = C.copy .. L["You are where this camp is and there is no fire: it burns in another copy of the zone, or it went out."] .. C.r
 	elseif other == true then hint = C.copy .. L["This camp is in another copy of the zone: you will not see the fire until you are in the owner's group."] .. C.r
-	elseif bring then hint = C.ok .. L["Your %s fits here."]:format(bring) .. C.r .. " " .. hint end
+	elseif bring then hint = C.ok .. L["Your %s fits here."]:format(bring) .. C.r .. " " .. hint
+	elseif not camp.notHere then
+		-- nothing in the bags for this camp, but maybe in the player's professions (the Workshop)
+		local could = W.Workshop:CouldBring(camp)
+		if could and could.state == "ready" then
+			hint = C.ok .. L["You can craft a %s for this camp."]:format(W.ObjectName(could.index)) .. C.r .. " " .. hint
+		elseif could then
+			hint = L["You could craft a %s for this camp; the Workshop says what is missing."]:format(W.ObjectName(could.index)) .. " " .. hint
+		end
+	end
 	v.hint:SetText(hint)
 
 	v.go:Set(L["Go there"])

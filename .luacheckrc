@@ -19,27 +19,35 @@ read_globals = {
     -- Lua environment WoW adds
     "strsplit", "time", "date", "issecretvalue", "geterrorhandler", "hooksecurefunc", "tinsert",
     -- frames
-    "CreateFrame", "UIParent", "GameTooltip", "Minimap", "WorldMapFrame", "UISpecialFrames",
+    "CreateFrame", "UIParent", "GameTooltip", "Minimap", "WorldMapFrame", "UISpecialFrames", "ToggleWorldMap",
     "ChatFrameUtil", "ChatFrame_AddMessageEventFilter", "Settings", "InterfaceOptions_AddCategory",
     -- constants
     "RAID_CLASS_COLORS", "CLASS_ICON_TCOORDS", "ERR_CHAT_PLAYER_NOT_FOUND_S", "STANDARD_TEXT_FONT",
     -- client, units
     "GetLocale", "GetTime", "GetCVar", "GetPlayerFacing", "Ambiguate", "UnitName", "UnitFullName", "UnitClass",
+    "UnitFactionGroup",
     "InviteUnit", "UnitGUID", "UnitAura", "InCombatLockdown", "GetBuildInfo", "IsResting", "GetRestState",
     "GetXPExhaustion",
     -- items, spells, professions (the classic trade skill API is used guarded)
     "GetItemCount", "GetItemSpell", "GetItemIcon", "GetItemInfo", "GetSpellInfo",
-    "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo",
+    "GetTradeSkillLine", "GetNumTradeSkills", "GetTradeSkillInfo", "GetProfessions", "GetProfessionInfo", "IsPlayerSpell",
+    "IsSpellKnown", "GetMerchantNumItems", "GetMerchantItemID", "GetMerchantItemInfo", "GetNumTrainerServices",
+    "GetTrainerServiceInfo", "GetQuestID", "GetTitleText",
     -- maps
     "CreateVector2D", "UiMapPoint",
     -- namespaces
-    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_TradeSkillUI", "C_SuperTrack", "C_Timer",
+    "C_AddOns", "C_CVar", "C_Item", "C_Map", "C_MerchantFrame", "C_SpellBook", "C_UnitAuras", "C_VignetteInfo", "C_PartyInfo", "C_PlayerInfo", "C_Spell", "C_TradeSkillUI", "C_SuperTrack", "C_Timer",
 }
 
 files["Core/Locale.lua"] = { max_line_length = false }
 files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
 files["UI/Entry.lua"] = { max_line_length = false }
+files["Core/VendorData.lua"] = { max_line_length = false }
+files["Core/SourceData.lua"] = { max_line_length = false }
+files["Core/Sources.lua"] = { max_line_length = false }
+files["UI/Workshop.lua"] = { max_line_length = false }
+files["Core/Workshop.lua"] = { max_line_length = false }
 files["UI/Compass.lua"] = { max_line_length = false }
 files["UI/Options.lua"] = { max_line_length = false }
 files["Core/Probe.lua"] = { max_line_length = false }

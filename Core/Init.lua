@@ -13,7 +13,8 @@ W.me = ""
 
 -- consent: nil = never asked, true/false = the player's answer to "appear in circles?"
 -- auto: a campfire the player lights is announced by itself (the owner's decision, 2026-11-12; it can be turned off)
-local DEFAULTS = { toast = true, lessMotion = false, pins = true, invites = true, auto = true, compass = true }
+-- shareVendors: a vendor of camp materials the player opened, and the addon's table lacks, is told to the network later
+local DEFAULTS = { toast = true, lessMotion = false, pins = true, invites = true, auto = true, compass = true, shareVendors = true }
 
 local handlers = {}
 function W:On(event, fn)

@@ -10,7 +10,7 @@ addons=${1:?usage: tools/install.sh <AddOns folder>}
 dest="$addons/Warmth"
 rm -rf "$dest"
 mkdir -p "$dest"
-cp -r Core UI Libs Media Warmth.toc LICENSE README.md CHANGELOG.md "$dest/"
+cp -r Core UI Libs Media Warmth.toc LICENSE LICENSE-GPL-3.0.md README.md CHANGELOG.md "$dest/"
 rm -f "$dest/Media/logo-512.png" "$dest/Media/logo-square-512.png"
 sed -i "s/@project-version@/$(tr -d ' \t\r\n' < VERSION)/" "$dest/Warmth.toc"
 echo "installed Warmth $(tr -d ' \t\r\n' < VERSION) into $dest"

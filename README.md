@@ -24,6 +24,8 @@ luacheck Core UI                      # undefined globals are errors (.luacheckr
 luajit tools/core.lua                 # wire format, camps, network and consent rules
 luajit tools/ui.lua                   # views, motion bounds, pins, toast, options, ptBR completeness
 python -I tools/gen-media.py          # redraw Media/*.tga (add --check to verify, --preview DIR for PNGs)
+python -I tools/gen-questie.py        # rebuild Core/VendorData.lua and Core/SourceData.lua from the QuestieDB addon
+                                      # (needs Lodestar's tools/)
 bash tools/chehulnet-lock.sh          # the vendored network library is untouched
 ```
 
@@ -32,6 +34,9 @@ Rules that are easy to break:
 - **What leaves the client is what the player knows about.** A campfire is announced as it is lit
   (`WarmthDB.auto`, on by default, said in chat the first time) or, with that off, only by a click; presence in a
   circle needs the one-time yes (`WarmthDB.consent`). `tools/core.lua` asserts all of it on a fake mesh.
+- **What the network says about a vendor is hearsay.** It never corrects the generated table or a vendor the player
+  opened, never counts as a trusted seller, expires, and is never passed on. A vendor the player opens is told
+  later (never on the spot, which would give away where they are), and only with `WarmthDB.shareVendors` on.
 - **Secure buttons are owned by UIParent and touched only outside combat** (the Light button, the ring's slices):
   anchored to the window or the compass they would make it protected.
 - **Only the owner's announce uses the realm bus.** Presence and invite requests go to the owner by whisper.
@@ -52,4 +57,6 @@ BigWigsMods/packager and publishes to CurseForge. It needs the secrets `CF_API_K
 
 ## License
 
-MIT. The title font is Young Serif, under the SIL Open Font License (`Media/Fonts/OFL.txt`).
+MIT. The title font is Young Serif, under the SIL Open Font License (`Media/Fonts/OFL.txt`). `Core/VendorData.lua`
+and `Core/SourceData.lua` are generated from [QuestieDB](https://github.com/Questie/Questie) (GPL-3.0) by
+`tools/gen-questie.py` and are distributed under that licence (`LICENSE-GPL-3.0.md`).

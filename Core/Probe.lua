@@ -5,8 +5,10 @@
 --   /warmth probe <words>    while running: a mark in the recording ("lit basic", "sat down", "placed chair")
 --
 -- While it runs it writes what it sees into WarmthDB.probe: which APIs exist, what the client says about the kit
--- and object items (name, spell, count), and a time-stamped log of the player's casts, aura changes, system and
--- error lines, vignettes, tooltips shown, the object under the interact key and bag changes of camp items.
+-- and object items (name, spell, count), the player's professions and which camp recipes they know, and a
+-- time-stamped log of the player's casts, aura changes, system and error lines, vignettes, tooltips shown, the
+-- object under the interact key, bag changes of camp items, and what a profession window, a merchant, a trainer
+-- and a quest giver show when opened.
 -- Nothing is sent anywhere: the recording stays in the SavedVariables file, to be read after a /reload.
 --=============================================================================
 local _, W = ...
@@ -32,11 +34,14 @@ local function Log(what, ...)
 end
 Probe.Log = Log
 
+-- fn(...)'s results, or nothing if it is missing or throws. Passed through varargs, so a nil in the middle of the
+-- results does not cut the rest off.
+local function Results(ok, ...)
+	if ok then return ... end
+end
 local function Safe(fn, ...)
 	if type(fn) ~= "function" then return nil end
-	local out = { pcall(fn, ...) }
-	if not out[1] then return nil end
-	return unpack(out, 2)
+	return Results(pcall(fn, ...))
 end
 
 local function SpellName(id)
@@ -59,7 +64,13 @@ local API = { "C_UnitAuras.GetAuraDataByIndex", "C_UnitAuras.GetPlayerAuraBySpel
 	"C_Map.GetMapPosFromWorldPos", "GetPlayerFacing", "InCombatLockdown", "C_PartyInfo.InviteUnit", "InviteUnit",
 	"UnitGUID", "C_CVar.GetCVar", "DoEmote", "IsResting", "GetRestState", "GetXPExhaustion",
 	"C_Minimap.GetNumTrackingTypes", "C_GameRules.IsGameRuleActive", "Settings.RegisterCanvasLayoutCategory",
-	"AddonCompartmentFrame.RegisterAddon", "C_TooltipInfo.GetWorldCursor", "C_TooltipInfo.GetUnit" }
+	"AddonCompartmentFrame.RegisterAddon", "C_TooltipInfo.GetWorldCursor", "C_TooltipInfo.GetUnit",
+	-- for the Workshop: professions, known recipes, what a recipe takes, merchants, trainers
+	"C_TradeSkillUI.GetAllProfessionTradeSkillLines", "C_TradeSkillUI.GetProfessionInfoBySkillLineID",
+	"C_TradeSkillUI.GetRecipeSchematic", "C_TradeSkillUI.OpenTradeSkill", "C_TradeSkillUI.CraftRecipe", "GetProfessionInfo",
+	"C_SpellBook.IsSpellKnown", "C_SpellBook.IsSpellInSpellBook", "C_Spell.IsSpellUsable",
+	"GetMerchantNumItems", "GetMerchantItemID", "GetMerchantItemInfo", "C_MerchantFrame.GetItemInfo", "C_MerchantFrame.GetNumItems",
+	"GetNumTrainerServices", "GetTrainerServiceInfo", "C_QuestLog.IsQuestFlaggedCompleted", "C_Item.GetItemInfo", "GetItemInfo" }
 
 local function Exists(path)
 	local v = _G
@@ -123,6 +134,46 @@ local function Items()
 	return out
 end
 
+-- A table's plain fields as "k=v k=v" (nested tables are only counted).
+local function Dump(t, max)
+	local parts = {}
+	for k, v in pairs(type(t) == "table" and t or {}) do
+		if #parts < (max or 16) then parts[#parts + 1] = S(k) .. "=" .. (type(v) == "table" and ("{" .. #v .. "}") or S(v)) end
+	end
+	table.sort(parts)
+	return table.concat(parts, " ")
+end
+
+-- The player's professions as the client tells them, by every way it might.
+local function Professions()
+	local out = {}
+	local TS = C_TradeSkillUI
+	for _, line in ipairs(Safe(TS and TS.GetAllProfessionTradeSkillLines) or {}) do
+		local info = Safe(TS.GetProfessionInfoBySkillLineID, line)
+		if type(info) == "table" and (tonumber(info.skillLevel) or 0) > 0 then out[#out + 1] = "line " .. S(line) .. ": " .. Dump(info) end
+	end
+	if GetProfessions and GetProfessionInfo then
+		for slot, index in pairs({ Safe(GetProfessions) }) do
+			if index then
+				local name, _, rank, maxRank, _, _, skillLine = Safe(GetProfessionInfo, index)
+				out[#out + 1] = string.format("GetProfessions slot %s: %s %s/%s line=%s", S(slot), S(name), S(rank), S(maxRank), S(skillLine))
+			end
+		end
+	end
+	return out
+end
+
+-- Each camp object's recipe spell (from the guide): what the client calls it and whether the player knows it.
+local function Recipes()
+	local out = {}
+	for index, spell in ipairs(W.RECIPES) do
+		out[#out + 1] = string.format("%-26s recipe=%d  client=%s  IsPlayerSpell=%s  IsSpellKnown=%s  spellbook=%s", W.OBJECTS[index][2], spell,
+			S(Safe(C_Spell and C_Spell.GetSpellName, spell)), S(Safe(IsPlayerSpell, spell)), S(Safe(IsSpellKnown, spell)),
+			S(Safe(C_SpellBook and C_SpellBook.IsSpellKnown, spell)))
+	end
+	return out
+end
+
 -- What changed between two snapshots (id -> description), logged as + and -.
 local function Diff(what, before, after)
 	for k, v in pairs(after) do
@@ -149,7 +200,8 @@ end
 local EVENTS = { "UNIT_SPELLCAST_SENT", "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_FAILED",
 	"UNIT_SPELLCAST_INTERRUPTED", "UNIT_AURA", "CHAT_MSG_SYSTEM", "UI_INFO_MESSAGE", "UI_ERROR_MESSAGE",
 	"VIGNETTES_UPDATED", "VIGNETTE_MINIMAP_UPDATED", "BAG_UPDATE_DELAYED", "PLAYER_UPDATE_RESTING",
-	"PLAYER_SOFT_INTERACT_CHANGED", "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
+	"PLAYER_SOFT_INTERACT_CHANGED", "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "UPDATE_EXHAUSTION",
+	"MERCHANT_SHOW", "TRAINER_SHOW", "QUEST_DETAIL", "QUEST_COMPLETE", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 
 local function OnEvent(_, event, a, b, c, d)
 	if not Probe.on then return end
@@ -185,13 +237,43 @@ local function OnEvent(_, event, a, b, c, d)
 		end
 		local ids = Safe(TS and TS.GetAllRecipeIDs) or {}
 		Log(event, "base: " .. dump(Safe(TS and TS.GetBaseProfessionInfo)), "recipes=" .. #ids)
-		for _, id in ipairs(ids) do
-			local info = Safe(TS.GetRecipeInfo, id)
-			if type(info) == "table" and not W.IsSecret(info.numAvailable) and (tonumber(info.numAvailable) or 0) > 0 then
-				Log("recipe", dump(info))
-				break
+		if event == "TRADE_SKILL_SHOW" then
+			-- the first two recipes in full, every camp recipe in this profession, and what each takes
+			local camp, shown = {}, 0
+			for index, spell in ipairs(W.RECIPES) do camp[spell] = index end
+			for _, id in ipairs(ids) do
+				local info = Safe(TS.GetRecipeInfo, id)
+				if type(info) == "table" and (shown < 2 or camp[id]) then
+					shown = shown + 1
+					Log(camp[id] and "camp recipe" or "recipe", "id=" .. S(id), Dump(info, 24))
+					local schematic = Safe(TS.GetRecipeSchematic, id, false)
+					for _, slot in ipairs(type(schematic) == "table" and schematic.reagentSlotSchematics or {}) do
+						local reagent = type(slot.reagents) == "table" and slot.reagents[1] or {}
+						Log("  takes", "item=" .. S(reagent.itemID), W.ItemName(reagent.itemID or 0, "?"), "x" .. S(slot.quantityRequired), "have=" .. W.Count(reagent.itemID or 0))
+					end
+				end
 			end
 		end
+	elseif event == "MERCHANT_SHOW" then
+		-- who sells what, and where: the Workshop wants to mark vendors of camp materials on the map
+		local map, x, y = W.Position()
+		Log(event, "npc=" .. S(Safe(UnitGUID, "npc")), S(Safe(UnitName, "npc")), string.format("map %s  %.4f, %.4f", S(map), x or 0, y or 0))
+		local n = Safe(GetMerchantNumItems) or Safe(C_MerchantFrame and C_MerchantFrame.GetNumItems) or 0
+		for i = 1, math.min(tonumber(n) or 0, 60) do
+			local id = Safe(GetMerchantItemID, i)
+			local info = Safe(C_MerchantFrame and C_MerchantFrame.GetItemInfo, i)
+			local name, _, price = Safe(GetMerchantItemInfo, i)
+			if type(info) == "table" then name, price = info.name, info.price end
+			Log("  sells", "item=" .. S(id), S(name), "price=" .. S(price))
+		end
+	elseif event == "TRAINER_SHOW" then
+		Log(event, "npc=" .. S(Safe(UnitGUID, "npc")), S(Safe(UnitName, "npc")))
+		for i = 1, math.min(tonumber(Safe(GetNumTrainerServices)) or 0, 80) do
+			local name, kind = Safe(GetTrainerServiceInfo, i)
+			if kind ~= "header" then Log("  teaches", S(name), S(kind)) end
+		end
+	elseif event == "QUEST_DETAIL" or event == "QUEST_COMPLETE" then
+		Log(event, "quest=" .. S(Safe(GetQuestID)), S(Safe(GetTitleText)), "npc=" .. S(Safe(UnitGUID, "npc")), S(Safe(UnitName, "npc")))
 	elseif event == "PLAYER_UPDATE_RESTING" or event == "UPDATE_EXHAUSTION" then
 		Log(event, "resting=" .. S(Safe(IsResting)), "restState=" .. S(Safe(GetRestState)), "exhaustion=" .. S(Safe(GetXPExhaustion)))
 	else
@@ -232,6 +314,8 @@ function Probe:Start()
 		where = string.format("map %s (%s)  %.3f, %.3f  copy %s", S(map), map and W.ZoneName(map) or "?", x or 0, y or 0, S(map and W.MyCopy(map))) }
 	for _, name in ipairs(API) do rec.api[#rec.api + 1] = (Exists(name) and "yes  " or "NO   ") .. name end
 	rec.items = Items()
+	rec.professions = Professions()
+	rec.recipes = Recipes()
 	W.db.probe = rec
 	t0, self.on = GetTime(), true
 	auras, vignettes, counts, lastTip, lastInteract = Auras(), Vignettes(), Counts(), nil, nil
@@ -252,6 +336,8 @@ end
 function Probe:Stop()
 	if not self.on then return 0 end
 	rec.items = Items() -- again: the client may have learned item names and spells meanwhile
+	rec.professions = Professions()
+	rec.recipes = Recipes()
 	rec.seconds = math.floor(GetTime() - t0)
 	self.on = false
 	return #rec.log

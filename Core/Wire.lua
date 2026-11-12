@@ -5,6 +5,7 @@
 --   C2|J|owner|c|o                                       "I am in <owner>'s circle" (whisper to the owner, guild, group)
 --   C2|X                                                 the owner ended the camp
 --   C2|I|owner                                           "invite me to your copy of the zone" (whisper to the owner)
+--   C2|V|npc|map|x|y|i,i,i|name                          a vendor of camp materials: who, where, which items
 --
 -- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames. Unknown letters are
 -- ignored, so a flag can be added later without breaking older clients.
@@ -23,6 +24,7 @@ Wire.NAME_MAX  = 40
 Wire.PEOPLE    = 9   -- people an announce names (the ring draws that many)
 Wire.COUNT_MAX = 40
 Wire.AGE_MAX   = 1440 -- minutes
+Wire.VENDOR_ITEMS = 12 -- items a vendor message names
 
 local function ClassChar(i) return string.char(97 + (tonumber(i) or 0)) end
 local function ClassIndex(ch)
@@ -37,13 +39,16 @@ local function GoodName(name)
 end
 Wire.GoodName = GoodName
 
--- At most NOTE_MAX bytes, never ending in the middle of a UTF-8 character.
-function Wire.CleanNote(note)
-	local s = tostring(note or ""):gsub("[|%c]", " "):gsub("^%s+", ""):gsub("%s+$", "")
-	if #s <= Wire.NOTE_MAX then return s end
-	local cut = Wire.NOTE_MAX
+-- At most `max` bytes, never ending in the middle of a UTF-8 character.
+local function Cut(s, max)
+	if #s <= max then return s end
+	local cut = max
 	while cut > 0 and s:byte(cut + 1) >= 128 and s:byte(cut + 1) < 192 do cut = cut - 1 end -- next byte continues a character
 	return s:sub(1, cut)
+end
+
+function Wire.CleanNote(note)
+	return Cut(tostring(note or ""):gsub("[|%c]", " "):gsub("^%s+", ""):gsub("%s+$", ""), Wire.NOTE_MAX)
 end
 
 -- fields: map, x, y (0..1), zuid, tier, n, age (minutes), objs = { index }, people = { { name, class } }, note
@@ -70,6 +75,12 @@ function Wire.Join(owner, class, obj)
 	return table.concat({ "C2", "J", owner, ClassChar(class), obj or 0 }, "|")
 end
 function Wire.End() return "C2|X" end
+function Wire.Vendor(npc, v)
+	local items = {}
+	for i = 1, math.min(#v.items, Wire.VENDOR_ITEMS) do items[i] = v.items[i] end
+	return table.concat({ "C2", "V", npc, v.map, math.floor(v.x * 10000 + 0.5), math.floor(v.y * 10000 + 0.5),
+		table.concat(items, ","), Cut((tostring(v.name):gsub("[|;~%c]", " ")), Wire.NAME_MAX) }, "|")
+end
 function Wire.Invite(owner) return "C2|I|" .. owner end
 
 local function Int(s, lo, hi)
@@ -87,6 +98,17 @@ function Wire.Decode(payload)
 		return a == nil and { kind = "X" } or nil
 	elseif kind == "I" then
 		return (GoodName(a) and b == nil) and { kind = "I", owner = a } or nil
+	elseif kind == "V" then
+		local npc, map, x, y = Int(a, 1, 9999999), Int(b, 1, 99999), Int(c, 0, 10000), Int(d, 0, 10000)
+		if not (npc and map and x and y and type(e) == "string" and GoodName(f) and age == nil) then return nil end
+		local items, seen = {}, {}
+		for item in e:gmatch("[^,]+") do
+			local id = Int(item, 1, 9999999)
+			if not id or #items >= Wire.VENDOR_ITEMS then return nil end
+			if not seen[id] then seen[id] = true; items[#items + 1] = id end
+		end
+		if #items == 0 then return nil end
+		return { kind = "V", npc = npc, map = map, x = x / 10000, y = y / 10000, items = items, name = f }
 	elseif kind == "J" then
 		local obj = Int(c, 0, #W.OBJECTS)
 		if not (GoodName(a) and type(b) == "string" and #b == 1 and obj and d == nil) then return nil end

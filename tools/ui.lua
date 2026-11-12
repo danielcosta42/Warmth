@@ -260,15 +260,70 @@ check(UI.prompt.shown and UI.prompt.title.text == "Caio Nunes wants to come to y
 UI.prompt.yes:Click()
 check(S.invited == "Caio Nunes", "accepting invites them")
 
-check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 7, "the options live in the game's AddOns tab")
+check(S.registered and S.category.name == "Warmth" and #UI.options.checks == 8, "the options live in the game's AddOns tab")
 UI.options.checks[1]:Click()
 check(W.db.consent == true, "the consent switch")
 UI.options.checks[2]:Click()
 check(W.db.auto == true, "the automatic-announce switch")
 W.db.auto = false
-UI.options.checks[7]:Click()
+UI.options.checks[4]:Click()
+check(W.db.shareVendors == false, "the vendor-sharing switch")
+UI.options.checks[4]:Click()
+UI.options.checks[8]:Click()
 check(W.db.lessMotion == true, "the less-motion switch")
 W.db.lessMotion = false
+
+-- ── the Workshop view ──────────────────────────────────────────────────────
+S.profs = { { "Leatherworking", 45, 75, 165 }, { "Skinning", 188, 225, 393 } }
+S.known = { [W.RECIPES[W.TENT]] = true, [W.RECIPES[22]] = true }
+local takes = { [W.RECIPES[W.TENT]] = { { 2318, 5 } }, [W.RECIPES[22]] = { { 2318, 3 }, { 4470, 2 } } }
+C_TradeSkillUI = { OpenTradeSkill = function(line) S.opened = line; return true end, GetRecipeSchematic = function(id)
+	local slots = {}
+	for i, r in ipairs(takes[id] or {}) do slots[i] = { quantityRequired = r[2], reagents = { { itemID = r[1] } } } end
+	return { reagentSlotSchematics = slots }
+end }
+S.bags = { [2318] = 5 }
+UI:Show("list")
+UI.views.list.work:Click()
+local ws = UI.views.workshop
+check(UI.view == "workshop" and UI.title.text == "Workshop" and #ws.list.items == 6 and UI.back.shown, "the Workshop lists the objects of my two professions")
+check(ws.list.rows[1].title.text == "Camp Tent" and ws.list.rows[1].status.text:find("can make 1", 1, true) and ws.list.rows[1].sel.shown
+	and ws.list.rows[1].mats.text:find("5/5", 1, true), "ready first, selected, with its materials")
+check(ws.advice.text:find("Open Leatherworking to craft it", 1, true) and ws.act.shown and ws.act.label.text == "Open Leatherworking", "what to do about it")
+ws.act:Click()
+check(S.opened == 165, "the button opens the profession")
+ws.list.rows[2]:Click()
+check(UI.workSel == 22 and ws.list.rows[2].status.text:find("materials missing", 1, true) and ws.advice.text:find(": sold by ", 1, true)
+	and ws.act.label.text:find("^Mark .+ on the map$"), "a material short: who sells it, and a button to mark the vendor: " .. ws.advice.text)
+check(ws.advice.text:find("skinned from beasts around level 1-20", 1, true) == nil, "(the leather is in the bags, so only the wood is explained)")
+S.bags = {}
+UI:Render()
+check(ws.advice.text:find("#2318: skinned from beasts around level 1%-20%.\n") and ws.advice.text:find(": sold by ", 1, true),
+	"two materials short: how to get each, one per line: " .. ws.advice.text)
+S.bags = { [2318] = 5 }
+UI:Render()
+ws.act:Click()
+local sellers = W.Workshop:Sellers(4470)
+local marked
+for _, seller in pairs(sellers) do
+	if seller.map == S.waypoint.map and seller.x == S.waypoint.x then marked = seller end
+end
+check(marked ~= nil, "the vendor marked on the map is one of the Simple Wood vendors")
+ws.list.rows[3]:Click()
+check(ws.advice.text:find("needs a blueprint", 1, true) and ws.act.shown == false, "not learned: where the recipe comes from, and nothing to click")
+-- a camp says what I could craft for it
+S.bags = { [2318] = 5 }
+local needy = announce("Needs A Tent", { x = 0.5005, objs = { 1 }, tier = 2 })
+UI:Show("camp", "Needs A Tent")
+check(UI.views.camp.hint.text:find("You can craft a Camp Tent for this camp", 1, true), "a camp without a tent, and I can make one")
+S.bags = {}
+UI:Render()
+check(UI.views.camp.hint.text:find("You could craft a Camp Tent for this camp; the Workshop says what is missing", 1, true), "or could, with the materials")
+Camps:End("Needs A Tent")
+S.profs, S.known, C_TradeSkillUI, S.bags = nil, nil, nil, {}
+UI:Show("workshop")
+check(ws.empty.text:find("no profession", 1, true) and ws.act.shown == false, "no profession reported: the view says so")
+UI:Show("list")
 
 -- ── the compass and its ring ───────────────────────────────────────────────
 local Compass = UI.Compass
@@ -348,9 +403,9 @@ check(Compass.open == false and S.printed[#S.printed] == "|cffffb454Warmth|r You
 S.combat = false
 Compass.frame:Click("RightButton")
 check(UI.frame.shown == false, "right click on the compass toggles the window")
-UI.options.checks[6]:Click()
+UI.options.checks[7]:Click()
 check(W.db.compass == false and Compass.frame.shown == false, "the compass can be turned off")
-UI.options.checks[6]:Click()
+UI.options.checks[7]:Click()
 check(Compass.frame.shown, "and on again")
 for owner in pairs(Camps.all) do Camps:End(owner) end
 S.bags = {}
@@ -389,11 +444,29 @@ check(W.Probe.on == false and W.db.probe == nil, "the probe is off and has writt
 S.take()
 SlashCmdList.WARMTH("probe")
 check(W.Probe.on and #W.db.probe.api > 30 and #W.db.probe.items == 42 and W.db.probe.items[1]:find("kit1", 1, true), "starting it snapshots the APIs and the 42 camp items")
+check(#W.db.probe.recipes == 35 and W.db.probe.recipes[4]:find("Sharpening Wheel", 1, true) and W.db.probe.recipes[4]:find("recipe=1230171", 1, true),
+	"and the 35 camp recipes, with whether the client knows them")
+-- a merchant, a trainer and a profession window are written down when opened
+S.merchant, S.npc = { 4470, 2320 }, "Creature-0-1-1-1-3313-0"
+function GetMerchantItemInfo(i) return ({ "Simple Wood", "Coarse Thread" })[i], nil, ({ 38, 10 })[i] end
+S.fire("MERCHANT_SHOW")
+check(#S.take() == 0, "opening a vendor sends nothing")
+C_TradeSkillUI = {
+	GetBaseProfessionInfo = function() return { professionName = "Blacksmithing", skillLevel = 95 } end,
+	GetAllRecipeIDs = function() return { 2660, 1230171 } end,
+	GetRecipeInfo = function(id) return { recipeID = id, name = id == 1230171 and "Sharpening Wheel" or "Rough Sharpening Stone", learned = true, numAvailable = 0 } end,
+	GetRecipeSchematic = function(id) return { reagentSlotSchematics = { { quantityRequired = id == 1230171 and 1 or 2, reagents = { { itemID = 2835 } } } } } end,
+}
+S.fire("TRADE_SKILL_SHOW")
+C_TradeSkillUI = nil
 SlashCmdList.WARMTH("probe lit the basic kit")
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[1] + 1000000)
 S.fire("CHAT_MSG_SYSTEM", "You feel cozy.")
 S.fire("UNIT_SPELLCAST_SUCCEEDED", "target", "g", 5)
 local log = table.concat(W.db.probe.log, "\n")
+check(log:find("npc=Creature-0-1-1-1-3313-0", 1, true) and log:find("item=4470  Simple Wood  price=38", 1, true), "the merchant, where it stands and what it sells")
+check(log:find("camp recipe", 1, true) and log:find("id=1230171", 1, true) and log:find("item=2835", 1, true) and log:find("x1", 1, true),
+	"a camp recipe in the profession window, and what it takes")
 check(log:find(">>> lit the basic kit", 1, true) and log:find("spell=1279981", 1, true) and log:find("You feel cozy.", 1, true) and not log:find("spell=5", 1, true),
 	"marks, my casts and system lines are recorded; other units are not")
 SlashCmdList.WARMTH("probe")

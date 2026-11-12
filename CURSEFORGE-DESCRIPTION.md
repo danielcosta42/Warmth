@@ -12,12 +12,14 @@ Somewhere out there, someone just lit a campfire. Warmth puts it on your map: wh
 - **The circle fills up.** People who walk up to your fire appear around it, with the object they brought. An empty seat marked "you" waits on every camp you look at.
 - **Zone copies.** Forever runs several copies of a zone at once. Warmth marks camps that are in another copy, and lets you ask the owner for a group invite to land in theirs.
 - **A heads-up nearby.** A quiet toast when someone announces a campfire in the zone you are in.
+- **The Workshop.** Every camp object your professions can make: ready to craft, missing materials, missing skill or recipe, and what each one takes. For what you lack it says the easiest way to get it: the nearest vendor of your faction, the zones with the most nodes, the creature that drops it, or what it is made of. One click opens the profession, marks the vendor or opens the zone's map.
 - **A compass and a ring of camp actions.** A small campfire on your screen points to the most useful fire nearby. Click it and a ring opens: light your kit, place your camp object, unroll the sleeping bag, sit, cook.
 
 ## You decide what is shared
 
 - When you light a campfire, Warmth tells the network, so others can find it. One switch in the options turns that off; then a campfire is announced only when you click.
 - Warmth asks **once** whether you want to appear in other people's circles when you sit at an announced fire. Say no and you never show up in anyone's circle; change your mind in the options.
+- A vendor of camp materials you open that Warmth does not know yet is told to the network later, never on the spot; one switch turns that off.
 - You can turn off invite requests, the toast, the pins and most of the motion.
 
 ## Getting in

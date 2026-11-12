@@ -4,7 +4,9 @@
 -- What leaves this client, and when (the consent rules of the spec, section 2):
 --   * an announce: only when the player clicks Announce; its repeats ride on that click and die with the session;
 --   * presence in someone's circle: only after the one-time "yes" (W.db.consent == true);
---   * an invite request: only when the player clicks it.
+--   * an invite request: only when the player clicks it;
+--   * a vendor of camp materials the player opened and the addon's table lacks: later, never on the spot, and only
+--     with W.db.shareVendors on (on by default, a switch in the options).
 -- Only the announce travels the realm bus (with relay). Presence and invite requests go to the owner by whisper,
 -- and presence also to guild and group, where it costs nothing.
 --
@@ -136,6 +138,27 @@ function Net:AnswerInvite(name, accept)
 	if invite then pcall(invite, name) end
 end
 
+-- A vendor of camp materials, told to the network: which npc, where it stands, what it sells. Coalesced per npc.
+-- It does say that this player was at that vendor at some point; that is why it waits (see GossipVendor).
+function Net:ShareVendor(npc)
+	local v, mesh = W.Workshop:Vendors()[npc], Mesh()
+	if not (v and mesh) then return false end
+	local payload = W.Wire.Vendor(npc, v)
+	mesh:Guild(self.PREFIX, payload)
+	mesh:Realm(self.PREFIX, payload, "V" .. npc, true)
+	return true
+end
+
+-- Every half hour, at most one vendor this player opened and the table lacks is told (one guild message and one
+-- realm item): never at the moment it is opened, never something only heard, and not at all with the option off.
+function Net:GossipVendor()
+	if W.db.shareVendors == false then return false end
+	local npc = W.Workshop:ToTell()
+	if not npc or not self:ShareVendor(npc) then return false end
+	W.Workshop:Vendors()[npc].tell = nil
+	return true
+end
+
 local function OnMessage(payload, sender, dist)
 	if W.IsSecret(payload, sender, dist) or type(sender) ~= "string" then return end
 	local who = W.Short(sender)
@@ -146,6 +169,13 @@ local function OnMessage(payload, sender, dist)
 		if W.Wire.GoodName(who) then W.Camps:Announce(who, msg) end
 	elseif msg.kind == "X" then
 		W.Camps:End(who)
+	elseif msg.kind == "V" then
+		-- hearsay is fine for a map marker; only items this client knows as camp materials are kept
+		local wanted, items = W.Workshop:Wanted(), {}
+		for _, id in ipairs(msg.items) do
+			if wanted[id] then items[#items + 1] = id end
+		end
+		if #items > 0 then W.Workshop:Learn(msg.npc, { name = msg.name, map = msg.map, x = msg.x, y = msg.y, items = items }, false) end
 	elseif dist == "RELAY" then
 		return -- presence and invite requests rest on who sent them
 	elseif msg.kind == "J" then
@@ -186,6 +216,7 @@ W:On("LOADED", function()
 	if CN and CN.Register then CN:Register("cf", function() return "cfv=" .. W.VERSION end) end
 end)
 W:On("LOGIN", function()
+	C_Timer.NewTicker(1800, function() Net:GossipVendor() end)
 	local add = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
 	if add then pcall(add, "CHAT_MSG_SYSTEM", FilterNotFound) end
 end)

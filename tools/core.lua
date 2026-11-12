@@ -340,5 +340,138 @@ S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", W.VIOLET_DUST_SPELL)
 check(W.db.violetToy == true, "throwing Violet Dust tells the addon the player owns the toy")
 C_UnitAuras = nil
 
+-- ── the Workshop ───────────────────────────────────────────────────────────
+local Workshop = W.Workshop
+check(W.SKILL[1] == 20 and W.SKILL[2] == 140 and W.SKILL[3] == 300 and W.SKILL[28] == 140 and W.SKILL[29] == 300 and W.SKILL[30] == 20,
+	"each object's skill: 20, 140, 300, and Cooking's two start at 140")
+check(#Workshop:List() == 0, "no profession reported: nothing to list")
+S.profs = { { "Leatherworking", 45, 75, 165 }, { "Skinning", 188, 225, 393 }, { "First Aid", 60, 150, 129 } }
+S.known = { [W.RECIPES[W.TENT]] = true, [W.RECIPES[22]] = true }
+local schem = {
+	[W.RECIPES[W.TENT]] = { { 2318, 5 } }, [W.RECIPES[17]] = { { 2319, 5 }, { 2321, 3 }, { 4470, 2 } },
+	[W.RECIPES[22]] = { { 2318, 3 }, { 4470, 2 } }, [W.RECIPES[30]] = { { 1251, 3 }, { 159, 1 } },
+}
+C_TradeSkillUI = { OpenTradeSkill = function(line) S.opened = line; return true end, GetRecipeSchematic = function(id)
+	local slots = {}
+	for i, r in ipairs(schem[id] or {}) do slots[i] = { quantityRequired = r[2], reagents = { { itemID = r[1] } } } end
+	return { reagentSlotSchematics = slots }
+end }
+S.bags = { [2318] = 11 }
+local by = {}
+for _, e in ipairs(Workshop:List()) do by[W.OBJECTS[e.index][2]] = e end
+check(by["Camp Tent"].state == "ready" and by["Camp Tent"].can == 2 and Workshop:List()[1].index == W.TENT, "learned, with materials: ready, how many, listed first")
+check(by["Camp Chair"].state == "materials" and by["Camp Chair"].reagents[2].item == 4470 and by["Camp Chair"].reagents[2].have == 0, "learned, a material short")
+check(by["First Aid Kit"].state == "recipe" and by["Tanning Rack"].state == "skill" and by["Tanning Rack"].need == 140 and by["Tanning Rack"].rank == 45,
+	"skill enough but not learned: the recipe; skill short: the skill")
+check(by["Mana Well"] == nil and by["Field Guide"].state == "recipe", "another profession's objects are not listed; mine all are")
+check(Workshop:Open(165) and S.opened == 165, "opening the profession")
+
+-- vendors: the seed, learning one by opening it, telling the network, hearing others
+-- vendors: the table generated from QuestieDB, with what is learned in game laid over it
+local count, alliance = 0, 0
+for _, v in pairs(W.VENDOR_DATA) do
+	count = count + 1
+	check(type(v[1]) == "string" and v[2] > 0 and v[3] >= 0 and v[3] <= 10000 and v[4] >= 0 and v[4] <= 10000 and (v[5] == "A" or v[5] == "H" or v[5] == "AH") and #v[6] > 0,
+		"a well-formed vendor line: " .. tostring(v[1]))
+	if v[5] == "A" then alliance = alliance + 1 end
+end
+check(count > 300 and alliance > 50, "the generated table: " .. count .. " vendors")
+local xen = W.VENDOR_DATA[3400]
+check(xen[1] == "Xen'to" and xen[2] == 1454 and math.abs(xen[3] - 5750) < 30 and math.abs(xen[4] - 5314) < 30,
+	"it agrees with the vendor measured in game (Xen'to, Orgrimmar 57.50, 53.14)")
+check(Workshop:Sellers(4470)[3400] and Workshop:Sellers(4470)[3400].name == "Xen'to", "the Horde's Simple Wood vendors include him")
+for npc, v in pairs(W.VENDOR_DATA) do
+	if v[5] == "A" then check(Workshop:Sellers(v[6][1])[npc] == nil, "a Horde player is not sent to an Alliance-only vendor") break end
+end
+check(Workshop:Wanted()[2321] and Workshop:Wanted()[8925], "what vendors sell counts as camp material even before the game says what recipes take")
+-- a vendor the table lacks, opened by me: written down, and told later, never on the spot
+S.take()
+S.npc, S.merchant = "Creature-0-1-1-1-990001-0000", { 4470, 2320, 2321, 9999 }
+S.fire("MERCHANT_SHOW")
+local trade = Workshop:Vendors()[990001]
+check(trade and trade.mine and trade.tell and trade.map == 1411 and #trade.items == 3 and trade.items[3] == 2321,
+	"opening a vendor the table lacks writes it down, with only the items that matter")
+check(#S.take() == 0 and not W.Net:GossipVendor() and #S.take() == 0, "nothing is sent then, nor in the next minutes: it would say where I am right now")
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[990001] == trade, "the same vendor again changes nothing")
+S.advance(601)
+local told = S.take()
+if #told == 0 then W.Net:GossipVendor(); told = S.take() end
+check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|990001|1411|5000|5000|4470,2320,2321|Chehul",
+	"ten minutes later the gossip tells who, where and what: " .. tostring(told[2] and told[2].payload))
+check(Workshop:Vendors()[990001].tell == nil and not W.Net:GossipVendor() and #S.take() == 0, "once: there is nothing left to tell")
+S.pos = { map = 1454, x = 0.5757, y = 0.5290 }
+S.npc, S.merchant = "Creature-0-1-1-1-3400-0000", { 4470, 159 }
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[3400] == nil, "a vendor the table already has, where the table says, adds nothing")
+S.pos = keep
+S.npc, S.merchant = "Creature-0-1-1-1-777-0000", { 9999, 8888 }
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[777] == nil and #S.take() == 0, "a vendor with nothing for a camp is ignored")
+S.advance(6)
+local vend, yards = Workshop:Vendor(4470)
+check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item is the one I am standing at")
+
+-- what the network says is hearsay: it never corrects the table or me, and never outranks a trusted vendor
+S.handler("C2|V|990002|1411|5100|5000|2321,159,777777|Far Trader", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990002] and #Workshop:Vendors()[990002].items == 2 and not Workshop:Vendors()[990002].mine, "a vendor heard on the network is kept apart, with the items that are camp materials")
+S.handler("C2|V|990002|1411|5100|5000|2321|Far Trader", "Someone Else", "RELAY")
+check(#Workshop:Vendors()[990002].items == 2, "a shorter list heard later does not erase what was heard")
+S.handler("C2|V|3400|1429|100|100|4470|Liar", "Someone Else", "RELAY")
+check(Workshop:Vendors()[3400] == nil and Workshop:Sellers(4470)[3400].map == 1454, "a forged message cannot move a vendor the table knows")
+S.handler("C2|V|990001|1412|1|1|4470|Liar", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990001].map == 1411 and Workshop:Vendors()[990001].name == "Chehul", "nor one I opened myself")
+S.handler("C2|V|990003|1411|5001|5000|4470|Fake Wood", "Someone Else", "RELAY")
+S.advance(6)
+check(Workshop:Vendor(4470).name == "Chehul" and Workshop:Sellers(4470)[990003] == nil, "a forged vendor next to me is not the nearest seller of something trusted vendors sell")
+for n = 1, 6 do S.handler("C2|V|" .. (990100 + n) .. "|1411|5000|5000|2840|Bar Seller " .. n, "Someone Else", "RELAY") end
+check(W.Sources:Get(2840).kind == "craft", "six forged sellers do not turn a smelted bar into something sold everywhere")
+S.handler("C2|V|990005|1429|5000|5000|2321|Elwynn Trader", "Someone Else", "RELAY")
+check(Workshop:Vendors()[990005] == nil, "a vendor in the other faction's home is no use")
+S.handler("C2|V|990004|1411|5200|5000|2318|Leather Guy", "Someone Else", "RELAY")
+S.advance(61)
+local guy, _, heardOnly = Workshop:Vendor(2318)
+check(guy and guy.name == "Leather Guy" and heardOnly == true, "hearsay is used where no trusted vendor sells the item, and is marked as such")
+for _, bad in ipairs({ "C2|V|0|1411|1|1|4470|x", "C2|V|5|1411|10001|1|4470|x", "C2|V|5|1411|1|1||x", "C2|V|5|1411|1|1|abc|x", "C2|V|5|1411|1|1|4470|",
+	"C2|V|5|1411|1|1|4470|a|extra", "C2|V|5|1411|1|1|1,2,3,4,5,6,7,8,9,10,11,12,13|x", "C2|V|5|1411|1|1|4470|bad;name" }) do
+	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
+end
+S.handler("C2|V|4001|1411|5000|5000|777777|Nothing Useful", "Someone Else", "RELAY")
+check(Workshop:Vendors()[4001] == nil, "a vendor selling nothing this client knows as camp material is not kept")
+check(Wire.Vendor(1, { map = 1, x = 0, y = 0, items = { 1 }, name = ("a"):rep(39) .. "\195\167\195\163" }):sub(-39) == ("a"):rep(39),
+	"a long vendor name is cut on a whole letter")
+S.take()
+S.advance(1900)
+check(#S.take() == 0, "hearsay is never passed on: the gossip has nothing to say")
+-- room for my own vendors whatever the network sends
+for n = 1, 150 do S.handler("C2|V|" .. (991000 + n) .. "|1411|5000|5000|2321|Flood " .. n, "Someone Else", "RELAY") end
+local heardCount = 0
+for _, v in pairs(Workshop:Vendors()) do if not v.mine then heardCount = heardCount + 1 end end
+check(heardCount <= Workshop.HEARD_MAX and Workshop:Vendors()[990001] ~= nil, "a flood of hearsay is capped at " .. Workshop.HEARD_MAX .. " and never pushes out what I opened")
+S.npc, S.merchant = "Creature-0-1-1-1-990009-0000", { 2321 }
+S.fire("MERCHANT_SHOW")
+check(Workshop:Vendors()[990009] and Workshop:Vendors()[990009].mine, "and a vendor I open still goes in")
+W.db.shareVendors = false
+S.advance(1900)
+check(#S.take() == 0 and Workshop:Vendors()[990009].tell, "with the option off, nothing I open is told")
+W.db.shareVendors = true
+
+-- how to get what nobody sells
+local Sources = W.Sources
+local function kind(item) return Sources:Get(item).kind end
+check(kind(2321) == "vendor" and kind(4470) == "vendor", "threads and wood: a vendor")
+check(kind(2840) == "craft" and Sources:Get(2840).profession == "Mining" and Sources:Get(2840).from[1][1] == 2770, "a bar is smelted from its ore")
+local ore = Sources:Get(2770)
+check(ore.kind == "nodes" and #ore.places == 2, "an ore is mined: the two zones with the most veins, veins before the creatures that carry it")
+for _, place in ipairs(ore.places) do check(not Sources.Avoid(place.map), "and never in the other faction's home: " .. place.map) end
+check(Sources.Avoid(1429) and Sources.Avoid(1436) and not Sources.Avoid(1411) and not Sources.Avoid(1434), "a Horde player is not sent to Elwynn or Westfall")
+local meat = Sources:Get(12037)
+check(meat.kind == "mobs" and meat.places[1].creature and meat.places[1].from <= meat.places[1].to, "Mystery Meat: who drops it, at what level, where")
+check(kind(2318) == "skin" and kind(10940) ~= "unknown" and kind(6291) == "fish" and kind(273130) == "unknown",
+	"leather is skinned, a fish is fished, and a Forever boss part is honestly unknown")
+check(kind(2447) == "nodes" and kind(2319) == "skin", "three herb vendors or one leather vendor are a limited stock: gathering or skinning comes first")
+check(W.ItemName(2770, "x") == "Copper Ore", "raw materials have a name before the client caches them")
+S.bags, S.profs, S.known, C_TradeSkillUI = {}, nil, nil, nil
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")
