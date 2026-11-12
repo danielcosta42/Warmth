@@ -46,6 +46,7 @@ files["UI/Entry.lua"] = { max_line_length = false }
 files["Core/VendorData.lua"] = { max_line_length = false }
 files["Core/SourceData.lua"] = { max_line_length = false }
 files["Core/Sources.lua"] = { max_line_length = false }
+files["Core/Social.lua"] = { max_line_length = false }
 files["UI/Workshop.lua"] = { max_line_length = false }
 files["Core/Workshop.lua"] = { max_line_length = false }
 files["UI/Compass.lua"] = { max_line_length = false }

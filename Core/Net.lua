@@ -62,6 +62,7 @@ function Net:Announce(tier, note)
 	lastAnnounce, lastBeat = GetTime(), GetTime()
 	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
 	Broadcast(W.Wire.Announce(Fields(camp)))
+	self:Extras()
 	return camp
 end
 
@@ -76,6 +77,37 @@ function Net:Heartbeat()
 	local f = Fields(camp)
 	camp.last, camp.n, camp.objs = time(), f.n, f.objs
 	Broadcast(W.Wire.Announce(f))
+	self:Extras()
+	return true
+end
+
+-- What goes with my announce: the buff objects my camp still lacks (unless I turned asking off) and my warmth
+-- level as a host. The same paths as the announce, and no more often.
+function Net:Extras()
+	local camp, mesh = W.Camps:Get(W.me), Mesh()
+	if not (camp and mesh) then return false end
+	camp.wants = (W.db.asking ~= false) and W.Social:Wants(camp) or {}
+	camp.host = W.Social:MyLevel()
+	local payload = W.Wire.Extras(camp.wants, camp.host)
+	mesh:Guild(self.PREFIX, payload)
+	mesh:Group(self.PREFIX, payload)
+	mesh:Realm(self.PREFIX, payload, "E", true)
+	W:Fire("CAMPS")
+	return true
+end
+
+-- "Thank you for the fire": once a day per host, from someone sitting in their circle. It is the player's click.
+function Net:Thank(owner)
+	local camp, mesh = W.Camps:Get(owner), Mesh()
+	if not (camp and mesh) or not W.Social:CanThank(camp) then return false end
+	W.Social:MarkThanked(owner)
+	local payload = W.Wire.Thank(owner)
+	if time() - camp.last <= self.FRESH then
+		self:ExpectNotFound(owner)
+		mesh:Whisper(self.PREFIX, payload, owner)
+	end
+	mesh:Guild(self.PREFIX, payload)
+	mesh:Group(self.PREFIX, payload)
 	return true
 end
 
@@ -106,6 +138,7 @@ function Net:Presence(owner, now)
 	if GetTime() - (lastPresence[owner] or -1e9) < (now and self.ANNOUNCE_GAP or self.PRESENCE_GAP) then return false end
 	lastPresence[owner] = GetTime()
 	W.Camps:Join(W.me, owner, W.MyClassIndex(), obj)
+	W.Social:Visit(camp)
 	local mesh, payload = Mesh(), W.Wire.Join(owner, W.MyClassIndex(), obj)
 	if not mesh then return false end
 	if time() - camp.last <= self.FRESH then -- an owner gone quiet is probably offline: no whisper into the void
@@ -173,7 +206,7 @@ function Net.Diag()
 	return table.concat({ "v=" .. W.VERSION, "camps=" .. camps, "mine=" .. (W.Camps:Get(W.me) and 1 or 0),
 		"auto=" .. flag(W.db.auto ~= false), "consent=" .. flag(W.db.consent), "share=" .. flag(W.db.shareVendors ~= false),
 		"vend=" .. mine .. "/" .. heard, "burn=" .. (burn[1] or 0) .. "/" .. (burn[2] or 0) .. "/" .. (burn[3] or 0),
-		"compass=" .. flag(W.db.compass ~= false) }, ";")
+		"compass=" .. flag(W.db.compass ~= false), "asking=" .. flag(W.db.asking ~= false), "heat=" .. (W.db.heat and W.db.heat.points or 0) }, ";")
 end
 
 local function OnMessage(payload, sender, dist)
@@ -186,6 +219,14 @@ local function OnMessage(payload, sender, dist)
 		if W.Wire.GoodName(who) then W.Camps:Announce(who, msg) end
 	elseif msg.kind == "X" then
 		W.Camps:End(who)
+	elseif msg.kind == "E" then
+		local camp = W.Camps:Get(who) -- the owner's own word about their camp; a claimed owner can only decorate a pin
+		if camp then
+			local asked = #msg.wants > 0 and table.concat(msg.wants, ",") ~= table.concat(camp.wants or {}, ",")
+			camp.wants, camp.host = msg.wants, msg.level
+			W:Fire("CAMPS")
+			if asked then W:Fire("CAMP_WANTS", camp) end
+		end
 	elseif msg.kind == "V" then
 		-- hearsay is fine for a map marker; only items this client knows as camp materials are kept
 		local wanted, items = W.Workshop:Wanted(), {}
@@ -197,6 +238,10 @@ local function OnMessage(payload, sender, dist)
 		return -- presence and invite requests rest on who sent them
 	elseif msg.kind == "J" then
 		W.Camps:Join(who, msg.owner, msg.class, msg.obj)
+	elseif msg.kind == "T" then
+		-- thanks count only for my own camp, from someone I heard in my circle
+		local camp = W.Camps:Get(W.me)
+		if msg.owner == W.me and camp and camp.heard[who] then W.Social:Thanked(who) end
 	elseif msg.kind == "I" then
 		if dist ~= "WHISPER" or msg.owner ~= W.me or not W.Camps:Get(W.me) or not W.db.invites then return end
 		if GetTime() - (lastInviteFrom[who] or -1e9) < Net.INVITE_GAP then return end

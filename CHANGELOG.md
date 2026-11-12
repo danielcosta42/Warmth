@@ -5,6 +5,17 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- **Os tempos na bússola.** Um aro de pontos enche durante o minuto sentado, com os segundos que faltam; depois,
+  quanto resta do benefício.
+- **Benefícios para você.** A tela do acampamento marca o benefício que você não ganharia, porque já tem o de
+  classe equivalente.
+- **Pedido de objeto.** O acampamento diz à rede o que ainda falta (a tenda primeiro); quem está por perto e tem
+  o objeto na bolsa, ou sabe fabricar, recebe um aviso. O dono pode desligar.
+- **Calor do anfitrião.** Quem senta no seu fogo pode agradecer com um clique, uma vez por dia; os agradecimentos
+  viram calor e o anfitrião sobe de nível (Graveto, Brasa, Lareira, Fogueira, Farol), que aparece no acampamento.
+- **Livro de visitas.** Os acampamentos em que você sentou, e o seu calor como anfitrião.
+- O Warmth responde ao diagnóstico do operador da rede (contagens e opções, nada sobre onde você está).
+
 ## [0.2.0]
 
 - **Oficina.** Uma tela nova (e uma fatia na roda da bússola) mostra os objetos de acampamento que as suas

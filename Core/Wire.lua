@@ -6,6 +6,8 @@
 --   C2|X                                                 the owner ended the camp
 --   C2|I|owner                                           "invite me to your copy of the zone" (whisper to the owner)
 --   C2|V|npc|map|x|y|i,i,i|name                          a vendor of camp materials: who, where, which items
+--   C2|E|o,o,o|level                                     the owner's extras: the objects the camp asks for, the host's warmth level
+--   C2|T|owner                                           "thank you for the fire" (whisper to the owner, guild, group)
 --
 -- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames. Unknown letters are
 -- ignored, so a flag can be added later without breaking older clients.
@@ -75,6 +77,10 @@ function Wire.Join(owner, class, obj)
 	return table.concat({ "C2", "J", owner, ClassChar(class), obj or 0 }, "|")
 end
 function Wire.End() return "C2|X" end
+function Wire.Extras(wants, level)
+	return "C2|E|" .. table.concat(wants or {}, ",") .. "|" .. (level or 0)
+end
+function Wire.Thank(owner) return "C2|T|" .. owner end
 function Wire.Vendor(npc, v)
 	local items = {}
 	for i = 1, math.min(#v.items, Wire.VENDOR_ITEMS) do items[i] = v.items[i] end
@@ -98,6 +104,18 @@ function Wire.Decode(payload)
 		return a == nil and { kind = "X" } or nil
 	elseif kind == "I" then
 		return (GoodName(a) and b == nil) and { kind = "I", owner = a } or nil
+	elseif kind == "T" then
+		return (GoodName(a) and b == nil) and { kind = "T", owner = a } or nil
+	elseif kind == "E" then
+		local level = Int(b, 0, 5)
+		if not (type(a) == "string" and level and c == nil) then return nil end
+		local wants, seen = {}, {}
+		for item in a:gmatch("[^,]+") do
+			local o = Int(item, 1, #W.OBJECTS)
+			if not o or #wants >= 6 then return nil end
+			if not seen[o] then seen[o] = true; wants[#wants + 1] = o end
+		end
+		return { kind = "E", wants = wants, level = level }
 	elseif kind == "V" then
 		local npc, map, x, y = Int(a, 1, 9999999), Int(b, 1, 99999), Int(c, 0, 10000), Int(d, 0, 10000)
 		if not (npc and map and x and y and type(e) == "string" and GoodName(f) and age == nil) then return nil end

@@ -103,6 +103,18 @@ function W.HasAura(id)
 end
 function W.FireNearby() return W.HasAura(W.AURA.NEARBY) end
 
+-- Seconds left on one of the player's auras and its full duration; nil when the player does not have it or the
+-- client will not say.
+function W.AuraLeft(id)
+	local get = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
+	if not get then return nil end
+	local ok, aura = pcall(get, id)
+	if not ok or type(aura) ~= "table" or W.IsSecret(aura.expirationTime, aura.duration) then return nil end
+	local duration, expires = tonumber(aura.duration) or 0, tonumber(aura.expirationTime) or 0
+	if duration <= 0 then return nil end
+	return math.max(0, expires - GetTime()), duration
+end
+
 function W.ZoneName(map)
 	local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(map)
 	return (info and info.name) or ("#" .. tostring(map))

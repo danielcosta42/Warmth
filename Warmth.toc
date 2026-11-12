@@ -32,6 +32,7 @@ Core/VendorData.lua
 Core/SourceData.lua
 Core/Workshop.lua
 Core/Sources.lua
+Core/Social.lua
 Core/Probe.lua
 
 UI/Theme.lua

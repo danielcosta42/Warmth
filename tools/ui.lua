@@ -191,7 +191,7 @@ function b.input:GetText() return self.text end
 S.take()
 b.go:Click()
 local sent = S.take("Realm")
-check(#sent == 1 and sent[1].payload:find("|3|1|0||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
+check(#sent == 2 and sent[2].payload:find("^C2|E|") and sent[1].payload:find("|3|1|0||Chehul Costa~j|come sit", 1, true) and UI.view == "camp" and UI.sel == "Chehul Costa",
 	"Announce sends the camp and opens my circle: " .. tostring(sent[1] and sent[1].payload))
 check(UI.title.text == "Your camp" and UI.views.camp.other.label.text == "End announce", "my own camp")
 check(UI.views.camp.hint.text:find("the fire alone gives no benefits", 1, true) and not UI.views.camp.hint.text:find("may end them", 1, true),
@@ -325,6 +325,57 @@ UI:Show("workshop")
 check(ws.empty.text:find("no profession", 1, true) and ws.act.shown == false, "no profession reported: the view says so")
 UI:Show("list")
 
+-- ── asking, thanking, the guestbook, benefits ──────────────────────────────
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(20)
+W.db.consent = true
+local host = announce("Host Ana", { x = 0.5005, tier = 2, objs = { 7 } })
+S.handler("C2|E|16,33|2", "Host Ana", "RELAY")
+UI:Show("camp", "Host Ana")
+check(UI.sub.text:find("Ember host", 1, true) and UI.views.camp.objs.text:find("Asks for: Camp Tent, Fish Bowl", 1, true), "the camp view shows the host's level and what the camp asks for")
+check(UI.views.camp.other.label.text ~= "Thank the host", "not in the circle: no thanking")
+S.advance(15)
+UI:Render()
+check(UI.views.camp.other.label.text == "Thank the host", "sitting there: the host can be thanked")
+S.take()
+UI.views.camp.other:Click()
+check(S.take("Whisper")[1].payload == "C2|T|Host Ana" and UI.views.camp.other.label.text ~= "Thank the host", "one click thanks; the button goes away for today")
+C_Spell.GetSpellName = function(id) return ({ [2550] = "Cooking", [1126] = "Mark of the Wild" })[id] end
+C_UnitAuras = { GetAuraDataByIndex = function(_, i) return ({ { name = "Mark of the Wild" } })[i] end, GetPlayerAuraBySpellID = function() return {} end }
+UI:Render()
+check(UI.views.camp.objs.text:find("(you already have Mark of the Wild)", 1, true), "a benefit the player's class buff already covers is marked")
+C_UnitAuras = nil
+UI:Show("list")
+check(UI.views.list.book.label.text:find("^Guestbook  ·  warmth 0"), "the list leads to the guestbook, with my warmth: " .. UI.views.list.book.label.text)
+UI.views.list.book:Click()
+check(UI.view == "book" and UI.title.text == "Guestbook" and #UI.views.book.list.items == 1 and UI.views.book.list.rows[1].title.text == "Host Ana's camp",
+	"the guestbook lists the camp I sat at")
+W.db.heat.points = 12
+UI:Render()
+check(UI.sub.text:find("warmth 12, Ember host (13 more for Hearth)", 1, true), "and my warmth as a host: " .. UI.sub.text)
+W.db.heat.points = 0
+-- a camp nearby asks for something I carry
+if UI.toast then UI.toast:Hide() end
+S.bags = { [W.OBJECTS[4][1]] = 1 }
+announce("Needy Camp", { x = 0.52 })
+UI.toast:Hide()
+S.handler("C2|E|4|0", "Needy Camp", "RELAY")
+check(UI.toast.shown and UI.toast.title.text == "A camp needs a Sharpening Wheel" and UI.toast.line.text:find("You carry one", 1, true), "the toast for a camp that asks for what I carry")
+UI.toast:Hide()
+S.handler("C2|E|4,16|0", "Needy Camp", "RELAY")
+check(UI.toast.shown == false, "once per camp and object")
+S.bags = {}
+-- my own camp: the main button is whether it asks
+S.advance(30)
+W.Net:Announce(1, "")
+UI:Show("camp", "Chehul Costa")
+check(UI.views.camp.go.label.text == "Asking for what is missing", "at my own fire the main button is the asking switch")
+UI.views.camp.go:Click()
+check(W.db.asking == false and UI.views.camp.go.label.text == "Not asking for objects" and #Camps:Get("Chehul Costa").wants == 0, "one click stops asking")
+UI.views.camp.go:Click()
+W.Net:End()
+UI:Show("list")
+
 -- ── the compass and its ring ───────────────────────────────────────────────
 local Compass = UI.Compass
 for owner in pairs(Camps.all) do Camps:End(owner) end
@@ -354,6 +405,18 @@ S.facing = 0
 S.pos = { map = 1411, x = 0.461, y = 0.5 }
 Compass:Refresh(); Compass:Point()
 check(Compass.frame.pointer.shown == false and Compass.frame.text.text == "", "at the fire the needle rests")
+-- the minute of rest, and what is left of the benefits
+local rest = { duration = 60, expirationTime = S.now + 45 }
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return (id == W.AURA.WELCOME and rest) or (id == W.AURA.BENEFITS and { duration = 3600, expirationTime = S.now + 2500 }) or nil end }
+Compass:Refresh(); Compass:Rest()
+local litDots = 0
+for _, dot in ipairs(Compass.frame.dots) do if dot.shown and dot.color[1] == 1 then litDots = litDots + 1 end end
+check(Compass.frame.text.text:find("45 s", 1, true) and litDots == 6, "resting: the seconds left, and a quarter of the ring of dots lit")
+rest = nil
+Compass:Refresh(); Compass:Rest()
+check(Compass.frame.text.text:find("42 min", 1, true) and Compass.frame.dots[1].shown == false, "rested: the minutes of benefits left, and the dots gone")
+C_UnitAuras = nil
+Compass:Refresh(); Compass:Rest()
 S.pos = { map = 1411, x = 0.5, y = 0.5 }
 
 S.bags = { [W.KITS[1]] = 3, [W.KITS[2]] = 1, [W.OBJECTS[4][1]] = 2, [W.SLEEPING_BAG] = 1 }

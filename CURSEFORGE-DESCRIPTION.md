@@ -13,7 +13,9 @@ Somewhere out there, someone just lit a campfire. Warmth puts it on your map: wh
 - **Zone copies.** Forever runs several copies of a zone at once. Warmth marks camps that are in another copy, and lets you ask the owner for a group invite to land in theirs.
 - **A heads-up nearby.** A quiet toast when someone announces a campfire in the zone you are in.
 - **The Workshop.** Every camp object your professions can make: ready to craft, missing materials, missing skill or recipe, and what each one takes. For what you lack it says the easiest way to get it: the nearest vendor of your faction, the zones with the most nodes, the creature that drops it, or what it is made of. One click opens the profession, marks the vendor or opens the zone's map.
-- **A compass and a ring of camp actions.** A small campfire on your screen points to the most useful fire nearby. Click it and a ring opens: light your kit, place your camp object, unroll the sleeping bag, sit, cook.
+- **Ask, answer, thank.** A camp tells the network which buff objects it still lacks, and players nearby who carry one or can craft it get a heads-up. Sit at someone's fire and you can thank the host; hosts gather warmth and rise from Kindling to Beacon. A guestbook keeps the camps you sat at.
+- **Benefits that count for you.** The camp view marks a benefit you would not gain because you already carry the class buff it does not stack with.
+- **A compass and a ring of camp actions.** A small campfire on your screen points to the most useful fire nearby. It counts down your minute of rest and then shows how long your benefits last. Click it and a ring opens: light your kit, place your camp object, unroll the sleeping bag, sit, cook.
 
 ## You decide what is shared
 
