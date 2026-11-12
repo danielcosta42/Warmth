@@ -64,6 +64,7 @@ function GetLocale() return S.locale or "enUS" end
 function UnitName() return "Chehul" end
 function UnitFullName() return "Chehul", "Costa" end
 function UnitClass() return "Druid", "DRUID" end
+function UnitFactionGroup() return S.faction or "Horde" end
 function GetPlayerFacing() return S.facing or 0 end
 function GetCVar(name) return S.cvars and S.cvars[name] or "0" end
 function IsInGuild() return S.guild end

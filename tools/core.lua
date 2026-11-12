@@ -367,14 +367,30 @@ check(by["Mana Well"] == nil and by["Field Guide"].state == "recipe", "another p
 check(Workshop:Open(165) and S.opened == 165, "opening the profession")
 
 -- vendors: the seed, learning one by opening it, telling the network, hearing others
-check(Workshop:Vendor(4470).name == "Xen'to" and Workshop:Vendor(2321) == nil, "the measured Orgrimmar supplier is known from the start")
+-- vendors: the table generated from QuestieDB, with what is learned in game laid over it
+local count, alliance = 0, 0
+for _, v in pairs(W.VENDOR_DATA) do
+	count = count + 1
+	check(type(v[1]) == "string" and v[2] > 0 and v[3] >= 0 and v[3] <= 10000 and v[4] >= 0 and v[4] <= 10000 and (v[5] == "A" or v[5] == "H" or v[5] == "AH") and #v[6] > 0,
+		"a well-formed vendor line: " .. tostring(v[1]))
+	if v[5] == "A" then alliance = alliance + 1 end
+end
+check(count > 300 and alliance > 50, "the generated table: " .. count .. " vendors")
+local xen = W.VENDOR_DATA[3400]
+check(xen[1] == "Xen'to" and xen[2] == 1454 and math.abs(xen[3] - 5750) < 30 and math.abs(xen[4] - 5314) < 30,
+	"it agrees with the vendor measured in game (Xen'to, Orgrimmar 57.50, 53.14)")
+check(Workshop:Sellers(4470)[3400] and Workshop:Sellers(4470)[3400].name == "Xen'to", "the Horde's Simple Wood vendors include him")
+for npc, v in pairs(W.VENDOR_DATA) do
+	if v[5] == "A" then check(Workshop:Sellers(v[6][1])[npc] == nil, "a Horde player is not sent to an Alliance-only vendor") break end
+end
+check(Workshop:Wanted()[2321] and Workshop:Wanted()[8925], "what vendors sell counts as camp material even before the game says what recipes take")
 S.take()
 S.npc, S.merchant = "Creature-0-1-1-1-3313-0000", { 4470, 2320, 2321, 9999 }
 S.fire("MERCHANT_SHOW")
 local trade = Workshop:Vendors()[3313]
-check(trade and trade.mine and trade.map == 1411 and #trade.items == 2 and trade.items[2] == 2321, "opening a vendor of camp materials writes it down, with only the items that matter")
+check(trade and trade.mine and trade.map == 1411 and #trade.items == 3 and trade.items[3] == 2321, "opening a vendor of camp materials writes it down, with only the items that matter")
 local told = S.take()
-check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|3313|1411|5000|5000|4470,2321|Chehul",
+check(#told == 2 and told[1].bus == "Guild" and told[2].bus == "Realm" and told[2].relay == true and told[2].payload == "C2|V|3313|1411|5000|5000|4470,2320,2321|Chehul",
 	"and tells the network who, where and what: " .. tostring(told[2] and told[2].payload))
 S.fire("MERCHANT_SHOW")
 check(#S.take() == 0, "the same vendor again is not news")
@@ -382,7 +398,7 @@ S.npc, S.merchant = "Creature-0-1-1-1-777-0000", { 9999, 8888 }
 S.fire("MERCHANT_SHOW")
 check(Workshop:Vendors()[777] == nil and #S.take() == 0, "a vendor with nothing for a camp is ignored")
 local vend, yards = Workshop:Vendor(4470)
-check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item, on my map before another zone")
+check(vend.name == "Chehul" and vend.map == 1411 and yards == 0, "the nearest vendor of an item is the one I am standing at, opened a moment ago")
 S.handler("C2|V|4000|1411|5100|5000|2321,159,777777|Far Trader", "Someone Else", "RELAY")
 check(Workshop:Vendors()[4000] and #Workshop:Vendors()[4000].items == 2 and not Workshop:Vendors()[4000].mine, "a vendor heard on the network is kept, with the items that are camp materials")
 S.handler("C2|V|3313|1412|1|1|4470|Liar", "Someone Else", "RELAY")

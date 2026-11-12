@@ -28,6 +28,7 @@ Core/Wire.lua
 Core/Camps.lua
 Core/Net.lua
 Core/Watch.lua
+Core/VendorData.lua
 Core/Workshop.lua
 Core/Probe.lua
 

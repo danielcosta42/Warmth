@@ -8,7 +8,8 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 - **Oficina.** Uma tela nova (e uma fatia na roda da bússola) mostra os objetos de acampamento que as suas
   profissões fazem: pronto para fazer, falta material, falta perícia ou falta a receita, com o que cada um leva.
   Um botão abre a profissão ou marca no mapa o vendedor do material que falta.
-- **Vendedores pela rede.** Quem abre um vendedor de materiais de acampamento ensina o lugar dele aos outros.
+- **Vendedores.** 413 vendedores de 23 materiais já vêm no addon (do banco do Questie do Forever), só os da sua
+  facção; e quem abre um vendedor de materiais de acampamento ensina o lugar dele aos outros pela rede.
 - A tela de um acampamento diz o que você conseguiria fabricar para ele.
 - A sonda `/warmth probe` grava profissões, receitas, vendedores e instrutores.
 

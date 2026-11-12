@@ -290,10 +290,15 @@ check(ws.advice.text:find("Open Leatherworking to craft it", 1, true) and ws.act
 ws.act:Click()
 check(S.opened == 165, "the button opens the profession")
 ws.list.rows[2]:Click()
-check(UI.workSel == 22 and ws.list.rows[2].status.text:find("materials missing", 1, true) and ws.advice.text:find("sold by Xen'to (Zone1454)", 1, true)
-	and ws.act.label.text == "Mark Xen'to on the map", "a material short: who sells it, and a button to mark the vendor")
+check(UI.workSel == 22 and ws.list.rows[2].status.text:find("materials missing", 1, true) and ws.advice.text:find(": sold by ", 1, true)
+	and ws.act.label.text:find("^Mark .+ on the map$"), "a material short: who sells it, and a button to mark the vendor: " .. ws.advice.text)
 ws.act:Click()
-check(S.waypoint.map == 1454 and S.waypoint.x == 0.575, "the vendor is marked on the map")
+local sellers = W.Workshop:Sellers(4470)
+local marked
+for _, seller in pairs(sellers) do
+	if seller.map == S.waypoint.map and seller.x == S.waypoint.x then marked = seller end
+end
+check(marked ~= nil, "the vendor marked on the map is one of the Simple Wood vendors")
 ws.list.rows[3]:Click()
 check(ws.advice.text:find("needs a blueprint", 1, true) and ws.act.shown == false, "not learned: where the recipe comes from, and nothing to click")
 -- a camp says what I could craft for it

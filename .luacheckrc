@@ -25,6 +25,7 @@ read_globals = {
     "RAID_CLASS_COLORS", "CLASS_ICON_TCOORDS", "ERR_CHAT_PLAYER_NOT_FOUND_S", "STANDARD_TEXT_FONT",
     -- client, units
     "GetLocale", "GetTime", "GetCVar", "GetPlayerFacing", "Ambiguate", "UnitName", "UnitFullName", "UnitClass",
+    "UnitFactionGroup",
     "InviteUnit", "UnitGUID", "UnitAura", "InCombatLockdown", "GetBuildInfo", "IsResting", "GetRestState",
     "GetXPExhaustion",
     -- items, spells, professions (the classic trade skill API is used guarded)
@@ -42,6 +43,7 @@ files["Core/Locale.lua"] = { max_line_length = false }
 files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
 files["UI/Entry.lua"] = { max_line_length = false }
+files["Core/VendorData.lua"] = { max_line_length = false }
 files["UI/Workshop.lua"] = { max_line_length = false }
 files["Core/Workshop.lua"] = { max_line_length = false }
 files["UI/Compass.lua"] = { max_line_length = false }

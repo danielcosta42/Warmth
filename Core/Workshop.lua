@@ -7,8 +7,10 @@
 --   * C_TradeSkillUI.GetRecipeSchematic(recipe) gives what it takes, with item ids and amounts;
 --   * a merchant is known by the npc id in UnitGUID("npc") and lists its items with GetMerchantItemID.
 --
--- Vendors of camp materials are learned by opening them and shared on the network (Core/Net.lua, message V):
--- nothing about the player travels, only "npc N stands at map M, x, y and sells these items".
+-- Vendors of camp materials come from two places. Core/VendorData.lua is the table generated from the QuestieDB
+-- of Forever (tools/gen-vendors.py). On top of it, a vendor the player opens is written down and shared on the
+-- network (Core/Net.lua, message V), which covers what the database lacks or has wrong: nothing about the player
+-- travels, only "npc N stands at map M, x, y and sells these items".
 --=============================================================================
 local _, W = ...
 local Workshop = {}
@@ -38,9 +40,7 @@ W.BLUEPRINT = {
 	[34] = "Gelihast, Blackfathom Deeps",
 }
 
-Workshop.VENDORS_MAX = 300
--- Measured first hand: the cooking supplier in Orgrimmar sells the three woods, flour, water and spices.
-local SEED = { [3400] = { name = "Xen'to", map = 1454, x = 0.5750, y = 0.5314, items = { 4470, 11291, 272941, 4471, 159, 3713, 10284 } } }
+Workshop.VENDORS_MAX = 300 -- vendors learned (opened or heard), on top of the generated table
 
 local function Call(fn, ...)
 	if type(fn) ~= "function" then return nil end
@@ -141,11 +141,16 @@ end
 function Workshop:Wanted()
 	local set = { [4471] = true }
 	for _, wood in ipairs(W.WOOD) do set[wood[1]] = true end
+	for _, v in pairs(W.VENDOR_DATA or {}) do
+		for _, item in ipairs(v[6]) do set[item] = true end
+	end
 	for index in ipairs(W.OBJECTS) do
 		for _, r in ipairs(self:Reagents(index) or {}) do set[r.item] = true end
 	end
 	return set
 end
+
+local nearest = {} -- [item] = { at, vendor, yards }: the last answer of Workshop:Vendor, emptied when the book changes
 
 function Workshop:Vendors()
 	return W.db and W.db.vendors or {}
@@ -163,23 +168,57 @@ function Workshop:Learn(npc, v, mine)
 	end
 	local same = old and old.map == v.map and #old.items == #v.items and math.abs(old.x - v.x) < 0.002 and math.abs(old.y - v.y) < 0.002
 	book[npc] = { name = v.name, map = v.map, x = v.x, y = v.y, items = v.items, mine = mine or nil, at = time() }
+	nearest = {}
 	W:Fire("VENDORS")
 	return not same
 end
 
--- The nearest known vendor of an item: on the player's map by distance, otherwise any. vendor, yards (or nil).
-function Workshop:Vendor(item)
-	local best, bestDist, other
-	for npc, v in pairs(self:Vendors()) do
-		for _, sold in ipairs(v.items) do
-			if sold == item then
-				local d = W.Distance(v)
-				if d and (not bestDist or d < bestDist) then best, bestDist = v, d
-				elseif not d and (not other or npc < other.npc) then other = v; other.npc = npc end
+-- Every vendor of an item the player can use: the generated table (those friendly to the player's faction),
+-- with what was learned in game laid over it. { [npc] = { name, map, x, y } }
+local byItem
+function Workshop:Sellers(item)
+	if not byItem then -- the generated table, indexed once
+		byItem = {}
+		local mine = (UnitFactionGroup and UnitFactionGroup("player") or ""):sub(1, 1)
+		for npc, v in pairs(W.VENDOR_DATA or {}) do
+			if mine == "" or v[5]:find(mine, 1, true) then
+				for _, sold in ipairs(v[6]) do
+					byItem[sold] = byItem[sold] or {}
+					byItem[sold][npc] = { name = v[1], map = v[2], x = v[3] / 10000, y = v[4] / 10000 }
+				end
 			end
 		end
 	end
-	return best or other, bestDist
+	local out = {}
+	for npc, v in pairs(byItem[item] or {}) do out[npc] = v end
+	for npc, v in pairs(self:Vendors()) do
+		for _, sold in ipairs(v.items) do
+			if sold == item then out[npc] = v end -- seen in game: it wins over the database
+		end
+	end
+	return out
+end
+
+-- The nearest vendor of an item: by yards when it is on the player's continent, otherwise the first by id.
+-- vendor, yards (nil for another continent). Looked up at most every few seconds per item (`nearest`, above).
+function Workshop:Vendor(item)
+	local hit = nearest[item]
+	if hit and GetTime() - hit.at < 5 then return hit.vendor, hit.yards end
+	local map, x, y = W.Position()
+	local pn, pw, pc
+	if map then pn, pw, pc = W.World(map, x, y) end
+	local best, bestYards, other, otherNpc
+	for npc, v in pairs(self:Sellers(item)) do
+		local n, w, c = W.World(v.map, v.x, v.y)
+		if pn and n and c == pc then
+			local yards = math.sqrt((n - pn) ^ 2 + (w - pw) ^ 2)
+			if not bestYards or yards < bestYards then best, bestYards = v, yards end
+		elseif not otherNpc or npc < otherNpc then
+			other, otherNpc = v, npc
+		end
+	end
+	nearest[item] = { at = GetTime(), vendor = best or other, yards = best and bestYards or nil }
+	return best or other, best and bestYards or nil
 end
 
 -- The merchant window is open: if this npc sells camp materials, it goes in the book and out to the network.
@@ -203,8 +242,8 @@ end
 
 W:On("LOADED", function()
 	W.db.vendors = type(W.db.vendors) == "table" and W.db.vendors or {}
-	for npc, v in pairs(SEED) do
-		if not W.db.vendors[npc] then W.db.vendors[npc] = { name = v.name, map = v.map, x = v.x, y = v.y, items = v.items, at = 0 } end
+	for npc, v in pairs(W.db.vendors) do
+		if (v.at or 0) == 0 then W.db.vendors[npc] = nil end -- the one hand-made entry of an early build: the table has it now
 	end
 end)
 

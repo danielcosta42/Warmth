@@ -57,8 +57,13 @@ o resto é coleta ou fabricação.
 | Na janela de profissão | No `TRADE_SKILL_SHOW` a lista de receitas ainda é a da janela anterior: quem precisar dela lê no `TRADE_SKILL_LIST_UPDATE`. A Oficina não depende disso |
 
 Vendedor medido: Xen'to (NPC 3400, Orgrimmar 57.5, 53.1) vende Simple Wood, Star Wood, Thick Logs, Flint and Tinder,
-Refreshing Spring Water, Soothing Spices e Simple Flour. É a única entrada da tabela inicial: não inventei posições
-que não medi; o resto vem da rede.
+Refreshing Spring Water, Soothing Spices e Simple Flour.
+
+**A tabela inicial vem do QuestieDB do Forever** (pedido do dono, 2026-11-12): `tools/gen-vendors.py` lê o banco
+com o decodificador do Lodestar e escreve `Core/VendorData.lua`, com 413 vendedores de 23 materiais, a facção de
+cada um e a posição. Confere com a medição: o banco põe o Xen'to em Orgrimmar 57.6, 52.9 com os mesmos sete itens.
+O que o jogador abre no jogo e o que a rede ensina ficam por cima da tabela. O QuestieDB é GPL-3.0; o arquivo
+gerado leva esse aviso e essa licença, e o resto do Warmth continua MIT.
 
 Ainda não medido: se `GetRecipeSchematic` responde antes de qualquer janela de profissão ter sido aberta na sessão
 (se não responder, a linha pede "abra a profissão uma vez"); os instrutores (a sonda não conseguiu listar o que
