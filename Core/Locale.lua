@@ -154,8 +154,16 @@ local ptBR = {
 	["%s needs a blueprint; where it drops is not known yet."] = "%s pede um projeto; ainda não se sabe de onde cai.",
 	["%s: sold by %s (%s)."] = "%s: vendido por %s (%s).",
 	["Mark %s on the map"] = "Marcar %s no mapa",
-	["%s: no vendor known. It is gathered or crafted, or nobody on the network has opened its vendor yet."] =
-		"%s: nenhum vendedor conhecido. É coletado ou fabricado, ou ninguém na rede abriu o vendedor dele ainda.",
+	["%s: made with %s from %s."] = "%s: feito com %s a partir de %s.",
+	["%s: gathered; most nodes in %s."] = "%s: coletado; mais nós em %s.",
+	["%s: dropped by %s (level %d-%d) in %s."] = "%s: cai de %s (nível %d-%d) em %s.",
+	["%s: skinned from beasts around level %d-%d."] = "%s: esfolado de feras por volta do nível %d-%d.",
+	["%s: drops from humanoids around level %d-%d."] = "%s: cai de humanoides por volta do nível %d-%d.",
+	["%s: from disenchanting items around level %d-%d."] = "%s: de desencantar itens por volta do nível %d-%d.",
+	["%s: fished in the fresh waters of the starting zones."] = "%s: pescado nas águas doces das zonas iniciais.",
+	["%s: fished in fresh water, in zones around level 30-50."] = "%s: pescado em água doce, em zonas por volta do nível 30-50.",
+	["%s: where it comes from is not known yet."] = "%s: ainda não se sabe de onde vem.",
+	["Open the map of %s"] = "Abrir o mapa de %s",
 	["The game reports no profession for this character yet. Every profession makes its own camp objects, from skill 20."] =
 		"O jogo não informa nenhuma profissão neste personagem ainda. Cada profissão faz os seus objetos de acampamento, a partir de 20 de perícia.",
 	["You can craft a %s for this camp."] = "Você consegue fabricar %s para este acampamento.",

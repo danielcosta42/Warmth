@@ -16,6 +16,50 @@ function UI.MarkPlace(place, label)
 	else W.Print(("%s: %s %.1f, %.1f"):format(label, W.Esc(W.ZoneName(place.map)), place.x * 100, place.y * 100)) end
 end
 
+local function ZoneNames(places)
+	local names = {}
+	for i, p in ipairs(places) do names[i] = W.Esc(W.ZoneName(p.map)) end
+	return table.concat(names, ", ")
+end
+
+local function OpenMap(map)
+	pcall(function()
+		if WorldMapFrame and not WorldMapFrame:IsShown() and ToggleWorldMap then ToggleWorldMap() end
+		if WorldMapFrame and WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(map) end
+	end)
+end
+
+-- One sentence on how to get an item. `offer(label, fn)` receives the thing to click, when there is one.
+function UI.SourceLine(item, offer)
+	local name = W.ItemName(item, "#" .. item)
+	local s = W.Sources:Get(item)
+	if s.kind == "vendor" then
+		local where = s.yards and L["%d yd away"]:format(s.yards) or W.Esc(W.ZoneName(s.vendor.map))
+		offer(L["Mark %s on the map"]:format(W.Esc(s.vendor.name)), function() UI.MarkPlace(s.vendor, W.Esc(s.vendor.name)) end)
+		return L["%s: sold by %s (%s)."]:format(name, W.Esc(s.vendor.name), where)
+	elseif s.kind == "craft" then
+		local parts = {}
+		for i, from in ipairs(s.from) do parts[i] = (from[2] > 1 and (from[2] .. " ") or "") .. W.ItemName(from[1], "#" .. from[1]) end
+		return L["%s: made with %s from %s."]:format(name, L[s.profession], table.concat(parts, ", "))
+	elseif s.kind == "nodes" then
+		offer(L["Open the map of %s"]:format(W.Esc(W.ZoneName(s.places[1].map))), function() OpenMap(s.places[1].map) end)
+		return L["%s: gathered; most nodes in %s."]:format(name, ZoneNames(s.places))
+	elseif s.kind == "mobs" then
+		local p = s.places[1]
+		offer(L["Open the map of %s"]:format(W.Esc(W.ZoneName(p.map))), function() OpenMap(p.map) end)
+		return L["%s: dropped by %s (level %d-%d) in %s."]:format(name, W.Esc(p.creature), p.from, p.to, ZoneNames(s.places))
+	elseif s.kind == "skin" then
+		return L["%s: skinned from beasts around level %d-%d."]:format(name, s.from, s.to)
+	elseif s.kind == "cloth" then
+		return L["%s: drops from humanoids around level %d-%d."]:format(name, s.from, s.to)
+	elseif s.kind == "disenchant" then
+		return L["%s: from disenchanting items around level %d-%d."]:format(name, s.from, s.to)
+	elseif s.kind == "fish" then
+		return (s.from == "start" and L["%s: fished in the fresh waters of the starting zones."] or L["%s: fished in fresh water, in zones around level 30-50."]):format(name)
+	end
+	return L["%s: where it comes from is not known yet."]:format(name)
+end
+
 local function Status(e)
 	local have = e.bags > 0 and (C.ok .. L["%d in your bags"]:format(e.bags) .. C.r .. C.mute .. "  ·  " .. C.r) or ""
 	if e.state == "ready" then return have .. C.ok .. L["can make %d"]:format(e.can) .. C.r end
@@ -50,21 +94,20 @@ local function Advice(e)
 		return where and L["%s needs a blueprint, reported to drop from %s."]:format(name, where)
 			or L["%s needs a blueprint; where it drops is not known yet."]:format(name)
 	end
-	-- materials: say where each missing one comes from, and offer the nearest vendor of the first that has one
+	-- materials: how to get each missing one (at most three), and one thing to click for the first that has it
 	local lines, label, action = {}, nil, nil
+	local function offer(text, fn)
+		if not action then label, action = text, fn end
+	end
 	for _, r in ipairs(e.reagents) do
-		if r.have < r.need then
-			local item = W.ItemName(r.item, "#" .. r.item)
-			local vendor, yards = W.Workshop:Vendor(r.item)
-			if vendor then
-				local where = yards and L["%d yd away"]:format(yards) or W.Esc(W.ZoneName(vendor.map))
-				lines[#lines + 1] = L["%s: sold by %s (%s)."]:format(item, W.Esc(vendor.name), where)
-				if not action then
-					label = L["Mark %s on the map"]:format(W.Esc(vendor.name))
-					action = function() UI.MarkPlace(vendor, W.Esc(vendor.name)) end
-				end
-			else
-				lines[#lines + 1] = L["%s: no vendor known. It is gathered or crafted, or nobody on the network has opened its vendor yet."]:format(item)
+		if r.have < r.need and #lines < 5 then
+			local text = UI.SourceLine(r.item, offer)
+			lines[#lines + 1] = text
+			-- one step back: what a bar or a bolt is made of
+			local source = W.Sources:Get(r.item)
+			if source.kind == "craft" and #lines < 5 then
+				local first = source.from[1][1]
+				if W.Count(first) < source.from[1][2] then lines[#lines + 1] = C.mute .. "    " .. C.r .. UI.SourceLine(first, offer) end
 			end
 		end
 	end

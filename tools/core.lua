@@ -410,6 +410,22 @@ end
 S.handler("C2|V|4001|1411|5000|5000|777777|Nothing Useful", "Someone Else", "RELAY")
 check(Workshop:Vendors()[4001] == nil, "a vendor selling nothing this client knows as camp material is not kept")
 check(W.Net:GossipVendor() and S.take("Realm")[1].payload:find("^C2|V|3313|"), "every half hour one vendor goes out again, first-hand first")
+
+-- how to get what nobody sells
+local Sources = W.Sources
+local function kind(item) return Sources:Get(item).kind end
+check(kind(2321) == "vendor" and kind(4470) == "vendor", "threads and wood: a vendor")
+check(kind(2840) == "craft" and Sources:Get(2840).profession == "Mining" and Sources:Get(2840).from[1][1] == 2770, "a bar is smelted from its ore")
+local ore = Sources:Get(2770)
+check(ore.kind == "nodes" and #ore.places == 2, "an ore is mined: the two zones with the most veins, veins before the creatures that carry it")
+for _, place in ipairs(ore.places) do check(not Sources.Avoid(place.map), "and never in the other faction's home: " .. place.map) end
+check(Sources.Avoid(1429) and Sources.Avoid(1436) and not Sources.Avoid(1411) and not Sources.Avoid(1434), "a Horde player is not sent to Elwynn or Westfall")
+local meat = Sources:Get(12037)
+check(meat.kind == "mobs" and meat.places[1].creature and meat.places[1].from <= meat.places[1].to, "Mystery Meat: who drops it, at what level, where")
+check(kind(2318) == "skin" and kind(10940) ~= "unknown" and kind(6291) == "fish" and kind(273130) == "unknown",
+	"leather is skinned, a fish is fished, and a Forever boss part is honestly unknown")
+check(kind(2447) == "nodes" and kind(2319) == "skin", "three herb vendors or one leather vendor are a limited stock: gathering or skinning comes first")
+check(W.ItemName(2770, "x") == "Copper Ore", "raw materials have a name before the client caches them")
 S.bags, S.profs, S.known, C_TradeSkillUI = {}, nil, nil, nil
 
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")

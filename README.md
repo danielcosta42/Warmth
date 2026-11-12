@@ -24,7 +24,8 @@ luacheck Core UI                      # undefined globals are errors (.luacheckr
 luajit tools/core.lua                 # wire format, camps, network and consent rules
 luajit tools/ui.lua                   # views, motion bounds, pins, toast, options, ptBR completeness
 python -I tools/gen-media.py          # redraw Media/*.tga (add --check to verify, --preview DIR for PNGs)
-python -I tools/gen-vendors.py        # rebuild Core/VendorData.lua from the QuestieDB addon (needs Lodestar's tools/)
+python -I tools/gen-questie.py        # rebuild Core/VendorData.lua and Core/SourceData.lua from the QuestieDB addon
+                                      # (needs Lodestar's tools/)
 bash tools/chehulnet-lock.sh          # the vendored network library is untouched
 ```
 
@@ -54,5 +55,5 @@ BigWigsMods/packager and publishes to CurseForge. It needs the secrets `CF_API_K
 ## License
 
 MIT. The title font is Young Serif, under the SIL Open Font License (`Media/Fonts/OFL.txt`). `Core/VendorData.lua`
-is generated from [QuestieDB](https://github.com/Questie/Questie) (GPL-3.0) by `tools/gen-vendors.py` and is
-distributed under that licence.
+and `Core/SourceData.lua` are generated from [QuestieDB](https://github.com/Questie/Questie) (GPL-3.0) by
+`tools/gen-questie.py` and are distributed under that licence.

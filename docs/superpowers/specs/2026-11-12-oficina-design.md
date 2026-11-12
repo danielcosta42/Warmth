@@ -69,6 +69,25 @@ Ainda não medido: se `GetRecipeSchematic` responde antes de qualquer janela de 
 (se não responder, a linha pede "abra a profissão uma vez"); os instrutores (a sonda não conseguiu listar o que
 ensinam); os kits de fogueira ficaram na tela "Set up a camp", não na Oficina.
 
+## Como conseguir o que ninguém vende (pedido do dono, 2026-11-12)
+
+Para cada material que falta, uma frase com o caminho mais fácil, nesta ordem:
+
+1. **Vendedor**, se pelo menos cinco vendem (menos que isso é estoque limitado em algum canto do mundo).
+2. **Como se faz ou se ganha**, quando se sabe: uma barra do minério, um rolo do tecido, uma atadura, uma peça de
+   engenharia; couro esfolado, tecido de humanoides, material de desencantar, peixe. Para o que é fabricado, a
+   linha seguinte explica o ingrediente (o minério da barra).
+3. **Onde há mais nós**, para erva, minério e pedra: as duas zonas com mais, do `Core/SourceData.lua`.
+4. **Quem solta**, para o resto: a criatura mais comum, o nível e a zona.
+5. Se nada disso existe, "ainda não se sabe de onde vem" (as sete peças novas do Forever, como Golem Heart).
+
+Nunca manda para a zona inicial ou a capital da outra facção. Um botão abre o mapa da zona indicada, ou marca o
+vendedor.
+
+De onde vem cada coisa: zonas e criaturas saem do QuestieDB (`tools/gen-questie.py`, 40 materiais). As receitas um
+passo atrás e as faixas de nível são conhecimento geral do jogo clássico, escritas à mão em `Core/Sources.lua` e
+**não medidas no Forever**; por isso o texto diz "por volta do nível".
+
 ## Fora desta versão
 
 - Fabricar direto pela Oficina.

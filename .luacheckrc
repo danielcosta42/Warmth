@@ -19,7 +19,7 @@ read_globals = {
     -- Lua environment WoW adds
     "strsplit", "time", "date", "issecretvalue", "geterrorhandler", "hooksecurefunc", "tinsert",
     -- frames
-    "CreateFrame", "UIParent", "GameTooltip", "Minimap", "WorldMapFrame", "UISpecialFrames",
+    "CreateFrame", "UIParent", "GameTooltip", "Minimap", "WorldMapFrame", "UISpecialFrames", "ToggleWorldMap",
     "ChatFrameUtil", "ChatFrame_AddMessageEventFilter", "Settings", "InterfaceOptions_AddCategory",
     -- constants
     "RAID_CLASS_COLORS", "CLASS_ICON_TCOORDS", "ERR_CHAT_PLAYER_NOT_FOUND_S", "STANDARD_TEXT_FONT",
@@ -44,6 +44,8 @@ files["UI/Views.lua"] = { max_line_length = false }
 files["UI/Toast.lua"] = { max_line_length = false }
 files["UI/Entry.lua"] = { max_line_length = false }
 files["Core/VendorData.lua"] = { max_line_length = false }
+files["Core/SourceData.lua"] = { max_line_length = false }
+files["Core/Sources.lua"] = { max_line_length = false }
 files["UI/Workshop.lua"] = { max_line_length = false }
 files["Core/Workshop.lua"] = { max_line_length = false }
 files["UI/Compass.lua"] = { max_line_length = false }

@@ -10,6 +10,9 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
   Um botão abre a profissão ou marca no mapa o vendedor do material que falta.
 - **Vendedores.** 413 vendedores de 23 materiais já vêm no addon (do banco do Questie do Forever), só os da sua
   facção; e quem abre um vendedor de materiais de acampamento ensina o lugar dele aos outros pela rede.
+- **Como conseguir cada material.** Para o que ninguém vende, a Oficina diz o caminho: as zonas com mais nós de
+  uma erva ou de um minério, a criatura que solta (com nível e zona), do que uma barra ou um rolo é feito, e as
+  faixas de nível de couro, tecido e material de encantamento. Nunca manda para a zona inicial da outra facção.
 - A tela de um acampamento diz o que você conseguiria fabricar para ele.
 - A sonda `/warmth probe` grava profissões, receitas, vendedores e instrutores.
 

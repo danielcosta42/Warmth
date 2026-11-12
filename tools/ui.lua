@@ -292,6 +292,13 @@ check(S.opened == 165, "the button opens the profession")
 ws.list.rows[2]:Click()
 check(UI.workSel == 22 and ws.list.rows[2].status.text:find("materials missing", 1, true) and ws.advice.text:find(": sold by ", 1, true)
 	and ws.act.label.text:find("^Mark .+ on the map$"), "a material short: who sells it, and a button to mark the vendor: " .. ws.advice.text)
+check(ws.advice.text:find("skinned from beasts around level 1-20", 1, true) == nil, "(the leather is in the bags, so only the wood is explained)")
+S.bags = {}
+UI:Render()
+check(ws.advice.text:find("#2318: skinned from beasts around level 1%-20%.\n") and ws.advice.text:find(": sold by ", 1, true),
+	"two materials short: how to get each, one per line: " .. ws.advice.text)
+S.bags = { [2318] = 5 }
+UI:Render()
 ws.act:Click()
 local sellers = W.Workshop:Sellers(4470)
 local marked
