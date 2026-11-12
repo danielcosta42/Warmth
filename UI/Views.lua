@@ -359,12 +359,41 @@ end, function(v)
 		pair[1]:SetText(rows[i] and rows[i][1] or "")
 		pair[2]:SetText(rows[i] and rows[i][2] or "")
 	end
-	if lit and not UI.tierTouched then UI.tier = lit.tier end
-	for i, b in ipairs(v.tiers) do b:Set(L[W.TIERS[i]], UI.tier == i) end
-	v.go:Set(W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"])
+	-- What the lower half asks for depends on what the game says about the fire:
+	--   light   no campfire near: offer the kits in the bags (a choice only when there is more than one tier)
+	--   lit     a campfire near and it is the one this player lit: its tier is known, nothing to choose
+	--   which   a campfire near that the addon did not see lit (a /reload long ago): ask which it is
+	--   manual  the client cannot say whether a fire is near: everything, as a fallback
+	local fire, mine = W.FireNearby(), W.Watch:MyFire()
+	local mode = (fire == nil and "manual") or (fire == false and "light") or (mine and "lit") or "which"
+	local owned = {}
+	for i, kit in ipairs(W.KITS) do
+		if W.Count(kit) > 0 then owned[#owned + 1] = i end
+	end
+	if mode == "lit" then
+		UI.tier = mine.tier
+	elseif mode == "light" and W.Count(W.KITS[UI.tier]) == 0 and #owned > 0 then
+		UI.tier = owned[#owned] -- the best kit in the bags
+	elseif lit and not UI.tierTouched then
+		UI.tier = lit.tier
+	end
+	local choose = mode == "which" or mode == "manual" or (mode == "light" and #owned > 1)
+	for i, b in ipairs(v.tiers) do
+		b:Set(L[W.TIERS[i]], UI.tier == i)
+		b:SetShown(choose and (mode ~= "light" or W.Count(W.KITS[i]) > 0))
+	end
+	v.tierLabel:SetText((mode == "lit" and L["%s campfire: %d places for camp objects"]:format(L[W.TIERS[UI.tier]], W.SLOTS[UI.tier]))
+		or (mode == "which" and L["Which campfire is this?"])
+		or (mode == "light" and (#owned > 1 and L["Which kit to light"] or ""))
+		or L["Your campfire"])
+	UI.canLight = mode == "light" or mode == "manual"
+	v.lightSlot:SetShown(UI.canLight)
+	v.go:Set((mode == "light" and L["Light a campfire first"]) or (W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"]),
+		nil, mode == "light")
 	UI.SyncLight()
 	local lighting = UI.light and UI.light:IsShown()
 	v.lightText:SetText(lighting and "" or ((InCombatLockdown and InCombatLockdown()) and L["You are in combat."]
+		or (#owned == 0 and L["No campfire kit in your bags."])
 		or L["No %s kit in your bags."]:format(L[W.TIERS[UI.tier]])))
 end)
 
@@ -378,8 +407,8 @@ local function MakeLight()
 	-- both: with ActionButtonUseKeyDown on (the default) the secure action fires on the press, otherwise on release
 	b:RegisterForClicks("AnyUp", "AnyDown")
 	b:SetAttribute("type", "item")
-	b:SetFrameStrata("DIALOG")
-	b:SetFrameLevel(50)
+	-- one strata above the window (DIALOG, raised on every Show): on the same strata the window covered it
+	b:SetFrameStrata("FULLSCREEN_DIALOG")
 	b.bg = Wd.Fill(b, T.ember)
 	b.bg:SetAllPoints()
 	b.label = Wd.Text(b, 13, T.night, "title")
@@ -396,7 +425,7 @@ function UI.SyncLight()
 	local kit = W.KITS[UI.tier]
 	local slot = UI.views.build and UI.views.build.lightSlot
 	-- UI.frame is still nil while the window is being built (its first Hide runs OnHide, which calls this)
-	local want = slot and UI.frame and UI.frame:IsShown() and UI.view == "build" and W.Count(kit) > 0
+	local want = slot and UI.frame and UI.frame:IsShown() and UI.view == "build" and UI.canLight and W.Count(kit) > 0
 	local b = UI.light
 	if not want then
 		if b and b:IsShown() then b:Hide() end

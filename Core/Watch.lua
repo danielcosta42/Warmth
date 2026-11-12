@@ -8,7 +8,7 @@ W.Watch = Watch
 
 Watch.NEAR = 25 -- yards: by the fire
 W.placed   = nil -- { obj, at, map, x, y }: the camp object this player placed, and where
-W.lit      = nil -- { at, tier }: the kit the game saw this player light
+W.lit      = nil -- { at, tier, map, x, y }: the kit the game saw this player light, and where (kept across a /reload)
 W.cooking  = nil -- { at, ready, names }: what Cooking could make when its window was last open
 
 -- spell id -> { "kit", tier } or { "object", index }. An item's spell is asked for until the client answers,
@@ -74,10 +74,26 @@ local function TimeTheFire()
 	end
 end
 
+-- The fire this player lit, if they are standing by it: its tier is then known without asking.
+function Watch:MyFire()
+	local lit = W.lit
+	if not (lit and lit.map) or time() - lit.at > 3600 then return nil end
+	local map, x, y = W.Position()
+	if map ~= lit.map then return nil end
+	local an, aw = W.World(lit.map, lit.x, lit.y)
+	local pn, pw = W.World(map, x, y)
+	if not (an and pn) or math.sqrt((an - pn) ^ 2 + (aw - pw) ^ 2) > Watch.NEAR * 2 then return nil end
+	return lit
+end
+
 local asked = false
 function Watch:Tick()
 	Resolve()
 	TimeTheFire()
+	if W.FireNearby() == false and self:MyFire() then -- standing where I lit it, and it is gone
+		W.lit, W.db.lit = nil, nil
+		W:Fire("CAMPS")
+	end
 	local camp = self:Near()
 	if camp and W.FireNearby() == false then
 		-- Standing where the camp is, and the game shows no fire: it went out, or it burns in another copy of the
@@ -121,8 +137,9 @@ local function OnCast(spellID)
 	local what = spells[spellID]
 	if not what then return end
 	if what[1] == "kit" then
-		W.lit = { at = time(), tier = what[2] }
 		local map, x, y = W.Position()
+		W.lit = { at = time(), tier = what[2], map = map, x = x, y = y }
+		W.db.lit = W.lit
 		burning = map and { tier = what[2], t0 = GetTime(), map = map, x = x, y = y } or nil
 		W:Fire("LIT", what[2])
 	else
@@ -178,6 +195,11 @@ f:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	else
 		pcall(OnTradeSkill)
 	end
+end)
+W:On("LOADED", function()
+	local lit = W.db.lit
+	if type(lit) == "table" and type(lit.at) == "number" and W.SLOTS[lit.tier or 0] and time() - lit.at < 3600 then W.lit = lit
+	else W.db.lit = nil end
 end)
 W:On("LOGIN", function()
 	Resolve()

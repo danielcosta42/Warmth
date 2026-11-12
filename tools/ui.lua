@@ -145,6 +145,46 @@ check(light.shown and light.attributes.item == "item:" .. W.KITS[3], "after comb
 UI:Show("list")
 check(light.shown == false, "it leaves with the view")
 UI:Show("build")
+
+-- with the game's word on the fire, the lower half follows the state instead of asking
+local near = {}
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return near[id] end }
+W.lit, W.db.lit, UI.tierTouched = nil, nil, nil
+S.bags[W.KITS[3]] = nil
+UI:Render()
+check(light.shown and light.attributes.item == "item:" .. W.KITS[1] and b.tiers[1].shown == false and b.tierLabel.text == ""
+	and b.go.disabled and b.go.label.text == "Light a campfire first", "no fire near, one kind of kit: just the Light button, and no announcing yet")
+b.go:Click()
+check(Camps:Get("Chehul Costa") == nil and #S.take() == 0, "the disabled Announce does nothing")
+S.bags[W.KITS[2]] = 1
+UI:Render()
+check(UI.tier == 1 and b.tiers[1].shown and b.tiers[2].shown and b.tiers[3].shown == false and b.tierLabel.text == "Which kit to light",
+	"two kinds of kit in the bags: a choice between those two only")
+S.bags[W.KITS[1]] = nil; S.bags[W.KITS[2]] = nil
+UI:Render()
+check(light.shown == false and b.lightText.text == "No campfire kit in your bags.", "no kit at all")
+S.bags[W.KITS[1]] = 2
+near[W.AURA.NEARBY] = {}
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g", W.KITS[2] + 1000000)
+UI:Render()
+check(UI.tier == 2 and b.tiers[1].shown == false and b.tiers[2].shown == false and light.shown == false and b.lightSlot.shown == false
+	and b.tierLabel.text == "Journeyman campfire: 5 places for camp objects" and not b.go.disabled and W.db.lit.tier == 2,
+	"I lit a Journeyman kit and stand by it: the tier is known, nothing to choose, nothing to light")
+W.lit = nil
+UI:Render()
+check(b.tierLabel.text == "Which campfire is this?" and b.tiers[1].shown and b.tiers[3].shown and light.shown == false,
+	"a fire the addon did not see lit: it asks which one")
+S.fire("ADDON_LOADED", "Warmth")
+check(W.lit and W.lit.tier == 2, "the fire I lit survives a /reload")
+near[W.AURA.NEARBY] = nil
+S.advance(10)
+check(W.lit == nil and W.db.lit == nil, "and is forgotten when it goes out")
+C_UnitAuras = nil
+-- the clock above jumped a minute at once, so those ticks also marked Ana's fire "not here": back to how it was
+ana.gone, ana.notHere = nil, nil
+S.bags[W.KITS[3]] = 1
+UI.tier = 3
+UI:Render()
 b.input.text = "come sit"
 function b.input:GetText() return self.text end
 S.take()

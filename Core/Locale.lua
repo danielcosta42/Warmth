@@ -61,6 +61,11 @@ local ptBR = {
 	["Could not ask right now."] = "Não deu para pedir agora.",
 	-- setting up
 	["Your campfire"] = "Sua fogueira",
+	["%s campfire: %d places for camp objects"] = "Fogueira %s: %d lugares para objetos de acampamento",
+	["Which campfire is this?"] = "Qual fogueira é esta?",
+	["Which kit to light"] = "Qual kit acender",
+	["Light a campfire first"] = "Acenda uma fogueira primeiro",
+	["No campfire kit in your bags."] = "Nenhum kit de fogueira na bolsa.",
 	["Light the %s campfire"] = "Acender a fogueira %s",
 	["No %s kit in your bags."] = "Nenhum kit de fogueira %s na bolsa.",
 	["You are in combat."] = "Você está em combate.",
