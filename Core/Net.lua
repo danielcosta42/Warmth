@@ -48,8 +48,7 @@ local function Broadcast(payload)
 end
 
 -- Announce a campfire where the player stands. Returns the camp, or nil and a reason key.
--- `spotted`: a fire the player found burning, not one they lit.
-function Net:Announce(tier, note, spotted)
+function Net:Announce(tier, note)
 	local map, x, y = W.Position()
 	if not map then return nil, "no_position" end
 	if not W.SLOTS[tier or 0] then return nil, "bad_tier" end
@@ -58,7 +57,7 @@ function Net:Announce(tier, note, spotted)
 	if not Mesh() then return nil, "no_network" end
 	W.Camps:End(W.me) -- a new click is a new camp: nobody and nothing carries over from the last place
 	local camp = W.Camps:Announce(W.me, { map = map, x = x, y = y, zuid = W.MyCopy(map), tier = tier,
-		n = 1, age = 0, objs = {}, people = {}, note = W.Wire.CleanNote(note), spotted = spotted or nil })
+		n = 1, age = 0, objs = {}, people = {}, note = W.Wire.CleanNote(note) })
 	if not camp then return nil, "full" end
 	lastAnnounce, lastBeat = GetTime(), GetTime()
 	W.Camps:Join(W.me, W.me, W.MyClassIndex(), W.Watch:ObjectAt(camp))
@@ -80,6 +79,21 @@ function Net:Heartbeat()
 	Broadcast(W.Wire.Announce(f))
 	self:Extras()
 	return true
+end
+
+-- A fire burning here that the network does not know (Watch:Sight): told as a sighting, which is nobody's camp.
+function Net:Sight(map, x, y, tier)
+	local mesh = Mesh()
+	if not mesh then return nil end
+	local f = { map = map, x = x, y = y, zuid = W.MyCopy(map), tier = tier or 1, flame = (W.HasAura(W.AURA.VIOLET) == true) and 1 or 0 }
+	local camp = W.Camps:Sight(W.me, f)
+	if not camp then return nil end
+	f.x, f.y, f.tier = camp.x, camp.y, camp.tier -- a refreshed sighting keeps its place
+	local payload = W.Wire.Sight(f)
+	mesh:Guild(self.PREFIX, payload)
+	mesh:Group(self.PREFIX, payload)
+	mesh:Realm(self.PREFIX, payload, "S", true)
+	return camp
 end
 
 -- What goes with my announce: the buff objects my camp still lacks (unless I turned asking off) and my warmth
@@ -131,6 +145,7 @@ end
 function Net:Presence(owner, now)
 	local camp = W.Camps:Get(owner)
 	if not camp or camp.demo then return false end -- a demo camp (/warmth demo) exists on this client only
+	if camp.sight then return false end -- a sighting has no owner to tell
 	local obj = W.Watch:ObjectAt(camp)
 	if owner == W.me then
 		return W.Camps:Join(W.me, W.me, W.MyClassIndex(), obj) -- goes out in my next announce
@@ -155,7 +170,7 @@ end
 function Net:RequestInvite(owner)
 	local camp = W.Camps:Get(owner)
 	if camp and camp.demo then return false, "demo" end
-	if not camp or owner == W.me then return false, "no_camp" end
+	if not camp or owner == W.me or camp.sight then return false, "no_camp" end
 	if GetTime() - (lastInviteTo[owner] or -1e9) < self.INVITE_GAP then return false, "too_soon" end
 	local mesh = Mesh()
 	if not mesh then return false, "no_network" end
@@ -220,6 +235,8 @@ local function OnMessage(payload, sender, dist)
 		if W.Wire.GoodName(who) then W.Camps:Announce(who, msg) end
 	elseif msg.kind == "X" then
 		W.Camps:End(who)
+	elseif msg.kind == "S" then
+		if W.Wire.GoodName(who) then W.Camps:Sight(who, msg) end -- hearsay is fine for a pin; the cap is in Camps
 	elseif msg.kind == "E" then
 		local camp = W.Camps:Get(who) -- the owner's own word about their camp; a claimed owner can only decorate a pin
 		if camp then

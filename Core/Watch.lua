@@ -86,51 +86,26 @@ function Watch:MyFire()
 	return lit
 end
 
--- A fire lit by someone without Warmth is unknown to the network until a player who has it stops by: the game
--- says "a campfire is near" (the aura), the addon knows of no camp around, so this client announces it as a
--- sighting. Only for a player standing still by it (two ticks), not one riding past, and only with the automatic
--- announce on. Where it is and what tier are this player's guess: their own position, Basic until they point at
--- the fire. The lighter's own announce, or an earlier sighting, replaces it.
-local function Apart(a, map, x, y)
-	if a.map ~= map then return nil end
-	local an, aw = W.World(a.map, a.x, a.y)
-	local bn, bw = W.World(map, x, y)
-	return an and bn and math.sqrt((an - bn) ^ 2 + (aw - bw) ^ 2) or nil
-end
-
-local still
+-- A fire lit by someone without Warmth is unknown to the network until a player who has it comes by: the game
+-- says "a campfire is near" (the aura), the addon knows of no camp around, so this client tells the network of
+-- a sighting (Camps:Sight). A sighting is nobody's camp, so a player crossing a region leaves one at each fire
+-- they pass, whatever camp of their own they have. Where it is: this player's position when the tick caught the
+-- aura, not the fire's (the client does not give that). Tier: Basic until someone points at the fire.
+-- A sighting already known here is refreshed once it is a beat old, by whoever is by it: that keeps it alive.
+local lastSight = -1e9
 function Watch:Sight()
-	local mine = W.Camps:Get(W.me)
-	if mine and mine.spotted then
-		for _, other in ipairs(W.Camps:List()) do
-			local d = other ~= mine and not other.demo and other.other ~= true and Apart(other, mine.map, mine.x, mine.y)
-			if d and d <= W.Net.OWNER_NEAR and (not other.spotted or other.owner < mine.owner) then
-				W.Net:End()
-				return false
-			end
-		end
-		return false
-	end
-	if mine or W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then still = nil; return false end
-	for _, camp in ipairs(W.Camps:List()) do
-		if camp.dist and camp.dist <= W.Net.OWNER_NEAR and camp.other ~= true and not camp.demo then still = nil; return false end
-	end
+	if W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then return false end
 	local map, x, y = W.Position()
-	if not map then still = nil; return false end
-	-- a sighting that ended while its fire still burned (the player's click, or someone else's word) is not made again
-	-- there for an hour
-	local last = self.lastSight
-	local again = last and GetTime() - last.t < 3600 and Apart(last, map, x, y)
-	if again and again <= W.Net.OWNER_NEAR then return false end
-	local moved = still and Apart(still, map, x, y)
-	if not (moved and moved <= 5) then
-		still = { map = map, x = x, y = y }
-		return false
+	if not map or GetTime() - lastSight < W.Net.ANNOUNCE_GAP then return false end
+	for _, camp in ipairs(W.Camps:List()) do
+		if camp.dist and camp.dist <= W.Camps.SAME and camp.other ~= true and not camp.demo then
+			if not camp.sight or time() - camp.last < W.Net.BEAT then return false end
+			break
+		end
 	end
-	still = nil
-	local camp = W.Net:Announce(1, "", true)
+	local camp = W.Net:Sight(map, x, y)
 	if not camp then return false end
-	self.lastSight = { map = map, x = x, y = y, t = GetTime() }
+	lastSight = GetTime()
 	W:Fire("SIGHTED", camp)
 	return true
 end
@@ -150,9 +125,8 @@ function Watch:Tick()
 		camp.gone = (camp.gone or 0) + 1
 		if camp.gone >= 2 then
 			if camp.owner == W.me then
-				local found = camp.spotted
 				W.Net:End() -- my fire went out: the announce goes with it
-				if found then Watch.lastSight = nil else W:Fire("FIRE_OUT") end
+				W:Fire("FIRE_OUT")
 			else
 				camp.notHere = true
 				W:Fire("CAMPS")
@@ -171,9 +145,10 @@ function Watch:Tick()
 			camp.violetSeen = violet or nil
 			W:Fire("CAMPS")
 		end
-		if camp.owner == W.me or W.db.consent == true then
+		-- a sighting is nobody's camp: there is no circle to be counted in
+		if not camp.sight and (camp.owner == W.me or W.db.consent == true) then
 			W.Net:Presence(camp.owner)
-		elseif W.db.consent == nil and not asked then
+		elseif not camp.sight and W.db.consent == nil and not asked then
 			asked = true -- once a session, until the player answers
 			W:Fire("CONSENT_NEEDED", camp)
 		end
@@ -256,12 +231,9 @@ function Watch:Spot(text)
 	if W.IsSecret(text) or type(text) ~= "string" or text == "" then return nil end
 	local camp = self:Near()
 	if not camp then return nil end
-	if camp.owner == W.me and camp.spotted then -- the fire I found says its tier (enUS names, as measured)
+	if camp.sight then -- a sighted fire says its tier (enUS names, as measured), and the network hears it
 		for tier, name in ipairs(W.TIERS) do
-			if text == name .. " Campfire" and camp.tier ~= tier then
-				camp.tier = tier
-				W:Fire("CAMPS")
-			end
+			if text == name .. " Campfire" and camp.tier < tier then W.Net:Sight(camp.map, camp.x, camp.y, tier) end
 		end
 	end
 	for i, o in ipairs(W.OBJECTS) do

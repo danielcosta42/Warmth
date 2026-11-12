@@ -47,7 +47,7 @@ function UI:Toast(camp, title, line)
 	t.flame:SetViolet(W.Camps:Violet(camp))
 	if not title then
 		title = L["A campfire in %s"]:format(W.Esc(W.ZoneName(camp.map)))
-		line = W.Esc(camp.owner) .. (camp.note ~= "" and (": " .. W.Esc(camp.note)) or (" " .. L["lit a camp."]))
+		line = camp.sight and UI.CampTitle(camp) or W.Esc(camp.owner) .. (camp.note ~= "" and (": " .. W.Esc(camp.note)) or (" " .. L["lit a camp."]))
 		if W.Camps:OtherCopy(camp) == true then line = UI.C.copy .. L["another copy"] .. UI.C.r .. "  " .. line end
 	end
 	t.title:SetText(title)
@@ -155,7 +155,7 @@ local toldSight
 W:On("SIGHTED", function()
 	if toldSight then return end
 	toldSight = true
-	W.Print(L["You found a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
+	W.Print(L["You passed a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
 end)
 W:On("LIT", function()
 	if told or W.db.auto ~= false then return end
