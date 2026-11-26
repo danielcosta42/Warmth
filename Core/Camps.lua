@@ -30,7 +30,10 @@ end
 -- one player crossing a region can leave several; it lives while people keep seeing it. `by`: who saw it last.
 -- A known camp at the same place (SAME yards, the same copy of the zone) stands: a lit camp is left alone, a
 -- sighting is refreshed. Returns the sighting and whether it is new; nil when it added nothing.
-Camps.SAME, Camps.SIGHTS = 60, 40
+-- SAME is the game's own spacing: no campfire can be placed within 100 yards of a lit one, so two reports closer
+-- than that are one fire. The Campfire Nearby aura reaches about as far, and a sighting is where the seer stood,
+-- not where the fire is: anything smaller left a trail of pins behind a player crossing one fire's range.
+Camps.SAME, Camps.SIGHTS = 100, 40
 function Camps:Sight(by, f)
 	local key = ("@%d:%d:%d"):format(f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5))
 	local known, sights = self.all[key], 0
@@ -123,7 +126,8 @@ function Camps:People(camp)
 		if not by[p.name] then by[p.name] = { name = p.name, class = p.class or 0, obj = 0 }
 		elseif by[p.name].class == 0 then by[p.name].class = p.class or 0 end
 	end
-	by[camp.owner] = by[camp.owner] or { name = camp.owner, class = 0, obj = 0 } -- whoever lit it is there
+	-- whoever lit it is there; a sighting's "owner" is its place, nobody to draw in the circle
+	if not camp.sight then by[camp.owner] = by[camp.owner] or { name = camp.owner, class = 0, obj = 0 } end
 	local out = {}
 	for name, p in pairs(by) do
 		if not camp.order[name] then seq = seq + 1; camp.order[name] = seq end
@@ -163,6 +167,7 @@ function Camps:Violet(camp)
 end
 
 function Camps:Count(camp)
+	if camp.sight then return 0 end -- nobody is known to be at a fire somebody only saw burning
 	return math.max(camp.n or 0, #self:People(camp))
 end
 

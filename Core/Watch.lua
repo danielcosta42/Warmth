@@ -89,14 +89,29 @@ end
 -- A fire lit by someone without Warmth is unknown to the network until a player who has it comes by: the game
 -- says "a campfire is near" (the aura), the addon knows of no camp around, so this client tells the network of
 -- a sighting (Camps:Sight). A sighting is nobody's camp, so a player crossing a region leaves one at each fire
--- they pass, whatever camp of their own they have. Where it is: this player's position when the tick caught the
--- aura, not the fire's (the client does not give that). Tier: Basic until someone points at the fire.
+-- they stop at, whatever camp of their own they have. Where it is: this player's position, not the fire's (the
+-- client does not give that). Tier: Basic until someone points at the fire.
+-- The aura reaches far (about the game's 100 yards between fires), so a player riding past would place the fire
+-- wherever they happened to be. Only a player who stopped counts: resting at the fire (Welcoming Campfire), or
+-- the aura on two ticks in a row while they barely moved. Standing still near a fire is, most of the time,
+-- standing by it.
 -- A sighting already known here is refreshed once it is a beat old, by whoever is by it: that keeps it alive.
-local lastSight = -1e9
+Watch.STILL = 8 -- yards a player may drift between two ticks and still be standing
+local lastSight, stand = -1e9, nil
+local function Standing(map, x, y)
+	local was = stand
+	stand = { t = GetTime(), map = map, x = x, y = y }
+	if W.HasAura(W.AURA.WELCOME) == true then return true end
+	if not was or was.map ~= map or GetTime() - was.t > 15 then return false end
+	local an, aw = W.World(map, was.x, was.y)
+	local bn, bw = W.World(map, x, y)
+	return an ~= nil and bn ~= nil and math.sqrt((an - bn) ^ 2 + (aw - bw) ^ 2) <= Watch.STILL
+end
 function Watch:Sight()
-	if W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then return false end
+	if W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then stand = nil; return false end
 	local map, x, y = W.Position()
-	if not map or GetTime() - lastSight < W.Net.ANNOUNCE_GAP then return false end
+	if not map then stand = nil; return false end
+	if not Standing(map, x, y) or GetTime() - lastSight < W.Net.ANNOUNCE_GAP then return false end
 	for _, camp in ipairs(W.Camps:List()) do
 		if camp.dist and camp.dist <= W.Camps.SAME and camp.other ~= true and not camp.demo then
 			if not camp.sight or time() - camp.last < W.Net.BEAT then return false end

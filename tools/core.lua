@@ -601,6 +601,15 @@ local function sights()
 	for _, camp in pairs(Camps.all) do if camp.sight then out[#out + 1] = camp end end
 	return out
 end
+-- riding through the aura's range: each tick somewhere else, and the fire could be anywhere around
+for step = 1, 4 do
+	S.pos = { map = posWas.map, x = posWas.x + step * 0.004, y = posWas.y }
+	S.advance(10)
+end
+check(#sights() == 0 and #S.take("Realm") == 0, "passing by without stopping: no sighting, no trail of pins")
+S.pos = posWas
+S.advance(10)
+check(#sights() == 0, "one tick standing is not yet stopping")
 S.advance(10)
 local sent = S.take("Realm")
 local found = sights()[1]
@@ -622,13 +631,17 @@ local own = W.Net:Announce(1, "")
 S.take()
 S.pos = { map = posWas.map, x = posWas.x + 0.4, y = posWas.y }
 near = true
-S.advance(10)
+S.advance(20)
 check(#sights() == 2 and Camps:Get(W.me) == own and S.take("Realm")[1].payload:find("^C2|S|"), "a second fire, with a camp of my own standing: both sightings and my camp live")
 W.Net:End()
 -- heard from the network: merged by place, replaced by the lighter's word, capped
 S.pos = posWas
 S.handler(Wire.Sight({ map = found.map, x = found.x + 0.0005, y = found.y, zuid = found.zuid, tier = 1 }), "Other Seer", "RELAY")
 check(#sights() == 2 and found.by == "Other Seer" and found.tier == 2, "the same fire seen by another is the same sighting; a known tier is kept")
+-- another seer stood elsewhere inside the same fire's range (the game keeps fires 100 yards apart)
+S.handler(Wire.Sight({ map = found.map, x = found.x + 0.016, y = found.y, zuid = found.zuid, tier = 1 }), "Far Seer", "RELAY")
+check(#sights() == 2 and found.by == "Far Seer", "80 yards off is still the same fire: one pin, not two")
+check(Camps:Count(found) == 0 and #Camps:People(found) == 0, "nobody is known to be at a sighted fire: no count, no stranger in the circle")
 check(not Social:CanThank(found) and not W.Net:Presence(found.owner) and not W.Net:RequestInvite(found.owner), "a sighting has no host: no thanks, no presence, no invite")
 S.handler("C2|A|" .. found.map .. "|" .. math.floor(found.x * 10000) .. "|" .. math.floor(found.y * 10000) .. "|" .. found.zuid .. "|2|1|0|||", "Real Owner", "RELAY")
 check(#sights() == 1 and Camps:Get("Real Owner") ~= nil, "the lighter's own announce takes the sighting's place")
@@ -639,6 +652,16 @@ check(#sights() == Camps.SIGHTS, "sightings are capped")
 for _, bad in ipairs({ "C2|S|1411|5000|5000|0|0", "C2|S|1411|5000|5000|0|4", "C2|S|1411|5000|5000|0|1|x", "C2|S|1411|50000|5000|0|1" }) do
 	check(Wire.Decode(bad) == nil, "dropped: " .. bad)
 end
+-- resting at the fire (the game's Welcoming Campfire minute) is stopping by it, from the first tick
+for owner in pairs(Camps.all) do Camps:End(owner) end
+near = false
+S.advance(30)
+S.take()
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return (id == W.AURA.NEARBY or id == W.AURA.WELCOME) and {} or nil end }
+S.pos = { map = posWas.map, x = posWas.x + 0.1, y = posWas.y + 0.1 }
+S.advance(10)
+check(#sights() == 1 and #S.take("Realm") == 1, "a player resting by the fire sights it at once")
+S.pos = posWas
 W.db.auto = false
 for owner in pairs(Camps.all) do Camps:End(owner) end
 S.advance(30)

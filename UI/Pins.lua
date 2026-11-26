@@ -1,6 +1,7 @@
 --=============================================================================
 -- Campfires on the world map (the zone's map and its parents) and on the minimap.
--- A pin is a breathing glow, bigger with more people around the fire; one in another copy of the zone is dimmer.
+-- A pin is a flame with a breathing glow, brighter with more people around the fire; one in another copy of the
+-- zone is dimmer, a sighting (a fire seen, nobody's camp) smaller and dimmer, and pins that would overlap fold into one.
 --=============================================================================
 local _, W = ...
 local UI = W.UI
@@ -11,30 +12,37 @@ UI.Pins = Pins
 local function Tip(self)
 	local camp = self.camp
 	if not camp then return end
-	local lines = { L["%d by the fire"]:format(W.Camps:Count(camp)) .. "  ·  " .. L[W.TIERS[camp.tier]] .. "  ·  " .. UI.Where(camp) }
+	local lines = { UI.CampSummary(camp) }
 	for _, index in ipairs(W.Camps:Objects(camp)) do
 		local o = W.OBJECTS[index]
 		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
 	end
 	if camp.note ~= "" then lines[#lines + 1] = UI.C.ember .. "\"" .. W.Esc(camp.note) .. "\"" .. UI.C.r end
+	if camp.sight then lines[#lines + 1] = UI.C.mute .. L["Where someone stood when they saw it: the fire is within about 100 yards."] .. UI.C.r end
 	if W.Camps:OtherCopy(camp) == true then lines[#lines + 1] = UI.C.copy .. L["In another copy of the zone"] .. UI.C.r end
+	if (self.more or 0) > 0 then lines[#lines + 1] = UI.C.ember .. L["%d more fires here: zoom in to tell them apart"]:format(self.more) .. UI.C.r end
 	lines[#lines + 1] = UI.C.mute .. L["Click to see the circle"] .. UI.C.r
 	Wd.Tip(self, UI.CampTitle(camp), lines, "ANCHOR_RIGHT")
 end
 
+-- Sizes on the world map: an announced camp, and a sighting (someone saw a fire; it is drawn smaller and dimmer,
+-- and its place is only roughly known). The glow stays close to the flame so the map's own icons show through.
+Pins.SIZE, Pins.SIGHT_SIZE, Pins.GLOW = 24, 16, 1.5
+
 local function Pin(parent, size, withCount)
 	local p = CreateFrame("Button", nil, parent)
+	p.size = size
 	p:SetSize(size, size)
 	p:SetFrameLevel(parent:GetFrameLevel() + 500)
-	p.glow = Wd.Glow(p, size * 2)
+	p.glow = Wd.Glow(p, size * Pins.GLOW)
 	p.glow:SetPoint("CENTER")
 	p.flame = Wd.Flame(p, size)
 	p.flame:SetPoint("CENTER", 0, size * 0.08)
 	if withCount then
 		p.badge = Wd.Tex(p, "disc", T.night, 1, "OVERLAY")
-		p.badge:SetSize(18, 18)
-		p.badge:SetPoint("TOPRIGHT", 6, 4)
-		p.count = Wd.Text(p, 10.5, T.ember, "title")
+		p.badge:SetSize(15, 15)
+		p.badge:SetPoint("TOPRIGHT", 5, 3)
+		p.count = Wd.Text(p, 9.5, T.ember, "title")
 		p.count:SetPoint("CENTER", p.badge, "CENTER")
 	end
 	p:SetScript("OnEnter", Tip)
@@ -43,14 +51,55 @@ local function Pin(parent, size, withCount)
 	return p
 end
 
-local function Dress(p, camp)
+-- `size`: the pin's size for this camp (nil keeps it); `more`: other camps folded into this pin.
+local function Dress(p, camp, size, more)
 	local count = W.Camps:Count(camp)
-	p.camp = camp
-	p.glow.strength = math.min(1, 0.55 + count * 0.08)
+	p.camp, p.more = camp, more or 0
+	if size and size ~= p.size then
+		p.size = size
+		p:SetSize(size, size)
+		p.flame:SetSize(size, size)
+		p.flame:ClearAllPoints()
+		p.flame:SetPoint("CENTER", 0, size * 0.08)
+		p.glow:SetSize(size * Pins.GLOW, size * Pins.GLOW)
+	end
+	p.glow.strength = camp.sight and 0.3 or math.min(1, 0.55 + count * 0.08)
 	p.glow:SetViolet(W.Camps:Violet(camp))
 	p.flame:SetViolet(W.Camps:Violet(camp))
-	p:SetAlpha(W.Camps:OtherCopy(camp) == true and 0.55 or 1)
-	if p.count then p.count:SetText(count) end
+	local alpha = camp.sight and 0.75 or 1
+	if W.Camps:OtherCopy(camp) == true then alpha = alpha * 0.55 end
+	p:SetAlpha(alpha)
+	if p.count then
+		-- the badge says how many people, or how many fires share the pin; nothing for a lone sighting
+		local shown = count + (more or 0)
+		p.count:SetText(more and more > 0 and ("+" .. more) or count)
+		p.badge:SetShown(shown > 0)
+		p.count:SetShown(shown > 0)
+	end
+end
+Pins.Dress = Dress
+
+-- Fold camps whose pins would overlap on the map into one: the most telling camp stands for the group (an
+-- announced camp over a sighting, my copy over another, more people over fewer) and the rest are counted.
+-- points: { { camp, x, y } } in pixels. Returns { { camp, x, y, more } }.
+function Pins.Fold(points, gap)
+	local function weight(c)
+		return (c.sight and 0 or 1000) + (W.Camps:OtherCopy(c) == true and 0 or 100) + W.Camps:Count(c)
+	end
+	table.sort(points, function(a, b)
+		local wa, wb = weight(a.camp), weight(b.camp)
+		if wa ~= wb then return wa > wb end
+		return a.camp.owner < b.camp.owner
+	end)
+	local out = {}
+	for _, pt in ipairs(points) do
+		local home
+		for _, g in ipairs(out) do
+			if (g.x - pt.x) ^ 2 + (g.y - pt.y) ^ 2 < gap * gap then home = g; break end
+		end
+		if home then home.more = home.more + 1 else out[#out + 1] = { camp = pt.camp, x = pt.x, y = pt.y, more = 0 } end
+	end
+	return out
 end
 
 -- Where a camp falls on the map being shown (0..1), or nil when it is off that map.
@@ -73,17 +122,25 @@ function Pins:RefreshWorld()
 	local i = 0
 	if canvas and shown and W.db.pins then
 		local w, h = canvas:GetWidth(), canvas:GetHeight()
+		-- the canvas is scaled as the map zooms: pins keep their size on screen
+		local ok, scale = pcall(function() return wm.GetCanvasScale and wm:GetCanvasScale() end)
+		scale = ok and tonumber(scale) or 1
+		if scale <= 0 then scale = 1 end
+		local points = {}
 		for _, camp in ipairs(W.Camps:List()) do
 			local x, y = Pins.OnMap(camp, shown)
-			if x then
-				i = i + 1
-				local p = self.world[i] or Pin(canvas, 34, true)
-				self.world[i] = p
-				Dress(p, camp)
-				p:ClearAllPoints()
-				p:SetPoint("CENTER", canvas, "TOPLEFT", x * w, -y * h)
-				p:Show()
-			end
+			if x then points[#points + 1] = { camp = camp, x = x * w, y = y * h } end
+		end
+		for _, g in ipairs(Pins.Fold(points, Pins.SIZE * 0.9 / scale)) do
+			i = i + 1
+			local p = self.world[i] or Pin(canvas, Pins.SIZE, true)
+			self.world[i] = p
+			Dress(p, g.camp, g.camp.sight and g.more == 0 and Pins.SIGHT_SIZE or Pins.SIZE, g.more)
+			-- a scaled frame's offsets are in its own units: the canvas position is multiplied back
+			p:SetScale(1 / scale)
+			p:ClearAllPoints()
+			p:SetPoint("CENTER", canvas, "TOPLEFT", g.x * scale, -g.y * scale)
+			p:Show()
 		end
 	end
 	for j = i + 1, #self.world do self.world[j]:Hide() end
@@ -124,7 +181,7 @@ function Pins:RefreshMini()
 					i = i + 1
 					local p = self.mini[i] or Pin(mini, 18, false)
 					self.mini[i] = p
-					Dress(p, camp)
+					Dress(p, camp, camp.sight and 13 or 18)
 					if rim then p:SetAlpha(p:GetAlpha() * 0.7) end
 					p:ClearAllPoints()
 					p:SetPoint("CENTER", mini, "CENTER", dx, dy)

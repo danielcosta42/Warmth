@@ -109,6 +109,18 @@ conferido no jogo**; os ids em especial.
 | Erros do jogo ao montar | "You cannot place a new campfire within 100 yards of an existing campfire." e "You cannot place a feature that close to a creature or object." (`UI_ERROR_MESSAGE`) | Ainda não usados |
 | APIs que faltam no Forever | `GetItemSpell` global (há `C_Item.GetItemSpell`), as de ofício clássicas `GetTradeSkill*` (há `C_TradeSkillUI`), `C_SuperTrack.SetSuperTrackingUserWaypoint`, `InviteUnit` global (há `C_PartyInfo.InviteUnit`) | Culinária lê por `C_TradeSkillUI`; o waypoint é posto sem a seta |
 
+**Fogueira avistada (0.4.0, revista em 0.5.1, issue #17).** A fogueira de quem não tem o addon vira um avistamento
+sem dono, na posição de quem a viu (o cliente não dá a do fogo). Como a aura "Campfire Nearby" alcança longe, a
+0.5.0 deixava um rastro de pinos atrás de quem atravessava o alcance de uma fogueira. Regras desde a 0.5.1:
+
+- Só avista quem **parou**: a aura em dois ticks seguidos (10 s) andando no máximo 8 jardas, ou descansando no
+  fogo ("Welcoming Campfire"). Quem passa correndo não avista.
+- Dois relatos a menos de **100 jardas** (o espaçamento que o jogo impõe entre fogueiras), na mesma cópia, são a
+  mesma fogueira; também contra um acampamento anunciado.
+- Um avistamento não tem gente: conta 0, a roda não mostra o "dono" (que é o lugar), não levanta aviso na tela.
+- No mapa: pino menor e mais apagado, com a nota de que o fogo fica a até umas 100 jardas; pinos que se
+  sobrepõem viram um só ("+N"), com o acampamento anunciado à frente do avistamento; o tamanho acompanha o zoom.
+
 | Bolsa de dormir (Cozy Sleeping Bag, item 211527) | Usar lança Unroll Bag (429961, 15 s); o jogador fica "resting" e cerca de um minuto depois ganha "Well-Rested" (429959, 2 h). Pelo dono: 1% de experiência por minuto deitado, até 3%, e combina com a fogueira | Aparece no checklist com essa explicação |
 | Culinária | `C_TradeSkillUI.GetBaseProfessionInfo()` traz `professionName=Cooking`, `profession=5`; 132 receitas listadas | O addon reconhece a janela de Culinária; a contagem do que dá para fazer ainda não foi vista com materiais na bolsa |
 

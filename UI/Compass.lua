@@ -266,7 +266,7 @@ end
 -- The compass itself
 --------------------------------------------------------------------------------
 local function Describe(camp)
-	local lines = { L["%d by the fire"]:format(W.Camps:Count(camp)) .. "  ·  " .. L[W.TIERS[camp.tier]] .. "  ·  " .. UI.Where(camp) }
+	local lines = { UI.CampSummary(camp) }
 	for _, index in ipairs(W.Camps:Objects(camp)) do
 		local o = W.OBJECTS[index]
 		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r

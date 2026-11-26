@@ -5,6 +5,15 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+## [0.5.1]
+
+- **O mapa deixa de achar que tudo é fogueira.** Só avista uma fogueira quem para ao lado dela (ou descansa no
+  fogo); quem passa correndo não deixa mais um rastro de pinos. Relatos a menos de 100 jardas (a distância que o
+  jogo exige entre duas fogueiras) são a mesma fogueira.
+- Uma fogueira avistada não diz mais "1 na roda" nem põe um estranho no círculo, e não levanta aviso na tela.
+- Pinos do mapa menores; a fogueira avistada aparece menor e mais apagada; pinos sobrepostos viram um só, com
+  "+N", e o tamanho acompanha o zoom.
+
 ## [0.5.0]
 
 - **Fogueiras semeadas.** Uma fogueira vista deixa de ser o acampamento de quem a viu: vira um avistamento sem
