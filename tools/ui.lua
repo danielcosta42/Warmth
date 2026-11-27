@@ -376,6 +376,56 @@ UI.views.camp.go:Click()
 W.Net:End()
 UI:Show("list")
 
+-- ── a fire the ChehulNet beacon told about (Guild OS, Lodestar, PartyLens, without Warmth) ─────────────
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(300)
+S.take()
+W.db.consent = true
+S.handler("C2|A|1411|5005|5000|0|2l|1|0||Lia Brasa~h|", "Lia Brasa", "GUILD")
+local fam = Camps:Get("Lia Brasa")
+draws("a family camp", function() UI:Show("camp", "Lia Brasa") end)
+local cv = UI.views.camp
+local FAMILY = "Lit with Guild OS, Lodestar or PartyLens, without Warmth: no circle."
+check(fam and fam.family and UI.title.text == "Lia Brasa's camp" and cv.hint.text:find(FAMILY, 1, true), "a family camp: the lighter's name and the hint: " .. cv.hint.text)
+check(cv.other.label.text == "Back to the list", "no invite and no thanks to offer")
+local youSeat = false
+for _, seat in ipairs(UI.ring.seats) do
+	if seat.shown and seat.tipTitle == "A seat by the fire" then youSeat = true end
+end
+check(not youSeat and UI.ring.seats[1].shown and UI.ring.seats[1].tipTitle == "Lia Brasa", "the ring shows the lighter, and no empty seat inviting me in")
+S.advance(15)
+UI:Render()
+check(cv.other.label.text == "Back to the list" and #S.take("Whisper") == 0, "standing there changes nothing: no whisper to the lighter")
+local pinsWas, mapWas, shownWas = W.db.pins, S.shownMap, WorldMapFrame.shown
+W.db.pins, S.shownMap, WorldMapFrame.shown = true, 1411, true
+UI.Pins:RefreshWorld()
+local famPin
+for _, p in ipairs(UI.Pins.world) do if p.shown and p.camp == fam then famPin = p end end
+check(famPin ~= nil, "a family camp has its pin on the map")
+famPin.scripts.OnEnter(famPin)
+local tip = table.concat(S.tooltip, "\n")
+check(tip:find("Lia Brasa's camp", 1, true) and tip:find(FAMILY, 1, true) and tip:find("Click for details", 1, true) and not tip:find("see the circle", 1, true),
+	"its tooltip names the lighter and says there is no circle: " .. tip)
+W.db.pins, S.shownMap, WorldMapFrame.shown = pinsWas, mapWas, shownWas
+-- the beacon's realm sighting of another fire: nobody named, the same hint
+S.handler("C2|S|1411|5200|5000|0|1l", "Rui Faisca", "RELAY")
+local famSight
+for _, camp in pairs(Camps.all) do if camp.sight then famSight = camp end end
+draws("a family sighting", function() UI:Show("camp", famSight.owner) end)
+check(UI.title.text == "A lit campfire" and not UI.title.text:find("Rui", 1, true) and cv.hint.text:find(FAMILY, 1, true) and cv.other.label.text == "Back to the list",
+	"a family sighting: a fire, nobody's name, the same hint")
+check(#Camps:People(famSight) == 0, "a sighting puts no one in the ring")
+local n = 0
+for _ in pairs(Camps.all) do n = n + 1 end
+S.handler("C2|S|1411|5005|5000|0|2l", "Lia Brasa", "RELAY")
+local n2 = 0
+for _ in pairs(Camps.all) do n2 = n2 + 1 end
+check(n2 == n, "the lighter's own sighting does not duplicate their camp")
+check(W.L["A lit campfire"] == "A lit campfire" and W.LOCALES.ptBR[FAMILY] ~= nil, "the hint is translated")
+for owner in pairs(Camps.all) do Camps:End(owner) end
+W.db.consent = nil
+UI:Show("list")
+
 -- ── the compass and its ring ───────────────────────────────────────────────
 local Compass = UI.Compass
 for owner in pairs(Camps.all) do Camps:End(owner) end

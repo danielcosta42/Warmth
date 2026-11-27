@@ -5,6 +5,14 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- **Fogueiras da família.** As fogueiras acesas por quem usa o Guild OS, o Lodestar ou o PartyLens, sem o Warmth,
+  também aparecem: a ChehulNet (v17) as anuncia no formato do Warmth, com a marca `l`. No mapa e na tela elas mostram
+  o nome de quem acendeu (na guilda e no grupo) ou só a fogueira (no resto do reino), com a linha "Acesa com o Guild
+  OS, o Lodestar ou o PartyLens, sem o Warmth: sem roda". Não há roda: o Warmth não sussurra presença, pedido de
+  convite nem agradecimento para quem não pode ler. O anúncio e o avistamento da mesma fogueira viram uma só.
+- A biblioteca ChehulNet sincronizada em b690b1c (ChehulNet v17, LibChehulMesh v11). O Warmth não liga o
+  farol da biblioteca: com ele carregado, quem anuncia é o próprio Warmth.
+
 ## [0.5.0]
 
 - **Fogueiras semeadas.** Uma fogueira vista deixa de ser o acampamento de quem a viu: vira um avistamento sem

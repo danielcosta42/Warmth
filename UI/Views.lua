@@ -7,12 +7,18 @@ local T, Wd, L, C = UI.T, UI.Widgets, W.L, UI.C
 local PAD, WIDTH = UI.PAD, UI.W - 2 * UI.PAD
 
 function UI.CampTitle(camp)
+	if camp.sight and not camp.by then return L["A lit campfire"] end -- a family beacon's sighting names nobody
 	if camp.spotted then
 		local by = camp.by or camp.owner
 		return by == W.me and L["A campfire you found"] or L["Campfire seen by %s"]:format(W.Esc(by))
 	end
 	if camp.owner == W.me then return L["Your camp"] end
 	return L["%s's camp"]:format(W.Esc(camp.owner))
+end
+
+-- A fire the ChehulNet beacon told about: lit with another Chehul addon, by a player without Warmth.
+function UI.FamilyLine()
+	return L["Lit with Guild OS, Lodestar or PartyLens, without Warmth: no circle."]
 end
 
 -- "120 yd away", "1.2 km away" or the zone's name for a camp on another map.
@@ -261,11 +267,12 @@ end, function(v, fresh)
 			hint = L["You could craft a %s for this camp; the Workshop says what is missing."]:format(W.ObjectName(could.index)) .. " " .. hint
 		end
 	end
+	if camp.family then hint = C.ember .. UI.FamilyLine() .. C.r .. " " .. hint end
 	v.hint:SetText(hint)
 
 	v.go:Set(L["Go there"])
 	v.go.fn = function() UI.Waypoint(camp) end
-	if camp.sight then
+	if camp.sight or camp.family then -- nobody to ask or thank: a sighting has no owner, a family lighter no Warmth
 		v.other:Set(L["Back to the list"])
 		v.other.tip = nil
 		v.other.fn = function() UI:Show("list") end
@@ -308,6 +315,7 @@ UI.REASONS = {
 	no_camp = "That camp is gone.",
 	no_fire = "There is no campfire near you. Light one first.",
 	demo = "This is a demo camp: nobody is there to invite you.",
+	family = "Whoever lit this fire does not run Warmth: whisper them yourself.",
 }
 
 --------------------------------------------------------------------------------

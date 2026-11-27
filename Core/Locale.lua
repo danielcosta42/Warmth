@@ -137,6 +137,10 @@ local ptBR = {
 	["Announce the campfires I light, and the ones I find, to the network"] = "Anunciar à rede as fogueiras que eu acendo e as que eu encontro",
 	["A campfire you found"] = "Uma fogueira que você encontrou",
 	["Campfire seen by %s"] = "Fogueira vista por %s",
+	["A lit campfire"] = "Uma fogueira acesa",
+	["Lit with Guild OS, Lodestar or PartyLens, without Warmth: no circle."] = "Acesa com o Guild OS, o Lodestar ou o PartyLens, sem o Warmth: sem roda.",
+	["Click for details"] = "Clique para ver os detalhes",
+	["Whoever lit this fire does not run Warmth: whisper them yourself."] = "Quem acendeu este fogo não usa o Warmth: sussurre você mesmo.",
 	["You passed a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"] =
 		"Você passou por uma fogueira que a rede não conhecia: ela está no mapa agora. (O anúncio automático pode ser desligado nas opções.)",
 	["Show the compass (the small campfire that points to the best fire nearby)"] = "Mostrar a bússola (a fogueirinha que aponta para a melhor fogueira por perto)",

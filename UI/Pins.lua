@@ -18,7 +18,8 @@ local function Tip(self)
 	end
 	if camp.note ~= "" then lines[#lines + 1] = UI.C.ember .. "\"" .. W.Esc(camp.note) .. "\"" .. UI.C.r end
 	if W.Camps:OtherCopy(camp) == true then lines[#lines + 1] = UI.C.copy .. L["In another copy of the zone"] .. UI.C.r end
-	lines[#lines + 1] = UI.C.mute .. L["Click to see the circle"] .. UI.C.r
+	if camp.family then lines[#lines + 1] = UI.C.ember .. UI.FamilyLine() .. UI.C.r end
+	lines[#lines + 1] = UI.C.mute .. ((camp.family or camp.sight) and L["Click for details"] or L["Click to see the circle"]) .. UI.C.r
 	Wd.Tip(self, UI.CampTitle(camp), lines, "ANCHOR_RIGHT")
 end
 

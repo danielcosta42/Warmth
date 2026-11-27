@@ -647,5 +647,94 @@ W.db.auto = autoWas
 C_UnitAuras = nil
 S.take()
 
+-- ── the ChehulNet campfire beacon: fires lit with Guild OS, Lodestar or PartyLens, without Warmth ─────────
+-- The exact lines the library (ChehulNet v17) sends: the named camp on guild and group, the ownerless sighting
+-- on the realm bus, and the end.
+do
+	local a = Wire.Decode("C2|A|1429|4000|6000|0|1l|1|0||Chehul Costa~h|")
+	check(a and a.kind == "A" and a.family == true and a.map == 1429 and a.x == 0.4 and a.y == 0.6 and a.zuid == 0 and a.tier == 1
+		and a.n == 1 and a.age == 0 and #a.objs == 0 and #a.people == 1 and a.people[1].name == "Chehul Costa" and a.people[1].class == 7
+		and a.note == "" and a.flame == 0 and a.spotted == nil, "the beacon's camp decodes, flagged family")
+	local sg = Wire.Decode("C2|S|1429|4000|6000|0|1l")
+	check(sg and sg.kind == "S" and sg.family == true and sg.tier == 1 and sg.x == 0.4 and sg.zuid == 0, "the beacon's realm sighting decodes, flagged family")
+	check(Wire.Decode("C2|X").kind == "X", "and its end")
+	check(Wire.Decode("C2|A|1429|4000|6000|0|3l|1|1440||Ana Lima~b|").tier == 3, "an Expert kit, a day old")
+	check(Wire.Decode("C2|A|1429|4000|6000|0|2v|1|0|||").family == nil and Wire.Decode("C2|S|1429|4000|6000|0|1").family == nil
+		and Wire.Decode("C2|A|1429|4000|6000|0|2s|1|0|||").family == nil, "no l, no family: what Warmth itself sends is unchanged")
+	local both = Wire.Decode("C2|S|1429|4000|6000|0|2vl")
+	check(both.family == true and both.flame == 1 and both.tier == 2, "the flag mixes with the others")
+	check(Wire.Sight({ map = 1429, x = 0.4, y = 0.6, zuid = 0, tier = 1, family = true }) == "C2|S|1429|4000|6000|0|1l"
+		and Wire.Sight({ map = 1429, x = 0.4, y = 0.6, zuid = 0, tier = 1 }) == "C2|S|1429|4000|6000|0|1", "a refreshed family sighting keeps its flag")
+end
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.advance(300)
+S.take()
+local BEACON_A, BEACON_S = "C2|A|1429|4000|6000|0|1l|1|0||Lia Brasa~h|", "C2|S|1429|4000|6000|0|1l"
+local function at1429()
+	local out = {}
+	for _, camp in pairs(Camps.all) do if camp.map == 1429 then out[#out + 1] = camp end end
+	return out
+end
+-- the realm sighting first (a client outside the lighter's guild and group hears only this one)
+S.handler(BEACON_S, "Lia Brasa", "RELAY")
+local beaconSight = at1429()[1]
+check(#at1429() == 1 and beaconSight.sight and beaconSight.family and beaconSight.by == nil and Camps:Get("Lia Brasa") == nil,
+	"the beacon's sighting is a fire on the map, nobody's camp, and the relay's origin is not kept as who saw it")
+check(not W.Net:Presence(beaconSight.owner) and not W.Net:RequestInvite(beaconSight.owner) and not Social:CanThank(beaconSight), "and nothing to join")
+-- then the named camp on guild: it takes the sighting's place, one fire
+S.handler(BEACON_A, "Lia Brasa", "GUILD")
+local lia = Camps:Get("Lia Brasa")
+check(#at1429() == 1 and lia and lia.family == true and not lia.sight and lia.tier == 1 and #lia.objs == 0, "the beacon's camp and its sighting are one fire")
+S.handler(BEACON_S, "Lia Brasa", "RELAY")
+check(#at1429() == 1 and Camps:Get("Lia Brasa") == lia, "the next beat's sighting adds nothing beside the camp")
+S.handler(Wire.Sight({ map = 1429, x = 0.4005, y = 0.6, zuid = 0, tier = 1 }), "Other Seer", "RELAY")
+check(#at1429() == 1, "nor does a Warmth player's sighting of it")
+-- no circle: nothing whispered to a lighter who has no Warmth to read it
+W.db.consent = true
+S.take()
+check(W.Net:Presence("Lia Brasa") == false and W.Net:Presence("Lia Brasa", true) == false, "no presence in a family camp")
+local okInvite, whyInvite = W.Net:RequestInvite("Lia Brasa")
+check(okInvite == false and whyInvite == "family", "no invite request: its lighter would never read it")
+lia.heard[W.me] = { at = time(), obj = 0 } -- even if this client had somehow counted itself there
+check(not Social:CanThank(lia) and W.Net:Thank("Lia Brasa") == false, "no thanks")
+lia.heard[W.me] = nil
+S.handler(Wire.Join("Lia Brasa", 2, W.TENT), "Old Warmth", "GUILD")
+check(next(lia.heard) == nil and Camps:Count(lia) == 1 and #Camps:People(lia) == 1 and Camps:People(lia)[1].name == "Lia Brasa",
+	"an older Warmth's presence is not counted: the lighter alone is by the fire")
+-- standing at it, with consent and the automatic announce on: no J, no S, no question
+local posBefore, autoBefore, asked = S.pos, W.db.auto, 0
+W:On("CONSENT_NEEDED", function() asked = asked + 1 end)
+S.pos = { map = 1429, x = 0.4, y = 0.6 }
+W.db.auto = true
+C_UnitAuras = { GetPlayerAuraBySpellID = function(id) return id == W.AURA.NEARBY and {} or nil end }
+W.Watch:Tick()
+check(W.Watch:Near() == lia and #S.take() == 0, "at a family camp's fire: nothing goes out, not a presence, not a sighting")
+W.db.consent = nil
+W.Watch:Tick()
+check(asked == 0 and #S.take() == 0, "and no consent question for a circle that does not exist")
+C_UnitAuras, S.pos, W.db.auto = nil, posBefore, autoBefore
+-- the lighter's client loads Warmth mid-camp: its own announce, same sender, is a normal camp again
+S.handler("C2|A|1429|4000|6000|0|1|1|3|||", "Lia Brasa", "GUILD")
+check(Camps:Get("Lia Brasa").family == nil, "Warmth on the lighter's client: an ordinary camp")
+S.handler(BEACON_A, "Lia Brasa", "GUILD")
+check(Camps:Get("Lia Brasa").family == true, "the beacon again")
+-- the end: the camp goes, and a beat-late realm sighting from the same lighter does not bring it back
+S.handler("C2|X", "Lia Brasa", "GUILD")
+check(Camps:Get("Lia Brasa") == nil and #at1429() == 0, "the beacon's end removes the camp")
+S.advance(30)
+S.handler(BEACON_S, "Lia Brasa", "RELAY")
+check(#at1429() == 0, "a relayed sighting a moment after its end is ignored")
+S.advance(Camps.ENDED_SIGHT)
+S.handler(BEACON_S, "Lia Brasa", "RELAY")
+check(#at1429() == 1 and at1429()[1].sight, "later, a sighting is a sighting again")
+-- a fire a Warmth player had already sighted: the beacon's sighting refreshes it and adds the hint
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.handler(Wire.Sight({ map = 1429, x = 0.4, y = 0.6, zuid = 0, tier = 2 }), "Other Seer", "RELAY")
+S.handler(BEACON_S, "Lia Brasa", "RELAY")
+local seen = at1429()[1]
+check(#at1429() == 1 and seen.family == true and seen.by == "Other Seer" and seen.tier == 2, "merged: who saw it and its tier are kept, the family hint added")
+for owner in pairs(Camps.all) do Camps:End(owner) end
+S.take()
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")

@@ -271,6 +271,7 @@ local function Describe(camp)
 		local o = W.OBJECTS[index]
 		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
 	end
+	if camp.family then lines[#lines + 1] = UI.C.ember .. UI.FamilyLine() .. UI.C.r end
 	return lines
 end
 

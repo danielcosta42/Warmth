@@ -145,10 +145,11 @@ function Watch:Tick()
 			camp.violetSeen = violet or nil
 			W:Fire("CAMPS")
 		end
-		-- a sighting is nobody's camp: there is no circle to be counted in
-		if not camp.sight and (camp.owner == W.me or W.db.consent == true) then
+		-- a sighting is nobody's camp, and a family camp's lighter runs no Warmth: no circle to be counted in
+		local circle = not (camp.sight or camp.family)
+		if circle and (camp.owner == W.me or W.db.consent == true) then
 			W.Net:Presence(camp.owner)
-		elseif not camp.sight and W.db.consent == nil and not asked then
+		elseif circle and W.db.consent == nil and not asked then
 			asked = true -- once a session, until the player answers
 			W:Fire("CONSENT_NEEDED", camp)
 		end
