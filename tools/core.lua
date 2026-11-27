@@ -675,5 +675,19 @@ W.db.auto = autoWas
 C_UnitAuras = nil
 S.take()
 
+-- a campfire announced by the family's beacon (ChehulNet v16): lit by someone without Warmth
+local beacon = Wire.Decode("C2|A|1411|5000|5000|7|2l|1|0||Beto Faro~j|")
+check(beacon and beacon.lite == true and beacon.tier == 2 and beacon.people[1].name == "Beto Faro" and beacon.flame == 0, "the beacon's l is read")
+check(Wire.Decode("C2|A|1411|5000|5000|7|2vl|1|0|||").lite and Wire.Decode("C2|A|1411|5000|5000|7|2vl|1|0|||").flame == 1, "with violet flames too")
+check(Wire.Decode("C2|A|1411|5000|5000|7|2|1|0|||").lite == nil, "and only when it is there")
+S.handler("C2|A|1411|5000|5000|7|2l|1|0||Beto Faro~j|", "Beto Faro", "RELAY")
+local lite = Camps:Get("Beto Faro")
+check(lite and lite.lite and Camps:Count(lite) == 1, "a beacon's camp is a camp, its lighter in the circle")
+check(not Social:CanThank(lite) and select(2, W.Net:RequestInvite("Beto Faro")) == "lite", "no thanks and no invite: the other side does not understand them")
+S.handler("C2|A|1411|5000|5000|7|2|1|0|||", "Beto Faro", "RELAY")
+check(Camps:Get("Beto Faro").lite == nil, "the same owner's later Warmth announce drops the mark")
+Camps:End("Beto Faro")
+S.take()
+
 check(W.Esc("a|Hb\n") == "a||Hb?", "network text is escaped before display")
 S.done("core")

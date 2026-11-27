@@ -83,6 +83,7 @@ function Camps:Announce(owner, f, here)
 	camp.n, camp.objs, camp.roster, camp.note = f.n or 0, f.objs or {}, f.people or {}, f.note or ""
 	camp.flame = f.flame or 0
 	camp.spotted = f.spotted or nil
+	camp.lite = f.lite or nil -- the family's beacon: the lighter has no Warmth
 	camp.last = time()
 	W:Fire("CAMPS")
 	if isNew and owner ~= W.me then W:Fire("CAMP_NEW", camp) end

@@ -171,6 +171,7 @@ function Net:RequestInvite(owner)
 	local camp = W.Camps:Get(owner)
 	if camp and camp.demo then return false, "demo" end
 	if not camp or owner == W.me or camp.sight then return false, "no_camp" end
+	if camp.lite then return false, "lite" end -- the lighter's addon does not answer an invite request
 	if GetTime() - (lastInviteTo[owner] or -1e9) < self.INVITE_GAP then return false, "too_soon" end
 	local mesh = Mesh()
 	if not mesh then return false, "no_network" end

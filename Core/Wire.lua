@@ -10,8 +10,9 @@
 --   C2|S|map|x|y|zuid|tier                                a sighting: a fire burning here that nobody announced (tier: a guess)
 --   C2|T|owner                                           "thank you for the fire" (whisper to the owner, guild, group)
 --
--- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames; s = (0.4.0 only, still
--- read) the announcer found this fire burning; since 0.5.0 a sighting is its own message, S. Unknown letters are
+-- tier: 1..3, then optional flag letters ("2v"): v = the fire burns with violet flames; l = lit by a client of the
+-- family without Warmth (the ChehulNet v16 campfire beacon: no objects, no note, no invite nor thanks understood);
+-- s = (0.4.0 only, still read) the announcer found this fire burning; since 0.5.0 a sighting is its own message, S. Unknown letters are
 -- ignored, so a flag can be added later without breaking older clients.
 -- x, y: 0..10000. zuid: the zone copy, 0 = unknown. n: people in the circle. age: minutes since it was first
 -- announced. o: object index (Core/Data.lua).
@@ -165,6 +166,7 @@ function Wire.Decode(payload)
 		return { kind = "A", map = map, x = x / 10000, y = y / 10000, zuid = zuid, tier = tier, n = n, age = age,
 			flame = flags:find("v", 1, true) and 1 or 0,
 			spotted = flags:find("s", 1, true) and true or nil,
+			lite = flags:find("l", 1, true) and true or nil, -- lit by a family client without Warmth (ChehulNet v16's beacon)
 			objs = objs, people = people, note = Wire.CleanNote(note) }
 	end
 	return nil

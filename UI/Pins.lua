@@ -18,6 +18,7 @@ local function Tip(self)
 		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
 	end
 	if camp.note ~= "" then lines[#lines + 1] = UI.C.ember .. "\"" .. W.Esc(camp.note) .. "\"" .. UI.C.r end
+	if camp.lite then lines[#lines + 1] = UI.C.mute .. L["Lit by a player without Warmth: its camp objects are not known."] .. UI.C.r end
 	if camp.sight then lines[#lines + 1] = UI.C.mute .. L["Where someone stood when they saw it: the fire is within about 100 yards."] .. UI.C.r end
 	if W.Camps:OtherCopy(camp) == true then lines[#lines + 1] = UI.C.copy .. L["In another copy of the zone"] .. UI.C.r end
 	if (self.more or 0) > 0 then lines[#lines + 1] = UI.C.ember .. L["%d more fires here: zoom in to tell them apart"]:format(self.more) .. UI.C.r end

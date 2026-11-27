@@ -13,6 +13,10 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
   o nível) ou descansa nela. Relatos a menos de 100 jardas (a distância que o jogo exige entre duas fogueiras)
   são a mesma fogueira.
 - Perto do fogo de uma vila, a tela de montar acampamento volta a oferecer acender o kit.
+- **Fogueiras de quem usa GuildOS, Lodestar ou PartyLens.** Com a lib ChehulNet v1.5.0, esses addons anunciam a
+  fogueira que o jogador acende (se ele disser sim). Ela aparece no mapa como as outras, com o aviso de que os
+  objetos não são conhecidos, sem convite nem agradecimento.
+- Lib ChehulNet v1.5.0 (inclui a v1.4.1: a caixa de senha do canal da família fecha sozinha).
 - Uma fogueira avistada não diz mais "1 na roda" nem põe um estranho no círculo, e não levanta aviso na tela.
 - Pinos do mapa menores; a fogueira avistada aparece menor e mais apagada; pinos sobrepostos viram um só, com
   "+N", e o tamanho acompanha o zoom.

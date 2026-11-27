@@ -326,6 +326,12 @@ check(ws.advice.text:find("needs a blueprint", 1, true) and ws.act.shown == fals
 -- a camp says what I could craft for it
 S.bags = { [2318] = 5 }
 local needy = announce("Needs A Tent", { x = 0.5005, objs = { 1 }, tier = 2 })
+-- a camp from the family's beacon: lit by someone without Warmth
+announce("Beacon Lit", { tier = 2, lite = true, people = { { name = "Beacon Lit", class = 9 } } })
+draws("a beacon's camp", function() UI:Show("camp", "Beacon Lit") end)
+check(UI.views.camp.objs.text:find("its camp objects are not known", 1, true) and not UI.views.camp.objs.text:find("places open", 1, true)
+	and UI.views.camp.other.label.text == "Back to the list", "a beacon's camp: objects unknown, nobody to invite or thank")
+Camps:End("Beacon Lit")
 UI:Show("camp", "Needs A Tent")
 check(UI.views.camp.hint.text:find("You can craft a Camp Tent for this camp", 1, true), "a camp without a tent, and I can make one")
 S.bags = {}

@@ -245,13 +245,20 @@ end, function(v, fresh)
 		end
 		lines[#lines + 1] = C.ember .. L["Asks for: %s"]:format(table.concat(names, ", ")) .. (#camp.wants > 3 and "..." or "") .. C.r
 	end
-	lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
+	if camp.lite and #objs == 0 then
+		lines[#lines + 1] = C.mute .. L["Lit by a player without Warmth: its camp objects are not known."] .. C.r
+	else
+		lines[#lines + 1] = C.mute .. (slots == #objs and L["Every place is taken."] or L["%d of %d places open."]:format(slots - #objs, slots)) .. C.r
+	end
 	if W.Camps:Violet(camp) then lines[#lines + 1] = UI.Hex(T.violet) .. L["Violet flames: the benefits of this fire last two hours instead of one."] .. C.r end
 	v.objs:SetText(table.concat(lines, "\n"))
 
 	local bring = CanBring(camp)
 	local hint = L["Sit by the fire for a minute to get the camp's benefits for an hour."]
-	if #objs == 0 then
+	if #objs == 0 and camp.lite then
+		hint = L["Sit by the fire for a minute to get the camp's benefits for an hour."] .. " "
+			.. (W.Watch:Near() == camp and L["Point at a piece someone else placed and Warmth notes it."] or "")
+	elseif #objs == 0 then
 		-- A fire with no camp object gives nothing (guides, and measured: a minute at one ended the Camp Benefits
 		-- the player already had). The addon only knows the objects its own users placed, hence "reported".
 		hint = L["No camp object reported here: the fire alone gives no benefits. Bring one from your profession."]
@@ -276,7 +283,7 @@ end, function(v, fresh)
 
 	v.go:Set(L["Go there"])
 	v.go.fn = function() UI.Waypoint(camp) end
-	if camp.sight then
+	if camp.sight or camp.lite then -- nobody to invite or thank: a sighting has no owner, a beacon's owner has no Warmth
 		v.other:Set(L["Back to the list"])
 		v.other.tip = nil
 		v.other.fn = function() UI:Show("list") end
@@ -319,6 +326,7 @@ UI.REASONS = {
 	no_camp = "That camp is gone.",
 	no_fire = "There is no campfire near you. Light one first.",
 	demo = "This is a demo camp: nobody is there to invite you.",
+	lite = "The owner's addon does not take invite requests.",
 }
 
 --------------------------------------------------------------------------------
