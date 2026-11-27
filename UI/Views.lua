@@ -430,7 +430,8 @@ end, function(v)
 	-- What the lower half asks for depends on what the game says about the fire:
 	--   light   no campfire near: offer the kits in the bags (a choice only when there is more than one tier)
 	--   lit     a campfire near and it is the one this player lit: its tier is known, nothing to choose
-	--   which   a campfire near that the addon did not see lit (a /reload long ago): ask which it is
+	--   which   a fire near that the addon did not see lit: ask which campfire it is, and still offer the kits, since
+	--           the game's Campfire Nearby is on by any fire of the world too (a town's), not only a player's
 	--   manual  the client cannot say whether a fire is near: everything, as a fallback
 	local fire, mine = W.FireNearby(), W.Watch:MyFire()
 	local mode = (fire == nil and "manual") or (fire == false and "light") or (mine and "lit") or "which"
@@ -454,7 +455,7 @@ end, function(v)
 		or (mode == "which" and L["Which campfire is this?"])
 		or (mode == "light" and (#owned > 1 and L["Which kit to light"] or ""))
 		or L["Your campfire"])
-	UI.canLight = mode == "light" or mode == "manual"
+	UI.canLight = mode ~= "lit"
 	v.lightSlot:SetShown(UI.canLight)
 	v.go:Set((mode == "light" and L["Light a campfire first"]) or (W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"]),
 		nil, mode == "light")

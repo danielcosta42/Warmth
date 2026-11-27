@@ -173,8 +173,8 @@ check(UI.tier == 2 and b.tiers[1].shown == false and b.tiers[2].shown == false a
 	"I lit a Journeyman kit and stand by it: the tier is known, nothing to choose, nothing to light")
 W.lit = nil
 UI:Render()
-check(b.tierLabel.text == "Which campfire is this?" and b.tiers[1].shown and b.tiers[3].shown and light.shown == false,
-	"a fire the addon did not see lit: it asks which one")
+check(b.tierLabel.text == "Which campfire is this?" and b.tiers[1].shown and b.tiers[3].shown and b.lightSlot.shown,
+	"a fire the addon did not see lit: it asks which one, and still offers to light (it may be a town's fire)")
 S.fire("ADDON_LOADED", "Warmth")
 check(W.lit and W.lit.tier == 2, "the fire I lit survives a /reload")
 near[W.AURA.NEARBY] = nil

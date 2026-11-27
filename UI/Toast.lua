@@ -156,7 +156,7 @@ local toldSight
 W:On("SIGHTED", function()
 	if toldSight then return end
 	toldSight = true
-	W.Print(L["You stopped by a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
+	W.Print(L["You found a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
 end)
 W:On("LIT", function()
 	if told or W.db.auto ~= false then return end

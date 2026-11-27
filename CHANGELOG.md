@@ -7,9 +7,12 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [0.5.1]
 
-- **O mapa deixa de achar que tudo é fogueira.** Só avista uma fogueira quem para ao lado dela (ou descansa no
-  fogo); quem passa correndo não deixa mais um rastro de pinos. Relatos a menos de 100 jardas (a distância que o
-  jogo exige entre duas fogueiras) são a mesma fogueira.
+- **O mapa deixa de achar que tudo é fogueira.** O aviso do jogo de "fogueira por perto" liga junto a qualquer
+  fogo, até o de uma vila; o Warmth não confia mais nele para pôr uma fogueira no mapa. Uma fogueira de quem não
+  tem o addon só entra quando alguém aponta o mouse para ela ("Basic/Journeyman/Expert Campfire", que também diz
+  o nível) ou descansa nela. Relatos a menos de 100 jardas (a distância que o jogo exige entre duas fogueiras)
+  são a mesma fogueira.
+- Perto do fogo de uma vila, a tela de montar acampamento volta a oferecer acender o kit.
 - Uma fogueira avistada não diz mais "1 na roda" nem põe um estranho no círculo, e não levanta aviso na tela.
 - Pinos do mapa menores; a fogueira avistada aparece menor e mais apagada; pinos sobrepostos viram um só, com
   "+N", e o tamanho acompanha o zoom.

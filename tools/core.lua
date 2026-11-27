@@ -601,28 +601,32 @@ local function sights()
 	for _, camp in pairs(Camps.all) do if camp.sight then out[#out + 1] = camp end end
 	return out
 end
--- riding through the aura's range: each tick somewhere else, and the fire could be anywhere around
+-- the Campfire Nearby aura is on by any fire of the world: standing or riding by it proves nothing
 for step = 1, 4 do
 	S.pos = { map = posWas.map, x = posWas.x + step * 0.004, y = posWas.y }
 	S.advance(10)
 end
-check(#sights() == 0 and #S.take("Realm") == 0, "passing by without stopping: no sighting, no trail of pins")
 S.pos = posWas
-S.advance(10)
-check(#sights() == 0, "one tick standing is not yet stopping")
-S.advance(10)
+S.advance(30)
+check(#sights() == 0 and #S.take("Realm") == 0, "the aura alone, riding past or standing still: a town's fire is no campfire")
+check(W.Watch:Spot("Campfire") == nil and W.Watch:Spot("Bonfire") == nil and #sights() == 0, "a fire of the world under the mouse is nothing")
+-- the fire's own name under the mouse is a player's campfire, and its tier
+W.Watch:Spot("Journeyman Campfire")
 local sent = S.take("Realm")
 local found = sights()[1]
-check(#sights() == 1 and #sent == 1 and sent[1].payload:find("^C2|S|") and sent[1].payload:find("|1$") and Camps:Get(W.me) == nil,
-	"passing a fire the network does not know: a sighting goes out, and it is not my camp: " .. tostring(sent[1] and sent[1].payload))
-check(found.by == W.me and found.tier == 1 and Wire.Decode(sent[1].payload).kind == "S", "Basic until known, seen by me")
+check(#sights() == 1 and #sent == 1 and sent[1].payload:find("^C2|S|") and sent[1].payload:find("|2$") and Camps:Get(W.me) == nil,
+	"pointing at a player's campfire: a sighting goes out, with its tier, and it is not my camp: " .. tostring(sent[1] and sent[1].payload))
+check(found.by == W.me and found.tier == 2 and Wire.Decode(sent[1].payload).kind == "S", "seen by me")
 S.advance(60)
-check(#S.take("Realm") == 0 and #sights() == 1, "known now: not told again while fresh")
 W.Watch:Spot("Journeyman Campfire")
+check(#S.take("Realm") == 0 and #sights() == 1, "known now: not told again while fresh")
+W.Watch:Spot("Expert Campfire")
 sent = S.take("Realm")
-check(found.tier == 2 and #sent == 1 and sent[1].payload:find("|2$"), "pointing at the fire tells its tier, to the network too")
+check(found.tier == 3 and #sent == 1 and sent[1].payload:find("|3$") and #sights() == 1, "a better tier read off the fire is told at once")
 S.advance(250)
-check(#S.take("Realm") == 1 and found.tier == 2 and #sights() == 1, "whoever is by it refreshes it once it is a beat old")
+check(#S.take("Realm") == 0, "nobody proving it again: it is not refreshed")
+W.Watch:Spot("Expert Campfire")
+check(#S.take("Realm") == 1 and found.tier == 3 and #sights() == 1, "whoever points at it once it is a beat old refreshes it")
 -- with a camp of my own elsewhere, the next fire is still sighted: one player seeds a region
 S.pos = { map = posWas.map, x = posWas.x + 0.2, y = posWas.y }
 near = false
@@ -631,13 +635,14 @@ local own = W.Net:Announce(1, "")
 S.take()
 S.pos = { map = posWas.map, x = posWas.x + 0.4, y = posWas.y }
 near = true
-S.advance(20)
+S.advance(30)
+W.Watch:Spot("Basic Campfire")
 check(#sights() == 2 and Camps:Get(W.me) == own and S.take("Realm")[1].payload:find("^C2|S|"), "a second fire, with a camp of my own standing: both sightings and my camp live")
 W.Net:End()
 -- heard from the network: merged by place, replaced by the lighter's word, capped
 S.pos = posWas
 S.handler(Wire.Sight({ map = found.map, x = found.x + 0.0005, y = found.y, zuid = found.zuid, tier = 1 }), "Other Seer", "RELAY")
-check(#sights() == 2 and found.by == "Other Seer" and found.tier == 2, "the same fire seen by another is the same sighting; a known tier is kept")
+check(#sights() == 2 and found.by == "Other Seer" and found.tier == 3, "the same fire seen by another is the same sighting; a known tier is kept")
 -- another seer stood elsewhere inside the same fire's range (the game keeps fires 100 yards apart)
 S.handler(Wire.Sight({ map = found.map, x = found.x + 0.016, y = found.y, zuid = found.zuid, tier = 1 }), "Far Seer", "RELAY")
 check(#sights() == 2 and found.by == "Far Seer", "80 yards off is still the same fire: one pin, not two")
