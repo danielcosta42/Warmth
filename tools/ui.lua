@@ -173,8 +173,8 @@ check(UI.tier == 2 and b.tiers[1].shown == false and b.tiers[2].shown == false a
 	"I lit a Journeyman kit and stand by it: the tier is known, nothing to choose, nothing to light")
 W.lit = nil
 UI:Render()
-check(b.tierLabel.text == "Which campfire is this?" and b.tiers[1].shown and b.tiers[3].shown and light.shown == false,
-	"a fire the addon did not see lit: it asks which one")
+check(b.tierLabel.text == "Which campfire is this?" and b.tiers[1].shown and b.tiers[3].shown and b.lightSlot.shown,
+	"a fire the addon did not see lit: it asks which one, and still offers to light (it may be a town's fire)")
 S.fire("ADDON_LOADED", "Warmth")
 check(W.lit and W.lit.tier == 2, "the fire I lit survives a /reload")
 near[W.AURA.NEARBY] = nil
@@ -208,14 +208,26 @@ WorldMapFrame.shown = true
 S.shownMap = 1411
 UI.Pins:RefreshWorld()
 local function shownPins(list) local n = 0; for _, p in ipairs(list) do if p.shown then n = n + 1 end end; return n end
-check(shownPins(UI.Pins.world) == 10, "one pin per camp of the zone shown: " .. shownPins(UI.Pins.world))
-check(UI.Pins.world[1].point[4] == 501 and UI.Pins.world[1].point[5] == -300 and UI.Pins.world[1].count.text == 4, "placed by map position, with the head count")
+-- camps a pin stands for: itself and the ones folded into it
+local function shownCamps(list) local n = 0; for _, p in ipairs(list) do if p.shown then n = n + 1 + (p.more or 0) end end; return n end
+check(shownCamps(UI.Pins.world) == 10 and shownPins(UI.Pins.world) <= 10, "every camp of the zone shown is on a pin: " .. shownCamps(UI.Pins.world))
+check(UI.Pins.world[1].point[4] == 501 and UI.Pins.world[1].point[5] == -300 and UI.Pins.world[1].count.text == "+2", "placed by map position; a folded pin counts the fires it hides")
+check(UI.Pins.world[4].more == 0 and UI.Pins.world[4].count.text == 1, "a lone camp's badge is its head count")
 S.shownMap = 1414
 UI.Pins:RefreshWorld()
-check(shownPins(UI.Pins.world) == 12, "the continent shows every camp of its zones: " .. shownPins(UI.Pins.world))
+check(shownCamps(UI.Pins.world) == 12, "the continent shows every camp of its zones: " .. shownCamps(UI.Pins.world))
+check(shownPins(UI.Pins.world) < 12, "and camps that would overlap at that scale fold into one pin")
+do
+	local a = { owner = "A", sight = true, n = 0, heard = {}, roster = {}, order = {} }
+	local b = { owner = "B", n = 3, heard = {}, roster = {}, order = {} }
+	local c = { owner = "C", n = 1, heard = {}, roster = {}, order = {} }
+	local folded = UI.Pins.Fold({ { camp = a, x = 100, y = 100 }, { camp = b, x = 105, y = 102 }, { camp = c, x = 300, y = 100 } }, 20)
+	check(#folded == 2 and folded[1].camp == b and folded[1].more == 1 and folded[2].camp == c and folded[2].more == 0,
+		"overlapping pins fold, an announced camp standing for a sighting; distant ones stay apart")
+end
 S.shownMap = 1412
 UI.Pins:RefreshWorld()
-check(shownPins(UI.Pins.world) == 2, "another zone shows only its own")
+check(shownCamps(UI.Pins.world) == 2, "another zone shows only its own")
 W.db.pins = false
 UI.Pins:RefreshWorld(); UI.Pins:RefreshMini()
 check(shownPins(UI.Pins.world) == 0 and shownPins(UI.Pins.mini) == 0, "pins can be turned off")
@@ -408,7 +420,7 @@ check(tip:find("Lia Brasa's camp", 1, true) and tip:find(FAMILY, 1, true) and ti
 	"its tooltip names the lighter and says there is no circle: " .. tip)
 W.db.pins, S.shownMap, WorldMapFrame.shown = pinsWas, mapWas, shownWas
 -- the beacon's realm sighting of another fire: nobody named, the same hint
-S.handler("C2|S|1411|5200|5000|0|1l", "Rui Faisca", "RELAY")
+S.handler("C2|S|1411|5300|5000|0|1l", "Rui Faisca", "RELAY") -- over 100 yards off: another fire
 local famSight
 for _, camp in pairs(Camps.all) do if camp.sight then famSight = camp end end
 draws("a family sighting", function() UI:Show("camp", famSight.owner) end)

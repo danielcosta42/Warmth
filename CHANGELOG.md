@@ -12,6 +12,17 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
   convite nem agradecimento para quem não pode ler. O anúncio e o avistamento da mesma fogueira viram uma só.
 - A biblioteca ChehulNet sincronizada em b690b1c (ChehulNet v17, LibChehulMesh v11). O Warmth não liga o
   farol da biblioteca: com ele carregado, quem anuncia é o próprio Warmth.
+- **O mapa deixa de achar que tudo é fogueira (#17).** O aviso do jogo de "fogueira por perto" liga junto a
+  qualquer fogo, até o de uma vila; o Warmth não confia mais nele para pôr uma fogueira no mapa. Uma fogueira de
+  quem não tem o addon só entra quando alguém aponta o mouse para ela ("Basic/Journeyman/Expert Campfire", que
+  também diz o nível) ou descansa nela. Relatos a menos de 100 jardas (a distância que o jogo exige entre duas
+  fogueiras) são a mesma fogueira: acabam os pinos repetidos.
+- Perto do fogo de uma vila, a tela de montar acampamento volta a oferecer acender o kit.
+- Uma fogueira avistada não diz mais "1 na roda" nem põe um estranho no círculo, e não levanta aviso na tela.
+- Pinos do mapa menores; a fogueira avistada aparece menor e mais apagada; pinos sobrepostos viram um só, com
+  "+N", e o tamanho acompanha o zoom.
+- A descrição da CurseForge conta das fogueiras encontradas e das da família, e diz que fogos do mundo nunca
+  entram no mapa.
 
 ## [0.5.0]
 

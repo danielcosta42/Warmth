@@ -36,10 +36,13 @@ end
 -- one player crossing a region can leave several; it lives while people keep seeing it. `by`: who saw it last.
 -- A known camp at the same place (SAME yards, the same copy of the zone) stands: a lit camp is left alone, a
 -- sighting is refreshed. Returns the sighting and whether it is new; nil when it added nothing.
+-- SAME is the game's own spacing: no campfire can be placed within 100 yards of a lit one, so two reports closer
+-- than that are one fire. The Campfire Nearby aura reaches about as far, and a sighting is where the seer stood,
+-- not where the fire is: anything smaller left a trail of pins behind a player crossing one fire's range.
 -- f.family: the sighting a family beacon puts on the realm bus for its own player's fire. It is meant to carry no
 -- name, so `by` (the relay's claimed origin, which is that player) is not kept; and the camp the same beacon
 -- announced on guild or group, if this client heard it, is that fire.
-Camps.SAME, Camps.SIGHTS = 60, 40
+Camps.SAME, Camps.SIGHTS = 100, 40
 function Camps:Sight(by, f)
 	if f.family then
 		local own = self.all[by or ""]
@@ -182,6 +185,7 @@ function Camps:Violet(camp)
 end
 
 function Camps:Count(camp)
+	if camp.sight then return 0 end -- nobody is known to be at a fire somebody only saw burning
 	return math.max(camp.n or 0, #self:People(camp))
 end
 

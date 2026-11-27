@@ -101,7 +101,8 @@ end
 
 W:On("CAMP_NEW", function(camp)
 	local map = W.Position()
-	if W.db.toast and map and map == camp.map then UI:Toast(camp) end
+	-- a sighting only marks the map: a player crossing the zone would otherwise raise one toast per fire they see
+	if W.db.toast and map and map == camp.map and not camp.sight then UI:Toast(camp) end
 end)
 
 W:On("CONSENT_NEEDED", function()
@@ -155,7 +156,7 @@ local toldSight
 W:On("SIGHTED", function()
 	if toldSight then return end
 	toldSight = true
-	W.Print(L["You passed a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
+	W.Print(L["You found a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"])
 end)
 W:On("LIT", function()
 	if told or W.db.auto ~= false then return end

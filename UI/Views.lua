@@ -29,11 +29,18 @@ function UI.Where(camp)
 	return L["%.1fk yd away"]:format(d / 1000)
 end
 
-local function Ago(ts)
+function UI.Ago(ts)
 	local d = math.max(0, time() - ts)
 	if d < 60 then return L["just now"] end
 	if d < 3600 then return L["%d min ago"]:format(math.floor(d / 60)) end
 	return L["%d h ago"]:format(math.floor(d / 3600))
+end
+local Ago = UI.Ago
+
+-- The first line under a camp's name in a tooltip: who is there (a sighting: when it was last seen), tier, where.
+function UI.CampSummary(camp)
+	local who = camp.sight and L["Seen burning %s"]:format(Ago(camp.last)) or L["%d by the fire"]:format(W.Camps:Count(camp))
+	return who .. "  ·  " .. L[W.TIERS[camp.tier]] .. "  ·  " .. UI.Where(camp)
 end
 
 function UI.Waypoint(camp)
@@ -106,7 +113,11 @@ local function FillRow(r, camp)
 	r.title:SetText(UI.CampTitle(camp))
 	local where = UI.Where(camp)
 	if camp.other == true then where = where .. C.copy .. "  " .. L["another copy"] .. C.r end
-	r.sub:SetText(L["%s  ·  %d by the fire  ·  %d of %d"]:format(where, W.Camps:Count(camp), #objs, W.SLOTS[camp.tier]))
+	if camp.sight then
+		r.sub:SetText(L["%s  ·  seen burning %s"]:format(where, Ago(camp.last)))
+	else
+		r.sub:SetText(L["%s  ·  %d by the fire  ·  %d of %d"]:format(where, W.Camps:Count(camp), #objs, W.SLOTS[camp.tier]))
+	end
 	for j, s in ipairs(r.slots) do
 		if objs[j] then s:SetObject(objs[j]); s:Show() else s:Hide() end
 	end
@@ -218,7 +229,7 @@ end, function(v, fresh)
 	local other = W.Camps:OtherCopy(camp)
 	UI.title:SetText(UI.CampTitle(camp))
 	local host = W.Social.LEVELS[camp.host or 0]
-	UI.sub:SetText(("%s  ·  %s  ·  %s  ·  %s"):format(W.Esc(W.ZoneName(camp.map)), L[W.TIERS[camp.tier]], L["lit %s"]:format(Ago(camp.at)), UI.Where(camp))
+	UI.sub:SetText(("%s  ·  %s  ·  %s  ·  %s"):format(W.Esc(W.ZoneName(camp.map)), L[W.TIERS[camp.tier]], camp.sight and L["Seen burning %s"]:format(Ago(camp.last)) or L["lit %s"]:format(Ago(camp.at)), UI.Where(camp))
 		.. (host and ("  ·  " .. C.ember .. L["%s host"]:format(L[host]) .. C.r) or ""))
 	UI.ring:Set(camp, fresh)
 	v.note:SetText(camp.note ~= "" and ("\"" .. W.Esc(camp.note) .. "\"") or "")
@@ -427,7 +438,8 @@ end, function(v)
 	-- What the lower half asks for depends on what the game says about the fire:
 	--   light   no campfire near: offer the kits in the bags (a choice only when there is more than one tier)
 	--   lit     a campfire near and it is the one this player lit: its tier is known, nothing to choose
-	--   which   a campfire near that the addon did not see lit (a /reload long ago): ask which it is
+	--   which   a fire near that the addon did not see lit: ask which campfire it is, and still offer the kits, since
+	--           the game's Campfire Nearby is on by any fire of the world too (a town's), not only a player's
 	--   manual  the client cannot say whether a fire is near: everything, as a fallback
 	local fire, mine = W.FireNearby(), W.Watch:MyFire()
 	local mode = (fire == nil and "manual") or (fire == false and "light") or (mine and "lit") or "which"
@@ -451,7 +463,7 @@ end, function(v)
 		or (mode == "which" and L["Which campfire is this?"])
 		or (mode == "light" and (#owned > 1 and L["Which kit to light"] or ""))
 		or L["Your campfire"])
-	UI.canLight = mode == "light" or mode == "manual"
+	UI.canLight = mode ~= "lit"
 	v.lightSlot:SetShown(UI.canLight)
 	v.go:Set((mode == "light" and L["Light a campfire first"]) or (W.Camps:Get(W.me) and L["Announce again here"] or L["Announce this camp"]),
 		nil, mode == "light")
