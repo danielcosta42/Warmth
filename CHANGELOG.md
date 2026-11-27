@@ -5,6 +5,25 @@ Todas as mudanças relevantes do Warmth. Formato baseado em
 
 ## [Unreleased]
 
+- **Fogueiras da família.** As fogueiras acesas por quem usa o Guild OS, o Lodestar ou o PartyLens, sem o Warmth,
+  também aparecem: a ChehulNet (v17) as anuncia no formato do Warmth, com a marca `l`. No mapa e na tela elas mostram
+  o nome de quem acendeu (na guilda e no grupo) ou só a fogueira (no resto do reino), com a linha "Acesa com o Guild
+  OS, o Lodestar ou o PartyLens, sem o Warmth: sem roda". Não há roda: o Warmth não sussurra presença, pedido de
+  convite nem agradecimento para quem não pode ler. O anúncio e o avistamento da mesma fogueira viram uma só.
+- A biblioteca ChehulNet sincronizada em b690b1c (ChehulNet v17, LibChehulMesh v11). O Warmth não liga o
+  farol da biblioteca: com ele carregado, quem anuncia é o próprio Warmth.
+- **O mapa deixa de achar que tudo é fogueira (#17).** O aviso do jogo de "fogueira por perto" liga junto a
+  qualquer fogo, até o de uma vila; o Warmth não confia mais nele para pôr uma fogueira no mapa. Uma fogueira de
+  quem não tem o addon só entra quando alguém aponta o mouse para ela ("Basic/Journeyman/Expert Campfire", que
+  também diz o nível) ou descansa nela. Relatos a menos de 100 jardas (a distância que o jogo exige entre duas
+  fogueiras) são a mesma fogueira: acabam os pinos repetidos.
+- Perto do fogo de uma vila, a tela de montar acampamento volta a oferecer acender o kit.
+- Uma fogueira avistada não diz mais "1 na roda" nem põe um estranho no círculo, e não levanta aviso na tela.
+- Pinos do mapa menores; a fogueira avistada aparece menor e mais apagada; pinos sobrepostos viram um só, com
+  "+N", e o tamanho acompanha o zoom.
+- A descrição da CurseForge conta das fogueiras encontradas e das da família, e diz que fogos do mundo nunca
+  entram no mapa.
+
 ## [0.5.0]
 
 - **Fogueiras semeadas.** Uma fogueira vista deixa de ser o acampamento de quem a viu: vira um avistamento sem

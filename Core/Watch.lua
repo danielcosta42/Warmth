@@ -86,24 +86,32 @@ function Watch:MyFire()
 	return lit
 end
 
--- A fire lit by someone without Warmth is unknown to the network until a player who has it comes by: the game
--- says "a campfire is near" (the aura), the addon knows of no camp around, so this client tells the network of
--- a sighting (Camps:Sight). A sighting is nobody's camp, so a player crossing a region leaves one at each fire
--- they pass, whatever camp of their own they have. Where it is: this player's position when the tick caught the
--- aura, not the fire's (the client does not give that). Tier: Basic until someone points at the fire.
--- A sighting already known here is refreshed once it is a beat old, by whoever is by it: that keeps it alive.
+-- A fire lit by someone without Warmth is unknown to the network until a player who has it comes by; this client
+-- then tells the network of a sighting (Camps:Sight). A sighting is nobody's camp, so a player crossing a region
+-- leaves one at each fire they find, whatever camp of their own they have. Where it is: this player's position,
+-- not the fire's (the client does not give that).
+-- The Campfire Nearby aura is no proof: it is on by any fire of the world, a town's or a camp's of the creatures
+-- (seen in game, 2026-11-27). Only what a player's campfire alone gives counts:
+--   * its name under the mouse ("Basic Campfire", "Journeyman Campfire", "Expert Campfire"), which also says the
+--     tier (Watch:Spot passes it here);
+--   * resting at it: the Welcoming Campfire minute belongs to the camp system. Tier: Basic until someone points.
+-- A sighting already known here is refreshed once it is a beat old, by whoever proves it again: that keeps it
+-- alive, and one nobody sits at or points at fades with the TTL.
 local lastSight = -1e9
-function Watch:Sight()
-	if W.db.auto == false or W.FireNearby() ~= true or self:MyFire() then return false end
+function Watch:Sight(tier)
+	if W.db.auto == false or W.FireNearby() == false or self:MyFire() then return false end
+	if not tier and W.HasAura(W.AURA.WELCOME) ~= true then return false end
 	local map, x, y = W.Position()
 	if not map or GetTime() - lastSight < W.Net.ANNOUNCE_GAP then return false end
 	for _, camp in ipairs(W.Camps:List()) do
 		if camp.dist and camp.dist <= W.Camps.SAME and camp.other ~= true and not camp.demo then
-			if not camp.sight or time() - camp.last < W.Net.BEAT then return false end
+			if not camp.sight then return false end
+			-- a fresh sighting is told again only to say a tier someone read off the fire
+			if time() - camp.last < W.Net.BEAT and (tier or 0) <= camp.tier then return false end
 			break
 		end
 	end
-	local camp = W.Net:Sight(map, x, y)
+	local camp = W.Net:Sight(map, x, y, tier)
 	if not camp then return false end
 	lastSight = GetTime()
 	W:Fire("SIGHTED", camp)
@@ -145,10 +153,11 @@ function Watch:Tick()
 			camp.violetSeen = violet or nil
 			W:Fire("CAMPS")
 		end
-		-- a sighting is nobody's camp: there is no circle to be counted in
-		if not camp.sight and (camp.owner == W.me or W.db.consent == true) then
+		-- a sighting is nobody's camp, and a family camp's lighter runs no Warmth: no circle to be counted in
+		local circle = not (camp.sight or camp.family)
+		if circle and (camp.owner == W.me or W.db.consent == true) then
 			W.Net:Presence(camp.owner)
-		elseif not camp.sight and W.db.consent == nil and not asked then
+		elseif circle and W.db.consent == nil and not asked then
 			asked = true -- once a session, until the player answers
 			W:Fire("CONSENT_NEEDED", camp)
 		end
@@ -229,13 +238,11 @@ end
 -- object's name can drop the item's "Camp "). Pointing at a piece while standing at a camp notes it there.
 function Watch:Spot(text)
 	if W.IsSecret(text) or type(text) ~= "string" or text == "" then return nil end
+	for tier, name in ipairs(W.TIERS) do -- a player's campfire says its tier (enUS names, as measured)
+		if text == name .. " Campfire" then self:Sight(tier); return nil end
+	end
 	local camp = self:Near()
 	if not camp then return nil end
-	if camp.sight then -- a sighted fire says its tier (enUS names, as measured), and the network hears it
-		for tier, name in ipairs(W.TIERS) do
-			if text == name .. " Campfire" and camp.tier < tier then W.Net:Sight(camp.map, camp.x, camp.y, tier) end
-		end
-	end
 	for i, o in ipairs(W.OBJECTS) do
 		if text == o[2] or text == W.ObjectName(i) or "Camp " .. text == o[2] then
 			camp.seen = camp.seen or {}

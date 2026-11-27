@@ -5,6 +5,7 @@ Somewhere out there, someone just lit a campfire. Warmth puts it on your map: wh
 ## What it does
 
 - **Campfires on your map.** A glowing pin for every campfire a player chose to announce, on the world map and the minimap. The more people around the fire, the brighter it glows.
+- **Fires found along the way.** Point at a campfire someone without Warmth lit, or rest at it, and Warmth puts it on everyone's map. Campfires that players of GuildOS, Lodestar and PartyLens light show up too.
 - **See the camp before you walk.** The campfire's tier, which camp objects are there and what they give (rested experience from a Camp Tent, repairs from a Repair Bot, stat buffs...), how many places are still open, and who is in the circle.
 - **Go there.** One click sets the game's waypoint on the fire.
 - **Find what you need.** Filter the list: camps with a tent, with repairs, or with an open place for your object.
@@ -36,7 +37,7 @@ Warmth lives in the game's **addon compartment** (the addon list by the minimap)
 
 - Warmth runs on **ChehulNet**, the network shared with GuildOS, Lodestar and PartyLens. It is brand new on this network: for now you will mostly hear campfires from your guild, your group and a few players beyond. The reach grows as the other addons update.
 - Like every ChehulNet addon, Warmth says hello to the network from time to time (your class, level and zone), which is how its addons find each other. Your campfire and your place in a circle are never part of that.
-- Only campfires lit by players show up, and only the announced ones. Campfires that belong to the world are not listed.
+- Only campfires lit by players show up: announced ones, and ones a Warmth player found. Fires that belong to the world (a town's, a camp of creatures) are never listed.
 - English and Brazilian Portuguese. No dependencies.
 
 ---
@@ -46,6 +47,7 @@ Warmth lives in the game's **addon compartment** (the addon list by the minimap)
 Em algum lugar, alguém acabou de acender uma fogueira. O Warmth põe ela no seu mapa: o que o acampamento oferece, quem está sentado em volta e o caminho até lá. Acenda a sua, chame gente e veja a roda encher.
 
 - **Fogueiras no mapa**: um pino brilhante para cada fogueira que um jogador escolheu anunciar, no mapa e no minimapa. Quanto mais gente em volta, mais forte o brilho.
+- **Fogueiras encontradas**: aponte o mouse para a fogueira de quem não tem o Warmth, ou descanse nela, e ela entra no mapa de todos. As fogueiras que quem usa GuildOS, Lodestar ou PartyLens acende também aparecem.
 - **Veja o acampamento antes de ir**: o nível da fogueira, os objetos de acampamento e o que eles dão (experiência de descanso da tenda, conserto do Repair Bot, bônus de atributos...), quantos lugares estão livres e quem está na roda.
 - **Ir até lá**: um clique põe o marcador do jogo na fogueira.
 - **Filtros**: com tenda, com conserto ou com lugar livre para o seu objeto.

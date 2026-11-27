@@ -12,6 +12,9 @@
 --
 -- A relayed sender (dist "RELAY") is CLAIMED, not verified: good for a pin, never for authority. Presence and
 -- invite requests are taken only from authentic paths.
+--
+-- A family camp (Core/Camps.lua: lit with Guild OS, Lodestar or PartyLens, without Warmth) is never whispered:
+-- its owner's client has no ChehulCamp handler, so presence, invites and thanks would go nowhere.
 --=============================================================================
 local _, W = ...
 local Net = {}
@@ -89,6 +92,7 @@ function Net:Sight(map, x, y, tier)
 	local camp = W.Camps:Sight(W.me, f)
 	if not camp then return nil end
 	f.x, f.y, f.tier = camp.x, camp.y, camp.tier -- a refreshed sighting keeps its place
+	f.family = camp.family -- and what a family beacon said of it
 	local payload = W.Wire.Sight(f)
 	mesh:Guild(self.PREFIX, payload)
 	mesh:Group(self.PREFIX, payload)
@@ -145,7 +149,7 @@ end
 function Net:Presence(owner, now)
 	local camp = W.Camps:Get(owner)
 	if not camp or camp.demo then return false end -- a demo camp (/warmth demo) exists on this client only
-	if camp.sight then return false end -- a sighting has no owner to tell
+	if camp.sight or camp.family then return false end -- a sighting has no owner to tell, a family camp no circle
 	local obj = W.Watch:ObjectAt(camp)
 	if owner == W.me then
 		return W.Camps:Join(W.me, W.me, W.MyClassIndex(), obj) -- goes out in my next announce
@@ -171,6 +175,7 @@ function Net:RequestInvite(owner)
 	local camp = W.Camps:Get(owner)
 	if camp and camp.demo then return false, "demo" end
 	if not camp or owner == W.me or camp.sight then return false, "no_camp" end
+	if camp.family then return false, "family" end -- the lighter has no Warmth to read the request
 	if GetTime() - (lastInviteTo[owner] or -1e9) < self.INVITE_GAP then return false, "too_soon" end
 	local mesh = Mesh()
 	if not mesh then return false, "no_network" end

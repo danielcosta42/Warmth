@@ -114,6 +114,10 @@ local ptBR = {
 	["%d by the fire"] = "%d na roda",
 	["In another copy of the zone"] = "Em outra cópia da zona",
 	["Click to see the circle"] = "Clique para ver a roda",
+	["Seen burning %s"] = "Vista acesa %s",
+	["%s  ·  seen burning %s"] = "%s  ·  vista acesa %s",
+	["Where someone stood when they saw it: the fire is within about 100 yards."] = "Onde alguém estava quando a viu: o fogo fica a até umas 100 jardas.",
+	["%d more fires here: zoom in to tell them apart"] = "Mais %d fogueiras aqui: aproxime o mapa para separá-las",
 	["A campfire in %s"] = "Uma fogueira em %s",
 	["lit a camp."] = "acendeu um acampamento.",
 	["Appear in circles?"] = "Aparecer nas rodas?",
@@ -137,8 +141,12 @@ local ptBR = {
 	["Announce the campfires I light, and the ones I find, to the network"] = "Anunciar à rede as fogueiras que eu acendo e as que eu encontro",
 	["A campfire you found"] = "Uma fogueira que você encontrou",
 	["Campfire seen by %s"] = "Fogueira vista por %s",
-	["You passed a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"] =
-		"Você passou por uma fogueira que a rede não conhecia: ela está no mapa agora. (O anúncio automático pode ser desligado nas opções.)",
+	["A lit campfire"] = "Uma fogueira acesa",
+	["Lit with Guild OS, Lodestar or PartyLens, without Warmth: no circle."] = "Acesa com o Guild OS, o Lodestar ou o PartyLens, sem o Warmth: sem roda.",
+	["Click for details"] = "Clique para ver os detalhes",
+	["Whoever lit this fire does not run Warmth: whisper them yourself."] = "Quem acendeu este fogo não usa o Warmth: sussurre você mesmo.",
+	["You found a campfire the network did not know: it is on the map now. (The automatic announce can be turned off in the options.)"] =
+		"Você encontrou uma fogueira que a rede não conhecia: ela está no mapa agora. (O anúncio automático pode ser desligado nas opções.)",
 	["Show the compass (the small campfire that points to the best fire nearby)"] = "Mostrar a bússola (a fogueirinha que aponta para a melhor fogueira por perto)",
 	["The campfires you light are announced to the network by themselves (see the options)."] = "As fogueiras que você acende são anunciadas à rede sozinhas (veja as opções).",
 	["Campfire lit and announced to the network. (You can turn the automatic announce off in the options.)"] =
@@ -204,7 +212,7 @@ local ptBR = {
 	-- the compass
 	["%d yd"] = "%d jardas",
 	["Sit"] = "Sentar",
-	["A campfire burns nearby: the game wants 100 yards between two."] = "Há uma fogueira acesa por perto: o jogo pede 100 jardas entre duas.",
+	["A fire burns nearby: the game refuses a campfire within 100 yards of another."] = "Há um fogo aceso por perto: o jogo recusa uma fogueira a menos de 100 jardas de outra.",
 	["A minute resting by a fire that has camp objects gives its benefits."] = "Um minuto descansando junto a um fogo com objetos de acampamento dá os benefícios dele.",
 	["Open the window"] = "Abrir a janela",
 	["No campfire announced near you."] = "Nenhuma fogueira anunciada perto de você.",

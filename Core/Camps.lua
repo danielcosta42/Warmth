@@ -4,6 +4,10 @@
 -- A camp has two sources of people: the roster the owner's last announce named (far viewers have only that) and
 -- the people heard directly saying "I am in this circle" (the owner, guildmates, groupmates and this client).
 -- The owner's own client keeps only the second and builds its announce from it.
+--
+-- A family camp (camp.family, the flag "l") was lit by a player whose Guild OS, Lodestar or PartyLens announced it
+-- for them, without Warmth (the ChehulNet beacon). It is a real camp with a real lighter, but its owner hears none
+-- of Warmth's messages: it has no circle, no presence, no invite and no thanks, and nobody is counted in it.
 --=============================================================================
 local _, W = ...
 local Camps = { all = {} }
@@ -12,6 +16,7 @@ W.Camps = Camps
 Camps.TTL, Camps.PERSON_TTL = 720, 360 -- seconds without news until a camp / a person heard directly is gone
 Camps.MAX, Camps.PEOPLE_MAX = 100, 40
 Camps.ENDED = 15 -- seconds an owner's late (relayed) announce is ignored after their End
+Camps.ENDED_SIGHT = 240 -- and their family beacon's sighting of the same fire (one beat: the beacon stops at its End)
 
 local seq = 0
 local ended = {} -- [owner] = GetTime() of their End
@@ -21,6 +26,7 @@ function Camps:Get(owner) return self.all[owner or ""] end
 -- Yards between two points of one map; nil on different maps or where the client cannot say.
 local function Yards(a, b)
 	if a.map ~= b.map then return nil end
+	if a.x == b.x and a.y == b.y then return 0 end -- the same point needs no map data
 	local an, aw = W.World(a.map, a.x, a.y)
 	local bn, bw = W.World(b.map, b.x, b.y)
 	return an and bn and math.sqrt((an - bn) ^ 2 + (aw - bw) ^ 2) or nil
@@ -30,8 +36,20 @@ end
 -- one player crossing a region can leave several; it lives while people keep seeing it. `by`: who saw it last.
 -- A known camp at the same place (SAME yards, the same copy of the zone) stands: a lit camp is left alone, a
 -- sighting is refreshed. Returns the sighting and whether it is new; nil when it added nothing.
-Camps.SAME, Camps.SIGHTS = 60, 40
+-- SAME is the game's own spacing: no campfire can be placed within 100 yards of a lit one, so two reports closer
+-- than that are one fire. The Campfire Nearby aura reaches about as far, and a sighting is where the seer stood,
+-- not where the fire is: anything smaller left a trail of pins behind a player crossing one fire's range.
+-- f.family: the sighting a family beacon puts on the realm bus for its own player's fire. It is meant to carry no
+-- name, so `by` (the relay's claimed origin, which is that player) is not kept; and the camp the same beacon
+-- announced on guild or group, if this client heard it, is that fire.
+Camps.SAME, Camps.SIGHTS = 100, 40
 function Camps:Sight(by, f)
+	if f.family then
+		local own = self.all[by or ""]
+		if own and not own.sight then return nil end -- the lighter's camp, heard on guild or group, is this fire
+		if ended[by or ""] and GetTime() - ended[by] < self.ENDED_SIGHT then return nil end -- a beat late, after its End
+		by = nil
+	end
 	local key = ("@%d:%d:%d"):format(f.map, math.floor(f.x * 10000 + 0.5), math.floor(f.y * 10000 + 0.5))
 	local known, sights = self.all[key], 0
 	for _, camp in pairs(self.all) do
@@ -43,17 +61,19 @@ function Camps:Sight(by, f)
 		end
 	end
 	if known then
-		known.last, known.by = time(), by
+		known.last, known.by = time(), by or known.by
 		known.tier, known.flame = math.max(known.tier, f.tier), f.flame or 0 -- a tier someone read off the fire is kept
+		known.family = known.family or f.family
 		W:Fire("CAMPS")
 		return known, false
 	end
 	if sights >= self.SIGHTS then return nil end
 	local camp = { owner = key, sight = true, spotted = true, by = by, heard = {}, order = {}, at = time(), last = time(),
-		map = f.map, x = f.x, y = f.y, zuid = f.zuid or 0, tier = f.tier, flame = f.flame or 0, n = 0, objs = {}, roster = {}, note = "" }
+		map = f.map, x = f.x, y = f.y, zuid = f.zuid or 0, tier = f.tier, flame = f.flame or 0, n = 0, objs = {}, roster = {}, note = "",
+		family = f.family }
 	self.all[key] = camp
 	W:Fire("CAMPS")
-	if by ~= W.me then W:Fire("CAMP_NEW", camp) end
+	if by ~= W.me then W:Fire("CAMP_NEW", camp) end -- by is nil for a family sighting: news too
 	return camp, true
 end
 
@@ -80,6 +100,7 @@ function Camps:Announce(owner, f, here)
 	camp.n, camp.objs, camp.roster, camp.note = f.n or 0, f.objs or {}, f.people or {}, f.note or ""
 	camp.flame = f.flame or 0
 	camp.spotted = f.spotted or nil
+	camp.family = f.family or nil -- Warmth loaded mid-camp on the lighter's client: its own announce clears it
 	camp.last = time()
 	W:Fire("CAMPS")
 	if isNew and owner ~= W.me then W:Fire("CAMP_NEW", camp) end
@@ -89,7 +110,7 @@ end
 -- `who` said (by an authentic path) that they are in `owner`'s circle.
 function Camps:Join(who, owner, class, obj)
 	local camp = self.all[owner or ""]
-	if not (camp and who) then return false end
+	if not (camp and who) or camp.family then return false end -- an older Warmth may still say so: no circle there
 	local h = camp.heard[who]
 	if not h then
 		local n = 0
@@ -123,7 +144,8 @@ function Camps:People(camp)
 		if not by[p.name] then by[p.name] = { name = p.name, class = p.class or 0, obj = 0 }
 		elseif by[p.name].class == 0 then by[p.name].class = p.class or 0 end
 	end
-	by[camp.owner] = by[camp.owner] or { name = camp.owner, class = 0, obj = 0 } -- whoever lit it is there
+	-- whoever lit it is there; a sighting's key is a place, not a person
+	if not camp.sight then by[camp.owner] = by[camp.owner] or { name = camp.owner, class = 0, obj = 0 } end
 	local out = {}
 	for name, p in pairs(by) do
 		if not camp.order[name] then seq = seq + 1; camp.order[name] = seq end
@@ -163,6 +185,7 @@ function Camps:Violet(camp)
 end
 
 function Camps:Count(camp)
+	if camp.sight then return 0 end -- nobody is known to be at a fire somebody only saw burning
 	return math.max(camp.n or 0, #self:People(camp))
 end
 

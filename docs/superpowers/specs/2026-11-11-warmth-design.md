@@ -102,12 +102,30 @@ conferido no jogo**; os ids em especial.
 | Pergunta | Resposta | O que o addon faz com ela |
 |---|---|---|
 | Os ids dos kits e objetos conferem? | Sim, os 41. `C_Item.GetItemSpell` dá o feitiço de cada um (Basic Campfire 1307227, Journeyman 1307252, Expert 1307237; Camp Chair 1307229...), e `UNIT_SPELLCAST_SUCCEEDED` traz esse id. Acender leva 10 s de conjuração. | Reconhece sozinho o nível aceso e o objeto posto |
-| Há sinal de fogueira por perto? | Sim: a aura "Campfire Nearby" (1283391) liga perto de qualquer fogueira acesa, de qualquer jogador, e desliga ao se afastar | Só anuncia com fogo de verdade; só entra na roda com fogo presente; encerra o anúncio quando o fogo do dono some; marca "sem fogo aqui" o acampamento anunciado onde não há fogo (outra cópia da zona, ou apagou) |
+| Há sinal de fogueira por perto? | Sim: a aura "Campfire Nearby" (1283391) liga perto de qualquer fogueira acesa, de qualquer jogador, e desliga ao se afastar. **Mas liga também perto de qualquer fogo do mundo** (de vila, de acampamento de criaturas; visto no jogo em 2026-11-27): o "não" é confiável, o "sim" não prova fogueira de jogador | Só anuncia com fogo de verdade; só entra na roda com fogo presente; encerra o anúncio quando o fogo do dono some; marca "sem fogo aqui" o acampamento anunciado onde não há fogo (outra cópia da zona, ou apagou) |
 | Dá para saber que o jogador sentou e ganhou o benefício? | Sim: "Welcoming Campfire" (1229739, 60 s) é o minuto sentado; "Camp Benefits" (1229741) é o benefício: 1 hora, e 2 horas quando alguém usou o brinquedo da Twitch no fogo | Ainda não usado (a roda entra por distância mais fogo presente) |
 | Dá para ler a fogueira ou os objetos de quem não tem o addon? | Não automaticamente. Não há alvo de interação com GUID nem marcador de minimapa; o tooltip do objeto do mundo só traz o nome ("Basic Campfire", "Chair"), e só com o mouse em cima | Só aparecem objetos informados por quem tem o addon |
 | Chamas violetas (Pouch of Violet Dust, brinquedo da celebração de lançamento) | Lança Throw Violet Dust (1328348) e deixa a aura "Violet Flames" (1328375) em quem está junto do fogo | O dono anuncia a chama violeta (letra `v` junto do nível); quem está no fogo vê na hora; a tela diz que ali o benefício dura 2 horas |
 | Erros do jogo ao montar | "You cannot place a new campfire within 100 yards of an existing campfire." e "You cannot place a feature that close to a creature or object." (`UI_ERROR_MESSAGE`) | Ainda não usados |
 | APIs que faltam no Forever | `GetItemSpell` global (há `C_Item.GetItemSpell`), as de ofício clássicas `GetTradeSkill*` (há `C_TradeSkillUI`), `C_SuperTrack.SetSuperTrackingUserWaypoint`, `InviteUnit` global (há `C_PartyInfo.InviteUnit`) | Culinária lê por `C_TradeSkillUI`; o waypoint é posto sem a seta |
+
+**Fogueira avistada (0.4.0, revista depois da 0.5.0, issue #17).** A fogueira de quem não tem o addon vira um
+avistamento sem dono, na posição de quem a viu (o cliente não dá a do fogo). Como a aura "Campfire Nearby" alcança
+longe, a 0.5.0 deixava um rastro de pinos atrás de quem atravessava o alcance de uma fogueira. Regras desde então:
+
+- Como a aura liga perto de qualquer fogo do mundo, ela não basta. Só avista quem tem prova de fogueira de
+  jogador: o nome dela sob o mouse ("Basic Campfire", "Journeyman Campfire", "Expert Campfire", que também dá o
+  nível) ou descansando nela ("Welcoming Campfire", do sistema de acampamento). Um avistamento só é renovado
+  com nova prova; sem ela, some com o tempo.
+- Na tela de montar, um fogo por perto que o addon não viu acender ainda pergunta qual é, mas também oferece
+  acender o kit (pode ser o fogo de uma vila).
+- Limites conhecidos: perto de um fogo do mundo, o fim do anúncio do dono quando o fogo dele apaga e o
+  cronômetro do fogo não percebem o apagar (a aura continua ligada).
+- Dois relatos a menos de **100 jardas** (o espaçamento que o jogo impõe entre fogueiras), na mesma cópia, são a
+  mesma fogueira; também contra um acampamento anunciado.
+- Um avistamento não tem gente: conta 0, a roda não mostra o "dono" (que é o lugar), não levanta aviso na tela.
+- No mapa: pino menor e mais apagado, com a nota de que o fogo fica a até umas 100 jardas; pinos que se
+  sobrepõem viram um só ("+N"), com o acampamento anunciado à frente do avistamento; o tamanho acompanha o zoom.
 
 | Bolsa de dormir (Cozy Sleeping Bag, item 211527) | Usar lança Unroll Bag (429961, 15 s); o jogador fica "resting" e cerca de um minuto depois ganha "Well-Rested" (429959, 2 h). Pelo dono: 1% de experiência por minuto deitado, até 3%, e combina com a fogueira | Aparece no checklist com essa explicação |
 | Culinária | `C_TradeSkillUI.GetBaseProfessionInfo()` traz `professionName=Cooking`, `profession=5`; 132 receitas listadas | O addon reconhece a janela de Culinária; a contagem do que dá para fazer ainda não foi vista com materiais na bolsa |

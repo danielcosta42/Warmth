@@ -2,7 +2,8 @@
 
 Campfires lit by players, on your map, for **WoW: Forever** (interface 16001). See what each camp offers and who
 is around the fire, go there, and set up your own. Runs on the [ChehulNet](https://github.com/danielcosta42/chehulnet)
-network, shared with GuildOS, Lodestar and PartyLens.
+network, shared with GuildOS, Lodestar and PartyLens. Fires lit by Guild OS / Lodestar / PartyLens players also show
+up, even without Warmth: the library's campfire beacon announces them in Warmth's format (flag `l`).
 
 The store page text is in [CURSEFORGE-DESCRIPTION.md](CURSEFORGE-DESCRIPTION.md). The design is in
 [docs/superpowers/specs/2026-11-11-warmth-design.md](docs/superpowers/specs/2026-11-11-warmth-design.md).
@@ -39,6 +40,9 @@ Rules that are easy to break:
   later (never on the spot, which would give away where they are), and only with `WarmthDB.shareVendors` on.
 - **Secure buttons are owned by UIParent and touched only outside combat** (the Light button, the ring's slices):
   anchored to the window or the compass they would make it protected.
+- **A family camp (flag `l`) has no circle.** Its lighter runs Guild OS, Lodestar or PartyLens without Warmth, so
+  nothing is whispered to them (presence, invite, thanks) and no presence is counted there. Warmth never calls
+  `CN:EnableCamps`: with Warmth loaded the library's beacon stays quiet and Warmth announces by itself.
 - **Only the owner's announce uses the realm bus.** Presence and invite requests go to the owner by whisper.
 - **No looping `Scale` animation.** On the Forever client it accumulates until the region covers the screen.
   Everything that moves is computed per frame in `UI/Motion.lua`.

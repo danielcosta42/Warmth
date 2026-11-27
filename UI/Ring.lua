@@ -34,7 +34,9 @@ function UI.BuildRing(parent)
 		for _, p in ipairs(people) do
 			if p.name == W.me then inRing = true end
 		end
-		local total = shown + (inRing and 0 or 1)
+		-- the empty "you" seat is the invitation to join; a sighting or a family camp has no circle to join
+		local invite = not inRing and not (camp.sight or camp.family)
+		local total = shown + (invite and 1 or 0)
 		for i, seat in ipairs(self.seats) do
 			local p = people[i]
 			if i <= shown then
@@ -51,7 +53,7 @@ function UI.BuildRing(parent)
 				elseif not Motion.arriving[seat] then
 					seat:SetAlpha(1)
 				end
-			elseif i == shown + 1 and not inRing then
+			elseif i == shown + 1 and invite then
 				seat:SetEmpty(L["you"])
 				seat.tipTitle, seat.tipLines = L["A seat by the fire"], { L["Walk up to the fire to join the circle."] }
 				Motion.Settle(seat)

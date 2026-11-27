@@ -53,7 +53,7 @@ function Compass.Actions()
 	for tier = #W.KITS, 1, -1 do
 		if W.Count(W.KITS[tier]) > 0 then
 			out[#out + 1] = { kind = "item", item = W.KITS[tier], title = L["Light the %s campfire"]:format(L[W.TIERS[tier]]),
-				text = W.FireNearby() == true and L["A campfire burns nearby: the game wants 100 yards between two."] or nil }
+				text = W.FireNearby() == true and L["A fire burns nearby: the game refuses a campfire within 100 yards of another."] or nil }
 			break
 		end
 	end
@@ -266,11 +266,12 @@ end
 -- The compass itself
 --------------------------------------------------------------------------------
 local function Describe(camp)
-	local lines = { L["%d by the fire"]:format(W.Camps:Count(camp)) .. "  ·  " .. L[W.TIERS[camp.tier]] .. "  ·  " .. UI.Where(camp) }
+	local lines = { UI.CampSummary(camp) }
 	for _, index in ipairs(W.Camps:Objects(camp)) do
 		local o = W.OBJECTS[index]
 		lines[#lines + 1] = UI.C.mute .. W.ObjectName(index) .. (o[4] and (": " .. L[o[4]]) or "") .. UI.C.r
 	end
+	if camp.family then lines[#lines + 1] = UI.C.ember .. UI.FamilyLine() .. UI.C.r end
 	return lines
 end
 
